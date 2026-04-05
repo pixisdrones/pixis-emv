@@ -1413,6 +1413,16 @@ function buildInfCard(opts){
   const nameInp=mkTxt('@handle or name');
   const platSel=mkSel(PLATS.map(([v,t])=>[v,t]));
   r1.appendChild(mkFld('Handle / Name',nameInp));r1.appendChild(mkFld('Platform',platSel));
+  // Followers field (actuals only — used to auto-calculate Est. Views)
+  let follInpActuals=null,rFollowers=null;
+  if(!isPred){
+    follInpActuals=mkNum(0,1,0);
+    follInpActuals.placeholder='e.g. 25000';
+    follInpActuals.addEventListener('input',()=>card._setFollowers(parseFloat(follInpActuals.value)||0));
+    rFollowers=document.createElement('div');rFollowers.style.cssText='margin-top:6px';
+    rFollowers.appendChild(mkFld('Followers',follInpActuals));
+  }
+
   // URL row + quick metrics entry button
   const rUrl=document.createElement('div');rUrl.style.cssText='margin-top:6px;margin-bottom:2px';
   const urlInp=mkTxt('https://post-url (optional)');
@@ -1619,6 +1629,8 @@ function buildInfCard(opts){
   };
   card._setFollowers=(n)=>{
     card._followerCount=n;
+    // Sync visible followers input if value differs (e.g. set by TW import)
+    if(follInpActuals&&parseFloat(follInpActuals.value)!==n)follInpActuals.value=n||'';
     if(estViewRow){
       estViewRow.qtyInp.value=n>0?Math.round(n*getPlReach(platSel.value)):0;
       estViewRow.qtyInp.dispatchEvent(new Event('input'));
@@ -1627,6 +1639,7 @@ function buildInfCard(opts){
 
   card.appendChild(hd);
   card.appendChild(r1);
+  if(rFollowers)card.appendChild(rFollowers);
   card.appendChild(rUrl);
   if(isPred){card.appendChild(r2);card.appendChild(statsWrap);card.appendChild(r4);}
   card.appendChild(engWrap);
