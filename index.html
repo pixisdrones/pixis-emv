@@ -402,7 +402,6 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         <div class="ff"><label class="fl">Client</label><input class="fi" id="s-client" placeholder="e.g. LA Dodgers"></div>
         <div class="ff"><label class="fl">Program</label><input class="fi" id="s-prog" placeholder="e.g. Opening Night"></div>
         <div class="ff"><label class="fl">Show Name</label><input class="fi" id="s-name" placeholder="e.g. HipHop Legends"></div>
-        <div class="ff"><label class="fl">Location</label><input class="fi" id="s-loc" placeholder="e.g. Dodger Stadium"></div>
         <div class="ff"><label class="fl">Show City</label><input class="fi" id="s-city" placeholder="e.g. Los Angeles"></div>
         <div class="ff"><label class="fl">Show State</label><select class="fi" id="s-state"><option value="">-- Select State --</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select></div>
         <div class="ff"><label class="fl">Launch Site</label><input class="fi" id="s-launch" placeholder="e.g. Dodger Stadium Parking Lot"></div>
@@ -1943,7 +1942,7 @@ function resetAll(){
   // Clear actuals influencer sections
   ['paid-infs','earned-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
-  ['s-client','s-prog','s-name','s-loc','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-cost'].forEach(id=>{const e=$(id);if(e)e.value='';});
+  ['s-client','s-prog','s-name','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-cost'].forEach(id=>{const e=$(id);if(e)e.value='';});
   $('s-len').value='12';$('cb-qr').checked=false;window._clientLogo=null;
   $('up-prev').style.display='none';$('up-prev').src='';
   $('up-icon').style.display='';$('up-txt').style.display='';
@@ -2210,7 +2209,8 @@ async function genPdf(){
     await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Show Details</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 22px;font-size:11px;color:#333">'
       +'<div><strong>Client:</strong> '+gv('s-client')+'</div><div><strong>Program:</strong> '+gv('s-prog')+'</div>'
-      +'<div><strong>Show:</strong> '+gv('s-name')+'</div><div><strong>Location:</strong> '+gv('s-loc')+'</div>'
+      +'<div><strong>Show:</strong> '+gv('s-name')+'</div><div><strong>City / State:</strong> '+[gv('s-city'),gv('s-state')].filter(Boolean).join(', ')+'</div>'
+      +'<div><strong>Launch Site:</strong> '+(gv('s-launch')||'--')+'</div><div><strong>Audience Location:</strong> '+(gv('s-audience')||'--')+'</div>'
       +'<div><strong>Date:</strong> '+(gv('s-date')||'--')+'</div><div><strong>Drones:</strong> '+(gv('s-drones')||'--')+'</div>'
       +'<div><strong>Duration:</strong> '+gv('s-len')+' min</div><div><strong>Cost:</strong> '+(gn('s-cost')>0?fmt(gn('s-cost')):'--')+'</div></div></div>');
     for(const sec of SECS){
@@ -2327,7 +2327,7 @@ function svSetAll(arr){localStorage.setItem(SV_KEY,JSON.stringify(arr));}
 
 function svSerialize(){
   const details={};
-  ['s-client','s-prog','s-name','s-loc','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-len','s-cost'].forEach(id=>{
+  ['s-client','s-prog','s-name','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-len','s-cost'].forEach(id=>{
     const e=$(id);if(e)details[id]=e.value;
   });
   details['cb-qr']=$('cb-qr').checked;
@@ -2386,7 +2386,7 @@ function svDeserialize(data){
 
   // Show details
   const d=data.details||{};
-  ['s-client','s-prog','s-name','s-loc','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-len','s-cost'].forEach(id=>{
+  ['s-client','s-prog','s-name','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-len','s-cost'].forEach(id=>{
     const e=$(id);if(e&&d[id]!==undefined)e.value=d[id];
   });
   const qrCb=$('cb-qr');if(qrCb)qrCb.checked=!!d['cb-qr'];
@@ -3165,7 +3165,7 @@ async function genProgramReport(){
       const bg=i%2?'#f8f9ff':'#fff';
       tRows+='<tr style="background:'+bg+'">'
         +'<td style="'+tdL+';font-weight:600">'+entry.name+'</td>'
-        +'<td style="'+tdL+';font-size:9px;color:#555">'+(d['s-loc']||'--')+'</td>'
+        +'<td style="'+tdL+';font-size:9px;color:#555">'+([d['s-city'],d['s-state']].filter(Boolean).join(', ')||'--')+'</td>'
         +'<td style="'+tdL+';font-size:9px;color:#555">'+(d['s-date']||'--')+'</td>'
         +'<td style="'+tdR+'">'+fmt(calc.ooh||0)+'</td>'
         +'<td style="'+tdR+'">'+fmt(calc.wom||0)+'</td>'
@@ -3214,7 +3214,8 @@ async function genProgramReport(){
       await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Show Details</div>'
         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px 22px;font-size:11px;color:#333">'
         +'<div><strong>Client:</strong> '+(d['s-client']||'--')+'</div><div><strong>Program:</strong> '+(d['s-prog']||'--')+'</div>'
-        +'<div><strong>Show:</strong> '+(d['s-name']||'--')+'</div><div><strong>Location:</strong> '+(d['s-loc']||'--')+'</div>'
+        +'<div><strong>Show:</strong> '+(d['s-name']||'--')+'</div><div><strong>City / State:</strong> '+([d['s-city'],d['s-state']].filter(Boolean).join(', ')||'--')+'</div>'
+        +'<div><strong>Launch Site:</strong> '+(d['s-launch']||'--')+'</div><div><strong>Audience Location:</strong> '+(d['s-audience']||'--')+'</div>'
         +'<div><strong>Date:</strong> '+(d['s-date']||'--')+'</div><div><strong>Drones:</strong> '+(d['s-drones']||'--')+'</div>'
         +'<div><strong>Duration:</strong> '+(d['s-len']||'--')+' min</div><div><strong>Cost:</strong> '+(cost>0?fmt(cost):'--')+'</div>'
         +'</div></div>');
