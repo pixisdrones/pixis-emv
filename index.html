@@ -2950,11 +2950,10 @@ function parseTalkwalkerCSV(file){
       }
       if(!rows.length)return notif('No data rows found');
       _twRawRows=rows;_twFlagged=[];
-      // Pre-populate keywords from Client, Program, Show Name, Launch Site, Audience Location + "drone"
-      const sc=$('s-client')?.value||'';const sp=$('s-prog')?.value||'';const sn=$('s-name')?.value||'';
-      const slaunch=$('s-launch')?.value||'';const saud=$('s-audience')?.value||'';
+      // Pre-populate keywords from Client, Program + "drone"
+      const sc=$('s-client')?.value||'';const sp=$('s-prog')?.value||'';
       const kwEl=$('tw-keywords');
-      if(sc||sp||sn||slaunch||saud){kwEl.value=[sc,sp,sn,slaunch,saud,'drone'].filter(Boolean).join(', ');}
+      if(sc||sp){kwEl.value=[sc,sp,'drone'].filter(Boolean).join(', ');}
       _twReflag();
       _twRenderTable('all');
       $('tw-overlay').classList.add('open');
