@@ -1490,7 +1490,7 @@ function buildInfCard(opts){
         qtyInp.value=Math.round(engs*t.pr);
         qtyInp.readOnly=true;qtyInp.classList.add('eng-type-disp');qtyInp.style.background='var(--s4)';
       }else{
-        qtyInp.value=Math.round(engs*t.pr);// default seeded from estimate
+        qtyInp.value=0;// actual qty — entered manually or imported from post data
       }
 
       // Value per engagement cell
@@ -1525,42 +1525,45 @@ function buildInfCard(opts){
 
   function recalc(){
     const pl=platSel.value;
-    const fo=parseFloat(follInp.value)||0;
-    const engPct=(parseFloat(engInp.value)||0)/100;
-    const reach=getPlReach(pl);
-    const impr=Math.round(fo*reach);
-    const totalEngs=Math.round(fo*engPct);
     const adj=isPred?(card._statSel?.value==='paid'?BM.adj_paid:BM.adj_organic):adjFactor;
-    const vi=parseFloat(valImpInp.value)||0;
 
-    // Update stats display
-    impStat.val.textContent=impr.toLocaleString();
-    engStat.val.textContent=totalEngs.toLocaleString();
-    ctrStat.val.textContent=((parseFloat(engInp.value)||0).toFixed(1)+'%');
-
-    // If prediction mode, update predicted qtys based on new total engs
     if(isPred){
+      // Prediction mode: derive estimated impressions/engagements and seed per-type qtys
+      const fo=parseFloat(follInp.value)||0;
+      const engPct=(parseFloat(engInp.value)||0)/100;
+      const reach=getPlReach(pl);
+      const impr=Math.round(fo*reach);
+      const totalEngs=Math.round(fo*engPct);
+      impStat.val.textContent=impr.toLocaleString();
+      engStat.val.textContent=totalEngs.toLocaleString();
+      ctrStat.val.textContent=((parseFloat(engInp.value)||0).toFixed(1)+'%');
       engRows.forEach(er=>{
         er.qtyInp.value=Math.round(totalEngs*er.t.pr);
         er.valInp.value=(getEngVal(pl,er.t.id)||0.01).toFixed(3);
       });
+      const vi=parseFloat(valImpInp.value)||0;
+      const impEMV=(impr/1000)*vi;
+      let engEMV=0;
+      engRows.forEach(er=>{
+        const q=parseFloat(er.qtyInp.value)||0;
+        const v=parseFloat(er.valInp.value)||0;
+        const sub=q*v*adj;
+        engEMV+=sub;
+        er.subEmvEl.textContent=fmt(sub);
+      });
+      emvVal.textContent=fmt((impEMV*adj)+engEMV);
+    }else{
+      // Actuals mode: EMV = sum of actual engagement type quantities only
+      let engEMV=0;
+      engRows.forEach(er=>{
+        const q=parseFloat(er.qtyInp.value)||0;
+        const v=parseFloat(er.valInp.value)||0;
+        const sub=q*v*adj;
+        engEMV+=sub;
+        er.subEmvEl.textContent=fmt(sub);
+      });
+      emvVal.textContent=fmt(engEMV);
     }
-
-    // Compute impressions EMV component
-    const impEMV=(impr/1000)*vi;
-
-    // Compute per-type engagement EMV components
-    let engEMV=0;
-    engRows.forEach(er=>{
-      const q=parseFloat(er.qtyInp.value)||0;
-      const v=parseFloat(er.valInp.value)||0;
-      const sub=q*v*adj;
-      engEMV+=sub;
-      er.subEmvEl.textContent=fmt(sub);
-    });
-
-    const totalEMV=(impEMV*adj)+engEMV;
-    emvVal.textContent=fmt(totalEMV);
     onEMVChange();
   }
 
@@ -1571,26 +1574,26 @@ function buildInfCard(opts){
     buildEngTypeRows(pl);
     recalc();
   });
-  [follInp,engInp,valImpInp].forEach(i=>i.addEventListener('input',recalc));
+  if(isPred)[follInp,engInp,valImpInp].forEach(i=>i.addEventListener('input',recalc));
   if(card._statSel)card._statSel.addEventListener('change',recalc);
 
   card._getEMV=()=>{
-    const pl=platSel.value;
-    const fo=parseFloat(follInp.value)||0;
-    const engPct=(parseFloat(engInp.value)||0)/100;
-    const reach=getPlReach(pl);
-    const impr=fo*reach;
-    const totalEngs=fo*engPct;
     const adj=isPred?(card._statSel?.value==='paid'?BM.adj_paid:BM.adj_organic):adjFactor;
-    const vi=parseFloat(valImpInp.value)||0;
-    const impEMV=(impr/1000)*vi*adj;
-    let engEMV=0;
-    engRows.forEach(er=>{
-      const q=parseFloat(er.qtyInp.value)||0;
-      const v=parseFloat(er.valInp.value)||0;
-      engEMV+=q*v*adj;
-    });
-    return impEMV+engEMV;
+    if(isPred){
+      const pl=platSel.value;
+      const fo=parseFloat(follInp.value)||0;
+      const engPct=(parseFloat(engInp.value)||0)/100;
+      const impr=fo*getPlReach(pl);
+      const vi=parseFloat(valImpInp.value)||0;
+      const impEMV=(impr/1000)*vi*adj;
+      let engEMV=0;
+      engRows.forEach(er=>{engEMV+=(parseFloat(er.qtyInp.value)||0)*(parseFloat(er.valInp.value)||0)*adj;});
+      return impEMV+engEMV;
+    }else{
+      let engEMV=0;
+      engRows.forEach(er=>{engEMV+=(parseFloat(er.qtyInp.value)||0)*(parseFloat(er.valInp.value)||0)*adj;});
+      return engEMV;
+    }
   };
   card._updateDisp=()=>{emvVal.textContent=fmt(card._getEMV());};
   card._platSel=platSel;
@@ -1608,9 +1611,7 @@ function buildInfCard(opts){
   card.appendChild(hd);
   card.appendChild(r1);
   card.appendChild(rUrl);
-  card.appendChild(r2);
-  card.appendChild(statsWrap);
-  card.appendChild(r4);
+  if(isPred){card.appendChild(r2);card.appendChild(statsWrap);card.appendChild(r4);}
   card.appendChild(engWrap);
   card.appendChild(emvRow);
 
@@ -2886,21 +2887,14 @@ function _twImportSelected(){
     // Set handle name
     const nameInp=card.querySelector('.fi[placeholder="@handle or name"]');
     if(nameInp){nameInp.value=name;nameInp.dispatchEvent(new Event('input'));}
-    // Set followers/engPct BEFORE platform change so buildEngTypeRows seeds from correct values
-    const niPre=card.querySelectorAll('input[type="number"].fi');
-    if(niPre[0])niPre[0].value=followers||reach;
-    if(niPre[1])niPre[1].value=engPct;
-    // Set platform — triggers buildEngTypeRows which now reads the correct followers/engPct
+    // Set platform — triggers buildEngTypeRows
     const platSel=card.querySelectorAll('.fi')[1];
     if(platSel&&platSel.tagName==='SELECT'){platSel.value=pl;platSel.dispatchEvent(new Event('change'));}
     // Set post URL
     if(card._urlInp&&r.url){card._urlInp.value=r.url;}
-    // After eng rows are built: dispatch input events then override with actual CSV quantities
+    // After eng rows are built: set actual engagement quantities from CSV
     setTimeout(()=>{
-      const ni=card.querySelectorAll('input[type="number"].fi');
-      if(ni[0])ni[0].dispatchEvent(new Event('input'));
-      if(ni[1])ni[1].dispatchEvent(new Event('input'));
-      // Override ALL eng type row quantities with per-post actuals from CSV (including zeros)
+      // Set ALL eng type row quantities with per-post actuals from CSV (including zeros)
       const engMap=TW_ENG_MAP[pl]||{};
       const qtys={};
       Object.entries(engMap).forEach(([typeId,col])=>{
@@ -3038,9 +3032,6 @@ function parseAndImportCSV(file){
         if(platSel&&platSel.tagName==='SELECT'){
           platSel.value=pl;platSel.dispatchEvent(new Event('change'));
         }
-        const numInps=card.querySelectorAll('input[type="number"].fi');
-        if(numInps[0]){numInps[0].value=followers;numInps[0].dispatchEvent(new Event('input'));}
-        if(numInps[1]){numInps[1].value=engPct;numInps[1].dispatchEvent(new Event('input'));}
         // Per-engagement-type quantities — set after platform change rebuilds rows
         setTimeout(()=>{
           const engMap=CSV_ENG_MAP[pl]||{};
