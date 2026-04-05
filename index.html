@@ -594,8 +594,8 @@ const BM_DEFAULTS={
   cpm_ig:13,cpm_tt:9,cpm_yt:22,cpm_xx:7,cpm_fb:10,
   cpm_yts:7,cpm_rd:4,cpm_th:5,cpm_qu:2.5,
   // Platform organic reach rates (% of followers who see each post). Source: Sprout Social / Hootsuite 2024
-  reach_ig:8,reach_tt:40,reach_yt:28,reach_xx:5,reach_fb:3,
-  reach_yts:20,reach_rd:25,reach_th:12,reach_qu:12,
+  reach_ig:4,reach_tt:1,reach_yt:14,reach_xx:3,reach_fb:3,
+  reach_yts:1,reach_rd:10,reach_th:10,reach_qu:12,
   // Value per engagement action ($) — legacy aggregate, kept for backward compat
   veng_ig:0.08,veng_tt:0.05,veng_yt:0.10,veng_xx:0.07,veng_fb:0.06,
   veng_yts:0.04,veng_rd:0.05,veng_th:0.04,veng_qu:0.06,
@@ -612,7 +612,7 @@ const BM_DEFAULTS={
   // ── Per-engagement-type values ($ supplemental per action, on top of CPM reach value) ──
   // Source: IZEA Trust in Influencer Marketing 2024 / CreatorIQ / Traackr benchmarks
   // Instagram: imp, like, cmt, share
-  evt_ig_imp:0.005, evt_ig_like:0.025, evt_ig_cmt:0.10,  evt_ig_share:0.175,
+  evt_ig_imp:0.005, evt_ig_like:0.025, evt_ig_cmt:0.10,  evt_ig_repost:0.15, evt_ig_share:0.175,
   // TikTok: view, like, cmt, share
   evt_tt_view:0.003,evt_tt_like:0.015, evt_tt_cmt:0.08,  evt_tt_share:0.130,
   // YouTube: view, like, cmt
@@ -627,7 +627,7 @@ const BM_DEFAULTS={
   // Facebook: imp, react, cmt, share
   evt_fb_imp:0.004, evt_fb_react:0.025,evt_fb_cmt:0.10,  evt_fb_share:0.175,
   // Reddit: upvote, cmt
-  evt_rd_upvote:0.03,evt_rd_cmt:0.15,
+  evt_rd_view:0.002,evt_rd_upvote:0.03,evt_rd_cmt:0.15,
   // Threads: imp, like, cmt, repost, share
   evt_th_imp:0.003, evt_th_like:0.02,  evt_th_cmt:0.08,  evt_th_repost:0.12, evt_th_share:0.15,
   // Quora: upvote, cmt, share, view, follow
@@ -643,9 +643,9 @@ const BM_RANGES={
   cpm_yts:{lo:3,hi:12,fmt:'$'},  cpm_xx:{lo:4,hi:15,fmt:'$'},  cpm_fb:{lo:5,hi:20,fmt:'$'},
   cpm_rd:{lo:1.5,hi:8,fmt:'$'},  cpm_th:{lo:2,hi:8,fmt:'$'},   cpm_qu:{lo:1,hi:5,fmt:'$'},
   // Organic reach rates
-  reach_ig:{lo:3,hi:15,fmt:'%'}, reach_tt:{lo:20,hi:100,fmt:'%'},reach_yt:{lo:15,hi:60,fmt:'%'},
-  reach_yts:{lo:10,hi:50,fmt:'%'},reach_xx:{lo:2,hi:15,fmt:'%'},reach_fb:{lo:1,hi:8,fmt:'%'},
-  reach_rd:{lo:10,hi:60,fmt:'%'},reach_th:{lo:5,hi:25,fmt:'%'}, reach_qu:{lo:5,hi:30,fmt:'%'},
+  reach_ig:{lo:2,hi:8,fmt:'%'},  reach_tt:{lo:0.5,hi:3,fmt:'%'}, reach_yt:{lo:8,hi:25,fmt:'%'},
+  reach_yts:{lo:0.5,hi:3,fmt:'%'},reach_xx:{lo:1,hi:8,fmt:'%'},  reach_fb:{lo:1,hi:6,fmt:'%'},
+  reach_rd:{lo:5,hi:20,fmt:'%'}, reach_th:{lo:5,hi:20,fmt:'%'},  reach_qu:{lo:5,hi:20,fmt:'%'},
   // Influencer adj
   adj_paid:{lo:1.0,hi:1.5,fmt:'x'},adj_organic:{lo:1.5,hi:4.0,fmt:'x'},
   // OOH
@@ -659,7 +659,7 @@ const BM_RANGES={
   cont_ae:{lo:500,hi:5000,fmt:'$'}, cont_sf:{lo:500,hi:3000,fmt:'$'},
   // Per-engagement values
   evt_ig_imp:{lo:0.002,hi:0.010,fmt:'$'},evt_ig_like:{lo:0.010,hi:0.050,fmt:'$'},
-  evt_ig_cmt:{lo:0.050,hi:0.200,fmt:'$'},evt_ig_share:{lo:0.100,hi:0.300,fmt:'$'},
+  evt_ig_cmt:{lo:0.050,hi:0.200,fmt:'$'},evt_ig_repost:{lo:0.080,hi:0.300,fmt:'$'},evt_ig_share:{lo:0.100,hi:0.300,fmt:'$'},
   evt_tt_view:{lo:0.001,hi:0.008,fmt:'$'},evt_tt_like:{lo:0.005,hi:0.030,fmt:'$'},
   evt_tt_cmt:{lo:0.040,hi:0.150,fmt:'$'},evt_tt_share:{lo:0.080,hi:0.200,fmt:'$'},
   evt_yt_view:{lo:0.005,hi:0.025,fmt:'$'},evt_yt_like:{lo:0.030,hi:0.120,fmt:'$'},
@@ -671,7 +671,7 @@ const BM_RANGES={
   evt_xx_bkm:{lo:0.080,hi:0.300,fmt:'$'},evt_xx_qt:{lo:0.050,hi:0.150,fmt:'$'},
   evt_fb_imp:{lo:0.002,hi:0.008,fmt:'$'},evt_fb_react:{lo:0.010,hi:0.040,fmt:'$'},
   evt_fb_cmt:{lo:0.050,hi:0.200,fmt:'$'},evt_fb_share:{lo:0.100,hi:0.300,fmt:'$'},
-  evt_rd_upvote:{lo:0.010,hi:0.060,fmt:'$'},evt_rd_cmt:{lo:0.080,hi:0.250,fmt:'$'},
+  evt_rd_view:{lo:0.001,hi:0.005,fmt:'$'},evt_rd_upvote:{lo:0.010,hi:0.060,fmt:'$'},evt_rd_cmt:{lo:0.080,hi:0.250,fmt:'$'},
   evt_th_imp:{lo:0.001,hi:0.008,fmt:'$'},evt_th_like:{lo:0.010,hi:0.040,fmt:'$'},
   evt_th_cmt:{lo:0.050,hi:0.150,fmt:'$'},evt_th_repost:{lo:0.080,hi:0.200,fmt:'$'},evt_th_share:{lo:0.100,hi:0.250,fmt:'$'},
   evt_qu_upvote:{lo:0.015,hi:0.080,fmt:'$'},evt_qu_cmt:{lo:0.060,hi:0.200,fmt:'$'},
@@ -721,10 +721,11 @@ function updateRangeBar(wrap,key,val){
 // Engagement types sourced from Medium Lists worksheet (EMV Calculator - Master Copy.xlsx)
 const ENG_TYPES={
   ig:[
-    {id:'imp',   n:'Impressions', pr:0.10},
-    {id:'like',  n:'Likes',       pr:0.55},
-    {id:'cmt',   n:'Comments',    pr:0.20},
-    {id:'share', n:'Shares',      pr:0.15},
+    {id:'imp',    n:'Est. Views', pr:0.10, isEst:true},
+    {id:'like',   n:'Likes',      pr:0.50},
+    {id:'cmt',    n:'Comments',   pr:0.20},
+    {id:'repost', n:'Reposts',    pr:0.10},
+    {id:'share',  n:'Shares',     pr:0.10},
   ],
   tt:[
     {id:'view',  n:'Views',    pr:0.60},
@@ -744,36 +745,37 @@ const ENG_TYPES={
     {id:'remix', n:'Remix',    pr:0.05},
   ],
   xx:[
-    {id:'view',  n:'Views',       pr:0.45},
-    {id:'like',  n:'Likes',       pr:0.25},
-    {id:'reply', n:'Replies',     pr:0.10},
-    {id:'rt',    n:'Reposts',     pr:0.10},
-    {id:'bkm',   n:'Bookmarks',   pr:0.05},
+    {id:'view',  n:'Views',        pr:0.45},
+    {id:'reply', n:'Replies',      pr:0.10},
+    {id:'rt',    n:'Reposts',      pr:0.10},
+    {id:'like',  n:'Likes',        pr:0.25},
+    {id:'bkm',   n:'Bookmarks',    pr:0.05},
     {id:'qt',    n:'Quote Tweets', pr:0.05},
   ],
   fb:[
-    {id:'imp',   n:'Impressions', pr:0.40},
-    {id:'react', n:'Reactions',   pr:0.35},
-    {id:'cmt',   n:'Comments',    pr:0.15},
-    {id:'share', n:'Shares',      pr:0.10},
+    {id:'imp',   n:'Est. Views', pr:0.40, isEst:true},
+    {id:'react', n:'Reactions',  pr:0.35},
+    {id:'cmt',   n:'Comments',   pr:0.15},
+    {id:'share', n:'Shares',     pr:0.10},
   ],
   rd:[
-    {id:'upvote',n:'Upvotes',  pr:0.70},
-    {id:'cmt',   n:'Comments', pr:0.30},
+    {id:'view',   n:'Est. Views', pr:0.00, isEst:true},
+    {id:'upvote', n:'Upvotes',    pr:0.70},
+    {id:'cmt',    n:'Comments',   pr:0.30},
   ],
   th:[
-    {id:'imp',   n:'Impressions', pr:0.30},
-    {id:'like',  n:'Likes',       pr:0.40},
-    {id:'cmt',   n:'Comments',    pr:0.15},
-    {id:'repost',n:'Reposts',     pr:0.10},
-    {id:'share', n:'Shares',      pr:0.05},
+    {id:'imp',    n:'Est. Views', pr:0.30, isEst:true},
+    {id:'like',   n:'Likes',      pr:0.40},
+    {id:'cmt',    n:'Comments',   pr:0.15},
+    {id:'repost', n:'Reposts',    pr:0.10},
+    {id:'share',  n:'Shares',     pr:0.05},
   ],
   qu:[
-    {id:'upvote',n:'Upvotes',  pr:0.50},
-    {id:'cmt',   n:'Comments', pr:0.30},
-    {id:'share', n:'Shares',   pr:0.10},
-    {id:'view',  n:'Views',    pr:0.08},
-    {id:'follow',n:'Follows',  pr:0.02},
+    {id:'view',   n:'Views',    pr:0.08},
+    {id:'upvote', n:'Upvotes',  pr:0.50},
+    {id:'cmt',    n:'Comments', pr:0.30},
+    {id:'share',  n:'Shares',   pr:0.10},
+    {id:'follow', n:'Follows',  pr:0.02},
   ],
 };
 function getEngVal(plat,typeId){return BM['evt_'+plat+'_'+typeId]??0.01;}
@@ -1461,19 +1463,21 @@ function buildInfCard(opts){
   if(isPred){
     engHdr.innerHTML='<span>Engagement Type</span><span style="text-align:right">Predicted Qty</span><span style="text-align:right">Val / Eng ($)</span><span style="text-align:right">Sub-EMV</span>';
   }else{
-    engHdr.innerHTML='<span>Engagement Type</span><span style="text-align:right">Actual Qty</span><span style="text-align:right">Val / Eng ($)</span><span style="text-align:right">Sub-EMV</span>';
+    engHdr.innerHTML='<span>Engagement Type</span><span style="text-align:right">QTY</span><span style="text-align:right">Val / Eng ($)</span><span style="text-align:right">Sub-EMV</span>';
   }
   engWrap.appendChild(engHdr);
 
   // Per-type rows — store references for recalc
   const engRows=[];// {qtyInp, valInp, subEmvEl}
+  let estViewRow=null;// reference to the est. views row (isEst type) for auto-update
 
   const buildEngTypeRows=(pl)=>{
     // Remove existing type rows (all after header)
     while(engWrap.children.length>1)engWrap.removeChild(engWrap.lastChild);
     engRows.length=0;
+    estViewRow=null;
     const types=ENG_TYPES[pl]||[];
-    const engs=Math.round((parseFloat(follInp.value)||0)*((parseFloat(engInp.value)||0)/100));
+    const engs=isPred?Math.round((parseFloat(follInp.value)||0)*((parseFloat(engInp.value)||0)/100)):0;
     types.forEach(t=>{
       const row=document.createElement('div');
       row.className=isPred?'eng-type-row-p':'eng-type-row-a';
@@ -1489,6 +1493,11 @@ function buildInfCard(opts){
         // predicted qty = total engs × prediction ratio (read-only display)
         qtyInp.value=Math.round(engs*t.pr);
         qtyInp.readOnly=true;qtyInp.classList.add('eng-type-disp');qtyInp.style.background='var(--s4)';
+      }else if(!isPred&&t.isEst){
+        // Est. Views: auto-calculated from stored follower count × platform reach rate; editable override allowed
+        const fo=card._followerCount||0;
+        qtyInp.value=fo>0?Math.round(fo*getPlReach(pl)):0;
+        qtyInp.style.background='rgba(90,110,248,0.06)';
       }else{
         qtyInp.value=0;// actual qty — entered manually or imported from post data
       }
@@ -1509,6 +1518,7 @@ function buildInfCard(opts){
       row.appendChild(nameCel);row.appendChild(qtyInp);row.appendChild(valInp);row.appendChild(subEmvEl);
       engWrap.appendChild(row);
       engRows.push({t,qtyInp,valInp,subEmvEl});
+      if(!isPred&&t.isEst)estViewRow={t,qtyInp,valInp,subEmvEl};
 
       if(!isPred){
         qtyInp.addEventListener('input',recalc);
@@ -1606,6 +1616,13 @@ function buildInfCard(opts){
       }
     });
     recalc();
+  };
+  card._setFollowers=(n)=>{
+    card._followerCount=n;
+    if(estViewRow){
+      estViewRow.qtyInp.value=n>0?Math.round(n*getPlReach(platSel.value)):0;
+      estViewRow.qtyInp.dispatchEvent(new Event('input'));
+    }
   };
 
   card.appendChild(hd);
@@ -2732,20 +2749,20 @@ const TW_PRESS_ROW={
 const TW_ENG_MAP={
   // X / Twitter — ✅ reach→view, ✅ twitter_likes→like, ✅ twitter_replies→reply, ✅ twitter_retweets→rt, ✅ twitter_quote_tweets→qt; ❌ bkm (manual)
   xx:{view:'reach',like:'article_extended_attributes.twitter_likes',reply:'article_extended_attributes.twitter_replies',rt:'article_extended_attributes.twitter_retweets',qt:'article_extended_attributes.twitter_quote_tweets'},
-  // Instagram — ✅ reach→imp, ✅ instagram_likes→like, ✅ num_comments→cmt; ❌ shares (manual)
-  ig:{imp:'reach',like:'article_extended_attributes.instagram_likes',cmt:'article_extended_attributes.num_comments'},
+  // Instagram — ✅ instagram_likes→like, ✅ num_comments→cmt; ❌ imp (auto-calc from followers), ❌ shares/reposts (manual)
+  ig:{like:'article_extended_attributes.instagram_likes',cmt:'article_extended_attributes.num_comments'},
   // YouTube — ✅ youtube_views→view, ✅ youtube_likes→like, ✅ num_comments→cmt
   yt:{view:'article_extended_attributes.youtube_views',like:'article_extended_attributes.youtube_likes',cmt:'article_extended_attributes.num_comments'},
   // YouTube Shorts — same as yt
   yts:{view:'article_extended_attributes.youtube_views',like:'article_extended_attributes.youtube_likes',cmt:'article_extended_attributes.num_comments'},
-  // Facebook — ✅ reach→imp, ✅ facebook_reactions_total→react, ✅ num_comments→cmt, ✅ facebook_shares→share
-  fb:{imp:'reach',react:'article_extended_attributes.facebook_reactions_total',cmt:'article_extended_attributes.num_comments',share:'article_extended_attributes.facebook_shares'},
+  // Facebook — ✅ facebook_reactions_total→react, ✅ num_comments→cmt, ✅ facebook_shares→share; ❌ imp (auto-calc from followers)
+  fb:{react:'article_extended_attributes.facebook_reactions_total',cmt:'article_extended_attributes.num_comments',share:'article_extended_attributes.facebook_shares'},
   // TikTok — ✅ reach→view, ✅ num_comments→cmt; ❌ likes/shares (manual)
   tt:{view:'reach',cmt:'article_extended_attributes.num_comments'},
   // Reddit — ✅ num_comments→cmt; ❌ upvotes (manual)
   rd:{cmt:'article_extended_attributes.num_comments'},
-  // Threads — ✅ reach→imp, ✅ twitter_likes→like (proxy), ✅ num_comments→cmt, ✅ twitter_retweets→repost (proxy); ❌ shares (manual)
-  th:{imp:'reach',like:'article_extended_attributes.twitter_likes',cmt:'article_extended_attributes.num_comments',repost:'article_extended_attributes.twitter_retweets'},
+  // Threads — ✅ twitter_likes→like (proxy), ✅ num_comments→cmt, ✅ twitter_retweets→repost (proxy); ❌ imp (auto-calc from followers), ❌ shares (manual)
+  th:{like:'article_extended_attributes.twitter_likes',cmt:'article_extended_attributes.num_comments',repost:'article_extended_attributes.twitter_retweets'},
   // Quora — ✅ url_views→view, ✅ num_comments→cmt; ❌ upvotes/follows (manual)
   qu:{view:'article_extended_attributes.url_views',cmt:'article_extended_attributes.num_comments'},
 };
@@ -2892,9 +2909,11 @@ function _twImportSelected(){
     if(platSel&&platSel.tagName==='SELECT'){platSel.value=pl;platSel.dispatchEvent(new Event('change'));}
     // Set post URL
     if(card._urlInp&&r.url){card._urlInp.value=r.url;}
-    // After eng rows are built: set actual engagement quantities from CSV
+    // After eng rows are built: set followers (for est. views auto-calc) then actual engagement quantities from CSV
     setTimeout(()=>{
-      // Set ALL eng type row quantities with per-post actuals from CSV (including zeros)
+      // Set followers first so est. views row auto-calculates
+      if(card._setFollowers)card._setFollowers(followers||reach);
+      // Set remaining eng type quantities from CSV actuals (est. views rows excluded from TW_ENG_MAP)
       const engMap=TW_ENG_MAP[pl]||{};
       const qtys={};
       Object.entries(engMap).forEach(([typeId,col])=>{
