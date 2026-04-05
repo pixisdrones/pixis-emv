@@ -403,6 +403,10 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         <div class="ff"><label class="fl">Program</label><input class="fi" id="s-prog" placeholder="e.g. Opening Night"></div>
         <div class="ff"><label class="fl">Show Name</label><input class="fi" id="s-name" placeholder="e.g. HipHop Legends"></div>
         <div class="ff"><label class="fl">Location</label><input class="fi" id="s-loc" placeholder="e.g. Dodger Stadium"></div>
+        <div class="ff"><label class="fl">Show City</label><input class="fi" id="s-city" placeholder="e.g. Los Angeles"></div>
+        <div class="ff"><label class="fl">Show State</label><select class="fi" id="s-state"><option value="">-- Select State --</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select></div>
+        <div class="ff"><label class="fl">Launch Site</label><input class="fi" id="s-launch" placeholder="e.g. Dodger Stadium Parking Lot"></div>
+        <div class="ff"><label class="fl">Audience Location</label><input class="fi" id="s-audience" placeholder="e.g. Downtown Los Angeles"></div>
         <div class="ff"><label class="fl">Show Date</label><input class="fi" type="date" id="s-date"></div>
         <div class="ff"><label class="fl">Drone Count</label><input class="fi" type="number" id="s-drones" placeholder="e.g. 500"></div>
         <div class="ff"><label class="fl">Show Length (mins)</label><input class="fi" type="number" id="s-len" value="12"></div>
@@ -1939,7 +1943,7 @@ function resetAll(){
   // Clear actuals influencer sections
   ['paid-infs','earned-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
-  ['s-client','s-prog','s-name','s-loc','s-date','s-drones','s-cost'].forEach(id=>{const e=$(id);if(e)e.value='';});
+  ['s-client','s-prog','s-name','s-loc','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-cost'].forEach(id=>{const e=$(id);if(e)e.value='';});
   $('s-len').value='12';$('cb-qr').checked=false;window._clientLogo=null;
   $('up-prev').style.display='none';$('up-prev').src='';
   $('up-icon').style.display='';$('up-txt').style.display='';
@@ -2323,7 +2327,7 @@ function svSetAll(arr){localStorage.setItem(SV_KEY,JSON.stringify(arr));}
 
 function svSerialize(){
   const details={};
-  ['s-client','s-prog','s-name','s-loc','s-date','s-drones','s-len','s-cost'].forEach(id=>{
+  ['s-client','s-prog','s-name','s-loc','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-len','s-cost'].forEach(id=>{
     const e=$(id);if(e)details[id]=e.value;
   });
   details['cb-qr']=$('cb-qr').checked;
@@ -2382,7 +2386,7 @@ function svDeserialize(data){
 
   // Show details
   const d=data.details||{};
-  ['s-client','s-prog','s-name','s-loc','s-date','s-drones','s-len','s-cost'].forEach(id=>{
+  ['s-client','s-prog','s-name','s-loc','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-len','s-cost'].forEach(id=>{
     const e=$(id);if(e&&d[id]!==undefined)e.value=d[id];
   });
   const qrCb=$('cb-qr');if(qrCb)qrCb.checked=!!d['cb-qr'];
@@ -2952,11 +2956,11 @@ function parseTalkwalkerCSV(file){
       }
       if(!rows.length)return notif('No data rows found');
       _twRawRows=rows;_twFlagged=[];
-      // Pre-populate keywords from show details fields
-      const sc=$('s-client')?.value||'';const sp=$('s-prog')?.value||'';
-      const sn=$('s-name')?.value||'';const sl=$('s-loc')?.value||'';
+      // Pre-populate keywords from Client, Program, Show Name, Launch Site, Audience Location + "drone"
+      const sc=$('s-client')?.value||'';const sp=$('s-prog')?.value||'';const sn=$('s-name')?.value||'';
+      const slaunch=$('s-launch')?.value||'';const saud=$('s-audience')?.value||'';
       const kwEl=$('tw-keywords');
-      if(sc||sp||sn||sl){kwEl.value=[sc,sp,sn,sl,'drone','Pixis'].filter(Boolean).join(', ');}
+      if(sc||sp||sn||slaunch||saud){kwEl.value=[sc,sp,sn,slaunch,saud,'drone'].filter(Boolean).join(', ');}
       _twReflag();
       _twRenderTable('all');
       $('tw-overlay').classList.add('open');
