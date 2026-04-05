@@ -2955,7 +2955,7 @@ function parseTalkwalkerCSV(file){
       // Pre-populate keywords from show name if filled in
       const sn=$('s-name')?.value||'';const sc=$('s-client')?.value||'';
       const kwEl=$('tw-keywords');
-      if(!kwEl.value&&(sn||sc)){kwEl.value=[sc,sn,'drone show','light show','Pixis'].filter(Boolean).join(', ');}
+      if(sn||sc){kwEl.value=[sc,sn,'drone show','light show','Pixis'].filter(Boolean).join(', ');}
       _twReflag();
       _twRenderTable('all');
       $('tw-overlay').classList.add('open');
