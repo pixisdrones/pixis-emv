@@ -287,6 +287,19 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 /* Influencer section in Actuals */
 .ainf-wrap{padding:0 18px 14px}
 .ainf-adj{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-left:6px}
+/* ── Quick Metrics Entry Modal ────────────────────────────────────────────── */
+#qm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9100;display:none;align-items:center;justify-content:center;padding:20px}
+#qm-overlay.open{display:flex}
+#qm-modal{background:var(--s2);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.qm-hdr{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.qm-hdr-title{font-size:13px;font-weight:700;color:var(--tx);flex:1}
+.qm-open-link{font-size:11px;color:#7b8ff5;text-decoration:none;padding:4px 10px;border:1px solid rgba(90,110,248,.3);border-radius:5px;background:rgba(90,110,248,.1)}
+.qm-open-link:hover{background:rgba(90,110,248,.2)}
+.qm-body{padding:14px 18px}
+.qm-note{font-size:10px;color:var(--ft);margin-bottom:12px;padding:7px 10px;background:rgba(90,110,248,.08);border-radius:5px;border-left:3px solid #5a6ef8}
+.qm-field-row{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin-bottom:8px}
+.qm-field-lbl{font-size:11px;font-weight:600;color:var(--tx)}
+.qm-foot{padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
 /* ── Press Mention Cards ──────────────────────────────────────────────────── */
 .press-section-hdr{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);padding:10px 18px 6px;border-top:1px solid var(--bd2)}
 #press-list-wom{padding:0 12px 8px}
@@ -603,8 +616,11 @@ const BM_DEFAULTS={
   evt_yt_view:0.012,evt_yt_like:0.06,  evt_yt_cmt:0.20,
   // YouTube Shorts: view, like, cmt, remix
   evt_yts_view:0.003,evt_yts_like:0.02,evt_yts_cmt:0.08, evt_yts_remix:0.20,
-  // X / Twitter: imp, like, reply, rt
-  evt_xx_imp:0.002, evt_xx_like:0.01,  evt_xx_reply:0.10,evt_xx_rt:0.09,
+  // X / Twitter: view, like, reply, rt, bkm, qt
+  // Views: qualified video/post view — Sprout Social 2024
+  // Bookmarks: high-intent save (~15x like value) — X platform analytics benchmarks 2024
+  // Quote Tweets: editorial amplification near repost value — Brandwatch 2024
+  evt_xx_view:0.003,evt_xx_like:0.01,evt_xx_reply:0.10,evt_xx_rt:0.09,evt_xx_bkm:0.15,evt_xx_qt:0.08,
   // Facebook: imp, react, cmt, share
   evt_fb_imp:0.004, evt_fb_react:0.025,evt_fb_cmt:0.10,  evt_fb_share:0.175,
   // Reddit: upvote, cmt
@@ -647,8 +663,9 @@ const BM_RANGES={
   evt_yt_cmt:{lo:0.100,hi:0.350,fmt:'$'},
   evt_yts_view:{lo:0.001,hi:0.008,fmt:'$'},evt_yts_like:{lo:0.005,hi:0.030,fmt:'$'},
   evt_yts_cmt:{lo:0.040,hi:0.150,fmt:'$'},evt_yts_remix:{lo:0.100,hi:0.400,fmt:'$'},
-  evt_xx_imp:{lo:0.001,hi:0.005,fmt:'$'},evt_xx_like:{lo:0.005,hi:0.025,fmt:'$'},
+  evt_xx_view:{lo:0.001,hi:0.008,fmt:'$'},evt_xx_like:{lo:0.005,hi:0.025,fmt:'$'},
   evt_xx_reply:{lo:0.050,hi:0.200,fmt:'$'},evt_xx_rt:{lo:0.050,hi:0.150,fmt:'$'},
+  evt_xx_bkm:{lo:0.080,hi:0.300,fmt:'$'},evt_xx_qt:{lo:0.050,hi:0.150,fmt:'$'},
   evt_fb_imp:{lo:0.002,hi:0.008,fmt:'$'},evt_fb_react:{lo:0.010,hi:0.040,fmt:'$'},
   evt_fb_cmt:{lo:0.050,hi:0.200,fmt:'$'},evt_fb_share:{lo:0.100,hi:0.300,fmt:'$'},
   evt_rd_upvote:{lo:0.010,hi:0.060,fmt:'$'},evt_rd_cmt:{lo:0.080,hi:0.250,fmt:'$'},
@@ -724,10 +741,12 @@ const ENG_TYPES={
     {id:'remix', n:'Remix',    pr:0.05},
   ],
   xx:[
-    {id:'imp',   n:'Impressions', pr:0.50},
-    {id:'like',  n:'Likes',       pr:0.30},
+    {id:'view',  n:'Views',       pr:0.45},
+    {id:'like',  n:'Likes',       pr:0.25},
     {id:'reply', n:'Replies',     pr:0.10},
     {id:'rt',    n:'Reposts',     pr:0.10},
+    {id:'bkm',   n:'Bookmarks',   pr:0.05},
+    {id:'qt',    n:'Quote Tweets', pr:0.05},
   ],
   fb:[
     {id:'imp',   n:'Impressions', pr:0.40},
@@ -1157,6 +1176,17 @@ function wireEvents(){
   $('csv-file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)parseAndImportCSV(f);e.target.value='';});
   $('tw-file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)parseTalkwalkerCSV(f);e.target.value='';});
   $('tw-close').addEventListener('click',()=>$('tw-overlay').classList.remove('open'));
+  $('qm-close').addEventListener('click',()=>$('qm-overlay').classList.remove('open'));
+  $('qm-cancel').addEventListener('click',()=>$('qm-overlay').classList.remove('open'));
+  $('qm-apply').addEventListener('click',()=>{
+    if(!_qmCard)return;
+    const qtys={};
+    document.querySelectorAll('#qm-fields input[data-id]').forEach(inp=>{qtys[inp.dataset.id]=parseFloat(inp.value)||0;});
+    if(_qmCard._setEngQtys)_qmCard._setEngQtys(qtys);
+    $('qm-overlay').classList.remove('open');
+    runCalc();notif('Metrics applied to card');
+  });
+  $('qm-overlay').addEventListener('click',e=>{if(e.target===$('qm-overlay'))$('qm-overlay').classList.remove('open');});
   $('tw-import-btn').addEventListener('click',_twImportSelected);
   $('tw-recheck').addEventListener('click',()=>{if(_twRawRows.length){_twReflag();const af=document.querySelector('.tw-fb.on');_twRenderTable(af?af.dataset.twf:'all');}});
   $('tw-select-all').addEventListener('click',()=>{document.querySelectorAll('.tw-chk').forEach(cb=>{cb.checked=true;_twFlagged[parseInt(cb.dataset.idx)]._sel=true;_twFlagged[parseInt(cb.dataset.idx)]._selOverride=true;});_twUpdateStats();});
@@ -1378,10 +1408,20 @@ function buildInfCard(opts){
   const nameInp=mkTxt('@handle or name');
   const platSel=mkSel(PLATS.map(([v,t])=>[v,t]));
   r1.appendChild(mkFld('Handle / Name',nameInp));r1.appendChild(mkFld('Platform',platSel));
-  // URL row
+  // URL row + quick metrics entry button
   const rUrl=document.createElement('div');rUrl.style.cssText='margin-top:6px;margin-bottom:2px';
   const urlInp=mkTxt('https://post-url (optional)');
-  rUrl.appendChild(mkFld('Post URL',urlInp));
+  const urlWrap=document.createElement('div');urlWrap.style.cssText='display:flex;gap:6px;align-items:center';
+  urlWrap.appendChild(urlInp);
+  const qmBtn=document.createElement('button');qmBtn.type='button';qmBtn.title='Open post & enter metrics';
+  qmBtn.style.cssText='flex-shrink:0;padding:5px 9px;font-size:11px;background:rgba(90,110,248,.15);border:1px solid rgba(90,110,248,.3);color:#7b8ff5;border-radius:6px;cursor:pointer;white-space:nowrap';
+  qmBtn.innerHTML='📋 Enter Metrics';
+  qmBtn.addEventListener('click',()=>openQuickMetrics(card));
+  urlWrap.appendChild(qmBtn);
+  const urlFld=document.createElement('div');urlFld.className='ff';
+  const urlLbl=document.createElement('label');urlLbl.className='fl';urlLbl.textContent='Post URL';
+  urlFld.appendChild(urlLbl);urlFld.appendChild(urlWrap);
+  rUrl.appendChild(urlFld);
   card._urlInp=urlInp;
 
   // Row 2: followers + eng% + (prediction only) status
@@ -1550,6 +1590,8 @@ function buildInfCard(opts){
     return impEMV+engEMV;
   };
   card._updateDisp=()=>{emvVal.textContent=fmt(card._getEMV());};
+  card._platSel=platSel;
+  card._getEngQty=(id)=>{const er=engRows.find(r=>r.t.id===id);return er?parseFloat(er.qtyInp.value)||0:0;};
   card._setEngQtys=(qtysMap)=>{
     engRows.forEach(er=>{
       if(qtysMap[er.t.id]!==undefined){
@@ -2641,6 +2683,31 @@ async function genPredPdf(){
   finally{const b=$('btn-pred-pdf');b.disabled=false;b.textContent='\u2B07 Export Prediction Report';}
 }
 
+// ── QUICK METRICS ENTRY ───────────────────────────────────────────────────────
+let _qmCard=null;
+function openQuickMetrics(card){
+  _qmCard=card;
+  const pl=card._platSel?.value||'xx';
+  const url=card._urlInp?.value||'';
+  const types=ENG_TYPES[pl]||[];
+  const link=$('qm-open-link');
+  link.href=url||'#';
+  link.style.display=url?'':'none';
+  if(url)window.open(url,'_blank');
+  const fields=$('qm-fields');fields.innerHTML='';
+  types.forEach(t=>{
+    const cur=card._getEngQty?card._getEngQty(t.id):0;
+    const row=document.createElement('div');row.className='qm-field-row';
+    const lbl=document.createElement('div');lbl.className='qm-field-lbl';lbl.textContent=t.n;
+    const inp=document.createElement('input');inp.type='number';inp.className='fi';inp.dataset.id=t.id;
+    inp.value=cur;inp.min='0';inp.step='1';inp.style.cssText='text-align:right';
+    row.appendChild(lbl);row.appendChild(inp);fields.appendChild(row);
+  });
+  $('qm-overlay').classList.add('open');
+  // Focus first input
+  setTimeout(()=>fields.querySelector('input')?.focus(),80);
+}
+
 // ── TALKWALKER IMPORT ─────────────────────────────────────────────────────────
 const TW_PLATFORM_MAP={
   'SOCIALMEDIA_TWITTER':'xx','SOCIALMEDIA_X':'xx',
@@ -2658,8 +2725,8 @@ const TW_PRESS_ROW={
 // 'reach' = top-level reach column (follower-based impression estimate)
 // Columns marked ✅ are directly available; ❌ must be entered manually
 const TW_ENG_MAP={
-  // X / Twitter — ✅ reach→imp, ✅ twitter_likes→like, ✅ twitter_replies→reply, ✅ twitter_retweets→rt
-  xx:{imp:'reach',like:'article_extended_attributes.twitter_likes',reply:'article_extended_attributes.twitter_replies',rt:'article_extended_attributes.twitter_retweets'},
+  // X / Twitter — ✅ reach→view, ✅ twitter_likes→like, ✅ twitter_replies→reply, ✅ twitter_retweets→rt, ✅ twitter_quote_tweets→qt; ❌ bkm (manual)
+  xx:{view:'reach',like:'article_extended_attributes.twitter_likes',reply:'article_extended_attributes.twitter_replies',rt:'article_extended_attributes.twitter_retweets',qt:'article_extended_attributes.twitter_quote_tweets'},
   // Instagram — ✅ reach→imp, ✅ instagram_likes→like, ✅ num_comments→cmt; ❌ shares (manual)
   ig:{imp:'reach',like:'article_extended_attributes.instagram_likes',cmt:'article_extended_attributes.num_comments'},
   // YouTube — ✅ youtube_views→view, ✅ youtube_likes→like, ✅ num_comments→cmt
@@ -3232,6 +3299,24 @@ async function genProgramReport(){
   finally{const b=$('btn-prog-report');if(b){b.disabled=false;b.textContent='\u22b3 Program Report';}}
 }
 </script>
+<!-- ── Quick Metrics Entry Modal ─────────────────────────────────────────── -->
+<div id="qm-overlay">
+  <div id="qm-modal">
+    <div class="qm-hdr">
+      <span class="qm-hdr-title">📋 Enter Post Metrics</span>
+      <a id="qm-open-link" class="qm-open-link" href="#" target="_blank" rel="noopener">Open Post ↗</a>
+      <button id="qm-close" class="rm-btn" style="position:static;margin-left:4px">×</button>
+    </div>
+    <div class="qm-body">
+      <div class="qm-note">Post opened in a new tab. Enter the engagement numbers shown on the post, then click Apply.</div>
+      <div id="qm-fields"></div>
+    </div>
+    <div class="qm-foot">
+      <button id="qm-cancel" class="btn btn-g" style="font-size:11px;padding:7px 14px">Cancel</button>
+      <button id="qm-apply" class="btn btn-s" style="font-size:11px;padding:7px 14px">Apply to Card</button>
+    </div>
+  </div>
+</div>
 <!-- ── Talkwalker Review Modal ──────────────────────────────────────────── -->
 <div id="tw-overlay">
   <div id="tw-modal">
