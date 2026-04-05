@@ -287,6 +287,51 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 /* Influencer section in Actuals */
 .ainf-wrap{padding:0 18px 14px}
 .ainf-adj{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-left:6px}
+/* ── Press Mention Cards ──────────────────────────────────────────────────── */
+.press-section-hdr{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);padding:10px 18px 6px;border-top:1px solid var(--bd2)}
+#press-list-wom{padding:0 12px 8px}
+.press-card{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:8px;position:relative}
+.press-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.press-card-title{font-size:12px;font-weight:700;color:var(--tx);flex:1}
+.press-type-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.05em;background:rgba(212,168,67,.15);color:#d4a843}
+.press-card-g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.press-card-g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.press-emv-row{display:flex;justify-content:space-between;align-items:center;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);border-radius:6px;padding:8px 12px;margin-top:8px}
+.press-emv-lbl{font-size:10px;font-weight:600;color:var(--ft);text-transform:uppercase;letter-spacing:.06em}
+.press-emv-val{font-size:14px;font-weight:700;color:#d4a843}
+.press-foot{padding:8px 18px 12px;border-top:1px solid var(--bd2)}
+/* ── Talkwalker Import Modal ──────────────────────────────────────────────── */
+#tw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+#tw-overlay.open{display:flex}
+#tw-modal{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:100%;max-width:980px;display:flex;flex-direction:column;max-height:calc(100vh - 48px)}
+.tw-mh{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.tw-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--tx);flex:1}
+.tw-close{background:none;border:none;color:var(--ft);font-size:20px;cursor:pointer;padding:2px 8px;border-radius:4px;line-height:1}
+.tw-close:hover{color:var(--tx);background:var(--s4)}
+.tw-toolbar{padding:10px 20px;border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.tw-kw{flex:1;min-width:180px;background:var(--s3);border:1px solid var(--bd);border-radius:7px;padding:7px 11px;color:var(--tx);font-family:'Outfit',sans-serif;font-size:12px}
+.tw-kw:focus{outline:none;border-color:var(--ind)}
+.tw-kw::placeholder{color:var(--ft)}
+.tw-filters{display:flex;gap:4px;flex-shrink:0}
+.tw-fb{padding:5px 11px;border-radius:6px;border:1px solid var(--bd);background:var(--s3);color:var(--dm);font-size:10px;font-weight:600;cursor:pointer;letter-spacing:.03em;transition:all .14s}
+.tw-fb.on{background:var(--ind);border-color:var(--ind);color:#fff}
+.tw-stats{font-size:10px;color:var(--ft);white-space:nowrap}
+.tw-body{overflow-y:auto;flex:1;min-height:0}
+.tw-tbl{width:100%;border-collapse:collapse}
+.tw-tbl th{position:sticky;top:0;z-index:1;padding:8px 10px;background:var(--s3);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.tw-tbl td{padding:8px 10px;border-bottom:1px solid var(--bd2);font-size:11px;vertical-align:top}
+.tw-tbl tr:hover td{background:rgba(255,255,255,.018)}
+.tw-flag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.04em;white-space:nowrap}
+.tw-flag.green{background:rgba(61,214,140,.15);color:#3dd68c}
+.tw-flag.yellow{background:rgba(212,168,67,.15);color:#d4a843}
+.tw-flag.red{background:rgba(240,90,90,.15);color:#f05a5a}
+.tw-author{font-size:11px;color:var(--tx);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.tw-src-lbl{font-size:9.5px;color:var(--ft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.tw-snippet{font-size:10px;color:var(--dm);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tw-reach-val{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--gld);white-space:nowrap}
+.tw-reach-sub{font-size:9px;color:var(--ft)}
+.tw-foot{padding:12px 20px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;background:var(--s3);border-radius:0 0 14px 14px}
+.tw-sel-count{font-size:11px;color:var(--dm)}
 </style>
 </head>
 <body>
@@ -327,6 +372,9 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
     <button class="mtn" id="btn-csv-template" title="Download the structured CSV template">&#8595; Template</button>
     <label class="mtn" style="cursor:pointer" title="Import a filled-in CSV to populate influencer cards">&#8593; Import CSV
       <input type="file" id="csv-file-input" accept=".csv" style="display:none">
+    </label>
+    <label class="mtn" style="cursor:pointer;background:rgba(45,212,178,.1);border-color:rgba(45,212,178,.3);color:var(--tel)" title="Import a Talkwalker export CSV with review & flagging">&#128225; Talkwalker
+      <input type="file" id="tw-file-input" accept=".csv" style="display:none">
     </label>
   </div>
   <div class="panel open" id="pan-details">
@@ -1080,6 +1128,8 @@ function wireEvents(){
     const t=$('tog-wQR');if(!t)return;
     t.disabled=false;t.checked=$('cb-qr').checked;handleRowToggle('wQR');t.disabled=!$('cb-qr').checked;
   });
+  $('btn-pdf').addEventListener('click',genPdf);
+  $('btn-reset').addEventListener('click',resetAll);
   $('upzone').addEventListener('click',()=>$('logo-file').click());
   $('logo-file').addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
@@ -1091,8 +1141,6 @@ function wireEvents(){
     };
     rd.readAsDataURL(f);
   });
-  $('btn-pdf').addEventListener('click',genPdf);
-  $('btn-reset').addEventListener('click',resetAll);
   ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
     const el=$(id);if(el)el.addEventListener('input',calcPDebounced);
   });
@@ -1107,6 +1155,13 @@ function wireEvents(){
   $('btn-save').addEventListener('click',svOpenSaveModal);
   $('btn-csv-template').addEventListener('click',downloadCSVTemplate);
   $('csv-file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)parseAndImportCSV(f);e.target.value='';});
+  $('tw-file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)parseTalkwalkerCSV(f);e.target.value='';});
+  $('tw-close').addEventListener('click',()=>$('tw-overlay').classList.remove('open'));
+  $('tw-import-btn').addEventListener('click',_twImportSelected);
+  $('tw-recheck').addEventListener('click',()=>{if(_twRawRows.length){_twReflag();const af=document.querySelector('.tw-fb.on');_twRenderTable(af?af.dataset.twf:'all');}});
+  $('tw-select-all').addEventListener('click',()=>{document.querySelectorAll('.tw-chk').forEach(cb=>{cb.checked=true;_twFlagged[parseInt(cb.dataset.idx)]._sel=true;_twFlagged[parseInt(cb.dataset.idx)]._selOverride=true;});_twUpdateStats();});
+  $('tw-deselect-all').addEventListener('click',()=>{document.querySelectorAll('.tw-chk').forEach(cb=>{cb.checked=false;_twFlagged[parseInt(cb.dataset.idx)]._sel=false;_twFlagged[parseInt(cb.dataset.idx)]._selOverride=false;});_twUpdateStats();});
+  document.querySelectorAll('.tw-fb').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tw-fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');_twRenderTable(btn.dataset.twf);}));
   $('sv-ph').addEventListener('click',()=>{$('sv-panel').classList.toggle('open');});
 }
 
@@ -1323,6 +1378,11 @@ function buildInfCard(opts){
   const nameInp=mkTxt('@handle or name');
   const platSel=mkSel(PLATS.map(([v,t])=>[v,t]));
   r1.appendChild(mkFld('Handle / Name',nameInp));r1.appendChild(mkFld('Platform',platSel));
+  // URL row
+  const rUrl=document.createElement('div');rUrl.style.cssText='margin-top:6px;margin-bottom:2px';
+  const urlInp=mkTxt('https://post-url (optional)');
+  rUrl.appendChild(mkFld('Post URL',urlInp));
+  card._urlInp=urlInp;
 
   // Row 2: followers + eng% + (prediction only) status
   const r2=document.createElement('div');r2.className='inf-g3';
@@ -1490,9 +1550,19 @@ function buildInfCard(opts){
     return impEMV+engEMV;
   };
   card._updateDisp=()=>{emvVal.textContent=fmt(card._getEMV());};
+  card._setEngQtys=(qtysMap)=>{
+    engRows.forEach(er=>{
+      if(qtysMap[er.t.id]!==undefined){
+        er.qtyInp.value=qtysMap[er.t.id];
+        er.qtyInp.dispatchEvent(new Event('input'));
+      }
+    });
+    recalc();
+  };
 
   card.appendChild(hd);
   card.appendChild(r1);
+  card.appendChild(rUrl);
   card.appendChild(r2);
   card.appendChild(statsWrap);
   card.appendChild(r4);
@@ -1503,6 +1573,108 @@ function buildInfCard(opts){
   buildEngTypeRows(platSel.value);
   recalc();
   return card;
+}
+
+let pressMentionCount=0;
+function buildPressCard(opts){
+  // opts: {onEMVChange, onRemove, data}
+  const {onEMVChange,onRemove}=opts;
+  const d=opts.data||{};
+  pressMentionCount++;
+  const card=document.createElement('div');card.className='press-card';
+
+  const PRESS_TYPES=[['on','Online News'],['blog','Blog / Digital'],['nl','Newsletter'],['tv','TV / Broadcast'],['po','Podcast']];
+  const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20};
+  const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8};
+
+  const mkFld=(lbl,inp)=>{const f=document.createElement('div');f.className='ff';const l=document.createElement('label');l.className='fl';l.textContent=lbl;f.appendChild(l);f.appendChild(inp);return f;};
+  const mkTxt=(ph,val)=>{const i=document.createElement('input');i.type='text';i.className='fi';i.placeholder=ph;if(val)i.value=val;return i;};
+  const mkNum=(v,s)=>{const i=document.createElement('input');i.type='number';i.className='fi';i.value=v;i.step=s||'1';i.min='0';return i;};
+  const mkSel=(sopts,val)=>{const s=document.createElement('select');s.className='fi';s.style.cursor='pointer';sopts.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;if(v===val)o.selected=true;s.appendChild(o);});return s;};
+
+  // Header
+  const hd=document.createElement('div');hd.className='press-card-hd';
+  const titleSpan=document.createElement('span');titleSpan.className='press-card-title';titleSpan.textContent='Press Mention #'+pressMentionCount;
+  const typeBadge=document.createElement('span');typeBadge.className='press-type-badge';typeBadge.textContent='Online News';
+  const rm=document.createElement('button');rm.className='rm-btn';rm.textContent='\xd7';
+  rm.addEventListener('click',()=>{card.remove();onRemove();});
+  hd.appendChild(titleSpan);hd.appendChild(typeBadge);hd.appendChild(rm);
+
+  // Row 1: outlet + media type
+  const r1=document.createElement('div');r1.className='press-card-g2';
+  const outletInp=mkTxt('Outlet / Source name',d.outlet||'');
+  const typeSel=mkSel(PRESS_TYPES,d.mtype||'on');
+  r1.appendChild(mkFld('Outlet / Source',outletInp));
+  r1.appendChild(mkFld('Media Type',typeSel));
+
+  // Row 2: URL (full width)
+  const r2=document.createElement('div');r2.style.marginBottom='8px';
+  const urlInp=mkTxt('https://article-url',d.url||'');
+  r2.appendChild(mkFld('Article URL',urlInp));
+
+  // Row 3: headline (full width)
+  const r3=document.createElement('div');r3.style.marginBottom='8px';
+  const headlineInp=mkTxt('Headline or title',d.headline||'');
+  r3.appendChild(mkFld('Headline',headlineInp));
+
+  // Row 4: reach + cpm + adj
+  const r4=document.createElement('div');r4.className='press-card-g';
+  const reachInp=mkNum(d.reach||0,'1');
+  const cpmInp=mkNum(d.cpm||DEFAULT_CPM[typeSel.value]||10,'0.01');
+  const adjInp=mkNum(d.adj||DEFAULT_ADJ[typeSel.value]||1.5,'0.1');
+  r4.appendChild(mkFld('Reach',reachInp));
+  r4.appendChild(mkFld('CPM Rate ($)',cpmInp));
+  r4.appendChild(mkFld('Adj. Factor',adjInp));
+
+  // EMV row
+  const emvRow=document.createElement('div');emvRow.className='press-emv-row';
+  const emvLbl=document.createElement('div');emvLbl.className='press-emv-lbl';emvLbl.textContent='Estimated EMV';
+  const emvVal=document.createElement('div');emvVal.className='press-emv-val';emvVal.textContent='$0';
+  emvRow.appendChild(emvLbl);emvRow.appendChild(emvVal);
+
+  function recalc(){
+    const reach=parseFloat(reachInp.value)||0;
+    const cpm=parseFloat(cpmInp.value)||0;
+    const adj=parseFloat(adjInp.value)||1;
+    const emv=(reach/1000)*cpm*adj;
+    emvVal.textContent=fmt(emv);
+    typeBadge.textContent=PRESS_TYPES.find(([v])=>v===typeSel.value)?.[1]||'Online News';
+    if(onEMVChange)onEMVChange();
+  }
+
+  typeSel.addEventListener('change',()=>{
+    const t=typeSel.value;
+    if(!d.cpm)cpmInp.value=DEFAULT_CPM[t]||10;
+    if(!d.adj)adjInp.value=DEFAULT_ADJ[t]||1.5;
+    recalc();
+  });
+  [reachInp,cpmInp,adjInp].forEach(i=>i.addEventListener('input',recalc));
+
+  card._getEMV=()=>{
+    const reach=parseFloat(reachInp.value)||0;
+    const cpm=parseFloat(cpmInp.value)||0;
+    const adj=parseFloat(adjInp.value)||1;
+    return(reach/1000)*cpm*adj;
+  };
+  card._data=()=>({
+    outlet:outletInp.value,
+    url:urlInp.value,
+    headline:headlineInp.value,
+    mtype:typeSel.value,
+    reach:reachInp.value,
+    cpm:cpmInp.value,
+    adj:adjInp.value
+  });
+
+  card.appendChild(hd);card.appendChild(r1);card.appendChild(r2);card.appendChild(r3);card.appendChild(r4);card.appendChild(emvRow);
+  recalc();
+  return card;
+}
+
+function addPressCard(){
+  const list=$('press-list-wom');if(!list)return;
+  const card=buildPressCard({onEMVChange:runCalc,onRemove:runCalc});
+  list.appendChild(card);runCalc();
 }
 
 function addActualsInfluencer(secId,fixedAdj){
@@ -1523,6 +1695,16 @@ function buildStdSection(pb,sec){
     const addBtn=document.createElement('button');addBtn.className='btn btn-g';addBtn.style.cssText='font-size:11px;padding:7px 14px';addBtn.textContent='+ Add Channel';
     addBtn.addEventListener('click',()=>addCustomStdRow(sec.id));
     foot.appendChild(addBtn);pb.appendChild(foot);
+  }
+  if(sec.id==='wom'){
+    const phdr=document.createElement('div');phdr.className='press-section-hdr';phdr.textContent='Individual Press Mentions';
+    pb.appendChild(phdr);
+    const plist=document.createElement('div');plist.id='press-list-wom';
+    pb.appendChild(plist);
+    const pfoot=document.createElement('div');pfoot.className='press-foot';
+    const pBtn=document.createElement('button');pBtn.className='btn btn-g';pBtn.style.cssText='font-size:11px;padding:7px 14px';pBtn.textContent='+ Add Press Mention';
+    pBtn.addEventListener('click',addPressCard);
+    pfoot.appendChild(pBtn);pb.appendChild(pfoot);
   }
 }
 
@@ -1688,6 +1870,11 @@ function runCalc(){
       wrap.querySelectorAll('.dm-row').forEach(row=>{
         const v=calcRowEMV(row);const el=row.querySelector('.ev');if(el)el.textContent=fmt(v);t+=v;
       });
+      if(sec.id==='wom'){
+        document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
+          if(card._getEMV)t+=card._getEMV();
+        });
+      }
     }
     const tel=$('st-'+sec.id);if(tel)tel.textContent=fmt(t);
     if(sec.peso&&sec.peso!=='B')pesoTot[sec.peso]=(pesoTot[sec.peso]||0)+t;
@@ -1706,6 +1893,7 @@ function runCalc(){
 
 function resetAll(){
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
+  const pl=$('press-list-wom');if(pl)pl.innerHTML='';pressMentionCount=0;
   // Clear actuals influencer sections
   ['paid-infs','earned-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
@@ -2001,11 +2189,13 @@ async function genPdf(){
         document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
           if(!card._getEMV)return;const emv=card._getEMV();if(!emv)return;secTot+=emv;
           const nm=card.querySelector('input[type="text"]')?.value||'Unknown';
-          infRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nm+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
+          const url=card._urlInp?.value||'';
+          const urlCell=url?'<a href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#999;font-size:9px">—</span>';
+          infRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+nm+'</div><div>'+urlCell+'</div></td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
         });
         if(!infRows)continue;
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Influencer</th><th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>'
+          +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Influencer / Post URL</th><th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>'
           +'<tbody>'+infRows+'<tr style="background:#f0f2ff"><td style="padding:7px 9px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr></tbody></table></div>');
         continue;
       }
@@ -2023,10 +2213,34 @@ async function genPdf(){
         rowsHTML+='<tr style="background:#fafbff"><td style="padding:6px 9px 6px 22px;border:1px solid #e5e7eb;font-style:italic;color:#555">'+desc+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+m.toLocaleString()+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+r.toFixed(2)+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+a.toFixed(1)+'x</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(val)+'</td></tr>';
       });
       if(!rowsHTML)continue;
+      // Add press card EMV to secTot
+      if(sec.id==='wom'){
+        document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{if(card._getEMV)secTot+=card._getEMV();});
+      }
       await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
         +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
         +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
         +'<tbody>'+rowsHTML+'<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr></tbody></table></div>');
+      // Press mention cards sub-table for wom section
+      if(sec.id==='wom'){
+        let pressRows='';let pressTot=0;
+        document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
+          if(!card._data||!card._getEMV)return;
+          const pd=card._data();const pemv=card._getEMV();if(!pemv&&!pd.outlet)return;
+          pressTot+=pemv;
+          const urlCell=pd.url?'<a href="'+pd.url+'" style="color:#5a6ef8;font-size:9px;word-break:break-all">'+pd.url+'</a>':'—';
+          pressRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+( pd.outlet||'Unknown')+'</div><div style="font-size:9px;color:#555;margin-top:2px">'+( pd.headline||'')+'</div><div style="margin-top:2px">'+urlCell+'</div></td>'
+            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.reach||0).toLocaleString()+'</td>'
+            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+parseFloat(pd.cpm||0).toFixed(2)+'</td>'
+            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.adj||1).toFixed(1)+'x</td>'
+            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pemv)+'</td></tr>';
+        });
+        if(pressRows){
+          await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Press Mentions</div>'
+            +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">CPM</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj.</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>'
+            +'<tbody>'+pressRows+'<tr style="background:#fffbf0"><td colspan="4" style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Press Mentions Total</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(pressTot)+'</td></tr></tbody></table></div>');
+        }
+      }
     }
     const emvD=$('r-emv').textContent,bizD=$('r-biz').textContent,roiD=$('r-roi').textContent,totD=$('s-tot').textContent;
     const paidD=$('peso-P').textContent,earnD=$('peso-E').textContent,sharD=$('peso-S').textContent,ownD=$('peso-O').textContent;
@@ -2103,7 +2317,10 @@ function svSerialize(){
     });
   });
 
-  return{details,rows,mentions,bizRows,
+  const pressCards=[];
+  document.querySelectorAll('#press-list-wom .press-card').forEach(c=>{if(c._data)pressCards.push(c._data());});
+
+  return{details,rows,mentions,bizRows,pressCards,
     emv:$('r-emv').textContent,
     tot:$('s-tot').textContent,
     savedAt:new Date().toISOString()};
@@ -2179,6 +2396,16 @@ function svDeserialize(data){
     row.appendChild(c1);row.appendChild(mkN(br.u));row.appendChild(mkN(br.uv));row.appendChild(mkN(br.ru));row.appendChild(c5);
     biWrap.appendChild(row);
   });
+
+  // Press mention cards
+  const plist=$('press-list-wom');
+  if(plist){
+    plist.innerHTML='';pressMentionCount=0;
+    (data.pressCards||[]).forEach(d=>{
+      const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
+      plist.appendChild(card);
+    });
+  }
 
   runCalc();
 }
@@ -2404,6 +2631,248 @@ async function genPredPdf(){
     pdf.save('Pixis_EMV_Prediction_'+((gv('p-cl').replace(/\s+/g,'_'))||'Report')+'.pdf');notif('Report exported');
   }catch(err){console.error(err);notif('Error: '+err.message);}
   finally{const b=$('btn-pred-pdf');b.disabled=false;b.textContent='\u2B07 Export Prediction Report';}
+}
+
+// ── TALKWALKER IMPORT ─────────────────────────────────────────────────────────
+const TW_PLATFORM_MAP={
+  'SOCIALMEDIA_TWITTER':'xx','SOCIALMEDIA_X':'xx',
+  'SOCIALMEDIA_INSTAGRAM':'ig','SOCIALMEDIA_FACEBOOK':'fb',
+  'SOCIALMEDIA_TIKTOK':'tt','SOCIALMEDIA_YOUTUBE':'yt',
+  'SOCIALMEDIA_REDDIT':'rd','SOCIALMEDIA_THREADS':'th',
+};
+const TW_PRESS_ROW={
+  'ONLINENEWS_TVRADIO':'tv','ONLINENEWS_OTHER':'on','ONLINENEWS':'on',
+  'BLOG_OTHER':'blog','BLOG':'blog','NEWSLETTER':'nl','NEWSLETTER_SUBSTACK':'nl',
+  'ONLINENEWS_NEWSPAPER':'on','ONLINENEWS_MAGAZINE':'on',
+  'PODCAST_OTHER':'po','PODCAST':'po',
+};
+const TW_ENG_MAP={
+  xx:{imp:'article_extended_attributes.twitter_impressions',like:'article_extended_attributes.twitter_likes',reply:'article_extended_attributes.twitter_replies',rt:'article_extended_attributes.twitter_retweets'},
+  ig:{imp:'article_extended_attributes.url_views',like:'article_extended_attributes.instagram_likes',cmt:'article_extended_attributes.num_comments'},
+  yt:{view:'article_extended_attributes.youtube_views',like:'article_extended_attributes.youtube_likes',cmt:'article_extended_attributes.num_comments'},
+  yts:{view:'article_extended_attributes.youtube_views',like:'article_extended_attributes.youtube_likes',cmt:'article_extended_attributes.num_comments'},
+  fb:{imp:'article_extended_attributes.url_views',react:'article_extended_attributes.facebook_reactions_total',cmt:'article_extended_attributes.num_comments',share:'article_extended_attributes.facebook_shares'},
+  tt:{view:'article_extended_attributes.url_views',like:'article_extended_attributes.instagram_likes',cmt:'article_extended_attributes.num_comments'},
+};
+let _twRawRows=[],_twFlagged=[];
+
+function _twParseCSVLine(line){
+  const result=[];let cur='';let inQ=false;let i=0;
+  while(i<line.length){
+    const ch=line[i];
+    if(ch==='"'){
+      if(inQ&&line[i+1]==='"'){cur+='"';i+=2;continue;}
+      inQ=!inQ;
+    }else if(ch===','&&!inQ){result.push(cur);cur='';}
+    else{cur+=ch;}
+    i++;
+  }
+  result.push(cur);
+  return result;
+}
+
+function _twFlagRow(row,keywords){
+  const st=row.source_type||'';
+  const stParts=st.split(',').map(s=>s.trim());
+  const stMain=stParts[0]||'';
+  const stSub=stParts[1]||stMain;
+  const url=(row.url||'').toLowerCase();
+  const reach=parseFloat(row.reach||0);
+  const eng=parseFloat(row.engagement||0);
+  const text=((row.content_snippet||'')+' '+(row.title||'')+' '+(row['extra_author_attributes.name']||'')+' '+(row['extra_source_attributes.name']||'')).toLowerCase();
+  const kws=keywords.map(k=>k.toLowerCase().trim()).filter(Boolean);
+  const hasKW=kws.length>0&&kws.some(k=>k.length>1&&text.includes(k));
+  const authorLow=(row['extra_author_attributes.name']||'').toLowerCase();
+  const isWire=['associated press','^ap$','reuters','upi'].some(w=>authorLow===w||authorLow.startsWith('ap '));
+
+  if(stMain==='SOCIALMEDIA'){
+    const pl=TW_PLATFORM_MAP[stSub]||'xx';
+    if(hasKW)return{flag:'green',reason:'Social — show keyword found',type:'social',stSub,pl};
+    return{flag:'yellow',reason:'Social — verify show relevance',type:'social',stSub,pl};
+  }
+  if(stMain==='PODCAST')return{flag:'red',reason:'Audio/podcast — not applicable',type:'skip',stSub};
+  if(url.includes('wikipedia.org'))return{flag:'red',reason:'Wikipedia — not applicable',type:'skip',stSub};
+  if(reach===0&&eng===0)return{flag:'red',reason:'Zero reach & engagement',type:'skip',stSub};
+  if(isWire&&!hasKW)return{flag:'red',reason:'Wire service — no show keyword',type:'skip',stSub};
+  if(hasKW)return{flag:'green',reason:'Show keyword found in content',type:'press',stSub};
+  return{flag:'yellow',reason:'No show keyword — verify relevance',type:'press',stSub};
+}
+
+function _twFmtReach(n){
+  n=parseFloat(n)||0;
+  if(n>=1e6)return(n/1e6).toFixed(1)+'M';
+  if(n>=1e3)return Math.round(n/1e3)+'K';
+  return n>0?n.toString():'—';
+}
+
+function _twReflag(){
+  const kws=$('tw-keywords').value.split(',');
+  _twFlagged=_twRawRows.map((r,i)=>{
+    const f=_twFlagRow(r,kws);
+    const existing=_twFlagged[i];
+    const sel=existing?._selOverride;
+    return{...r,_idx:i,...f,_sel:sel!==undefined?sel:f.flag!=='red'};
+  });
+}
+
+function _twRenderTable(filter){
+  const tbody=$('tw-tbl-body');tbody.innerHTML='';
+  const vis=_twFlagged.filter(r=>filter==='all'||r.flag===filter);
+  vis.forEach(r=>{
+    const tr=document.createElement('tr');
+    // Checkbox
+    const tdChk=document.createElement('td');
+    const chk=document.createElement('input');
+    chk.type='checkbox';chk.className='tw-chk';chk.dataset.idx=r._idx;
+    chk.checked=r._sel;chk.style.cssText='accent-color:var(--ind);width:14px;height:14px;cursor:pointer;margin-top:2px';
+    chk.addEventListener('change',()=>{_twFlagged[r._idx]._sel=chk.checked;_twFlagged[r._idx]._selOverride=chk.checked;_twUpdateStats();});
+    tdChk.appendChild(chk);tr.appendChild(tdChk);
+    // Flag
+    const tdFlag=document.createElement('td');
+    const badge=document.createElement('span');badge.className='tw-flag '+r.flag;
+    badge.textContent=r.flag==='green'?'🟢 Include':r.flag==='yellow'?'🟡 Review':'🔴 Exclude';
+    tdFlag.appendChild(badge);tr.appendChild(tdFlag);
+    // Author / Source
+    const tdAuth=document.createElement('td');
+    const authorName=r['extra_author_attributes.name']||r['extra_source_attributes.name']||r['provider']||'—';
+    const srcName=r['extra_source_attributes.name']||r['domain_url']||'';
+    tdAuth.innerHTML='<div class="tw-author">'+authorName.substring(0,32)+'</div>'+(srcName?'<div class="tw-src-lbl">'+srcName.substring(0,32)+'</div>':'');
+    tr.appendChild(tdAuth);
+    // Media type
+    const tdType=document.createElement('td');
+    const stLabel=(r.source_type||'').split(',').map(s=>s.replace(/_OTHER|_SUBSTACK/,'')).join(' › ');
+    tdType.innerHTML='<div class="tw-src-lbl">'+stLabel.substring(0,30)+'</div>';tr.appendChild(tdType);
+    // Reach
+    const tdReach=document.createElement('td');tdReach.style.textAlign='right';
+    const reach=parseFloat(r.reach||0),eng=parseFloat(r.engagement||0);
+    tdReach.innerHTML='<div class="tw-reach-val">'+_twFmtReach(reach)+'</div>'+(eng>0?'<div class="tw-reach-sub">eng '+_twFmtReach(eng)+'</div>':'');
+    tr.appendChild(tdReach);
+    // Snippet
+    const tdSnip=document.createElement('td');
+    const snippet=(r.title_snippet||r.title||'(no headline)').substring(0,150);
+    tdSnip.innerHTML='<div class="tw-snippet">'+snippet+'</div>';tr.appendChild(tdSnip);
+    // Reason
+    const tdReason=document.createElement('td');
+    tdReason.innerHTML='<div style="font-size:9.5px;color:var(--ft);line-height:1.5">'+r.reason+'</div>';tr.appendChild(tdReason);
+    tbody.appendChild(tr);
+  });
+  _twUpdateStats();
+}
+
+function _twUpdateStats(){
+  const g=_twFlagged.filter(r=>r.flag==='green').length;
+  const y=_twFlagged.filter(r=>r.flag==='yellow').length;
+  const rd=_twFlagged.filter(r=>r.flag==='red').length;
+  const sel=_twFlagged.filter(r=>r._sel).length;
+  $('tw-stats').textContent='🟢 '+g+'  🟡 '+y+'  🔴 '+rd+'  |  Total: '+_twFlagged.length;
+  $('tw-sel-count').textContent=sel+' mention'+(sel!==1?'s':'')+' selected for import';
+}
+
+function _twImportSelected(){
+  const selected=_twFlagged.filter(r=>r._sel&&r.type!=='skip');
+  if(!selected.length){notif('No mentions selected for import');return;}
+  const social=selected.filter(r=>r.type==='social');
+  const press=selected.filter(r=>r.type==='press');
+
+  // Social → influencer cards in earned-oinfs
+  social.forEach(r=>{
+    const pl=r.pl||'xx';
+    const name=r['extra_author_attributes.name']||r['extra_author_attributes.short_name']||'Unknown';
+    const fkMap={xx:'twitter',ig:'instagram',fb:'facebook',yt:'youtube',tt:'instagram',rd:'reddit',th:'twitter'};
+    const fk=fkMap[pl];
+    const followers=fk?parseFloat(r['source_extended_attributes.'+fk+'_followers']||0):parseFloat(r.reach||0);
+    const reach=parseFloat(r.reach||0);
+    const eng=parseFloat(r.engagement||0);
+    const engPct=followers>0?parseFloat((eng/followers*100).toFixed(2)):0;
+    const secId='earned-oinfs';
+    actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
+    const card=buildInfCard({num:actualsInfCounts[secId],adjFactor:2.5,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
+    const listDiv=$('inf-list-'+secId);if(!listDiv)return;
+    listDiv.appendChild(card);
+    // Set handle name
+    const nameInp=card.querySelector('.fi[placeholder="@handle or name"]');
+    if(nameInp){nameInp.value=name;nameInp.dispatchEvent(new Event('input'));}
+    // Set followers/engPct BEFORE platform change so buildEngTypeRows seeds from correct values
+    const niPre=card.querySelectorAll('input[type="number"].fi');
+    if(niPre[0])niPre[0].value=followers||reach;
+    if(niPre[1])niPre[1].value=engPct;
+    // Set platform — triggers buildEngTypeRows which now reads the correct followers/engPct
+    const platSel=card.querySelectorAll('.fi')[1];
+    if(platSel&&platSel.tagName==='SELECT'){platSel.value=pl;platSel.dispatchEvent(new Event('change'));}
+    // Set post URL
+    if(card._urlInp&&r.url){card._urlInp.value=r.url;}
+    // After eng rows are built: dispatch input events then override with actual CSV quantities
+    setTimeout(()=>{
+      const ni=card.querySelectorAll('input[type="number"].fi');
+      if(ni[0])ni[0].dispatchEvent(new Event('input'));
+      if(ni[1])ni[1].dispatchEvent(new Event('input'));
+      // Override eng type row quantities with per-post actuals from article_extended_attributes
+      const engMap=TW_ENG_MAP[pl]||{};
+      const qtys={};
+      Object.entries(engMap).forEach(([typeId,col])=>{
+        const v=parseFloat(r[col]||0);
+        if(v>0)qtys[typeId]=v;
+      });
+      if(Object.keys(qtys).length&&card._setEngQtys)card._setEngQtys(qtys);
+      runCalc();
+    },120);
+  });
+
+  // Press → individual press mention cards
+  const pressList=$('press-list-wom');
+  if(pressList&&press.length>0){
+    press.forEach(r=>{
+      const stParts=(r.source_type||'').split(',').map(s=>s.trim());
+      const mtype=TW_PRESS_ROW[stParts[1]]||TW_PRESS_ROW[stParts[0]]||'on';
+      const outlet=r['extra_source_attributes.name']||r['domain_url']||r['host_url']||'Unknown';
+      const headline=r.title||r.title_snippet||'';
+      const url=r.url||'';
+      const reach=parseFloat(r.reach||0);
+      const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20};
+      const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8};
+      const card=buildPressCard({
+        onEMVChange:runCalc,onRemove:runCalc,
+        data:{outlet,url,headline,mtype,reach,cpm:DEFAULT_CPM[mtype]||10,adj:DEFAULT_ADJ[mtype]||1.5}
+      });
+      pressList.appendChild(card);
+    });
+  }
+
+  runCalc();
+  $('tw-overlay').classList.remove('open');
+  notif('Imported: '+social.length+' social + '+press.length+' press mentions ('+selected.length+' total)');
+}
+
+function parseTalkwalkerCSV(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const lines=e.target.result.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+      if(lines.length<2)return notif('CSV appears empty');
+      const headers=_twParseCSVLine(lines[0]);
+      if(!headers.includes('source_type')&&!headers.includes('engagement')){
+        return notif('This doesn\'t look like a Talkwalker export. For other formats use the standard CSV import.');
+      }
+      const rows=[];
+      for(let i=1;i<lines.length;i++){
+        if(!lines[i].trim())continue;
+        const vals=_twParseCSVLine(lines[i]);
+        const obj={};
+        headers.forEach((h,idx)=>{obj[h.trim()]=(vals[idx]||'').trim();});
+        rows.push(obj);
+      }
+      if(!rows.length)return notif('No data rows found');
+      _twRawRows=rows;_twFlagged=[];
+      // Pre-populate keywords from show name if filled in
+      const sn=$('s-name')?.value||'';const sc=$('s-client')?.value||'';
+      const kwEl=$('tw-keywords');
+      if(!kwEl.value&&(sn||sc)){kwEl.value=[sc,sn,'drone show','light show','Pixis'].filter(Boolean).join(', ');}
+      _twReflag();
+      _twRenderTable('all');
+      $('tw-overlay').classList.add('open');
+    }catch(err){console.error(err);notif('Parse error: '+err.message);}
+  };
+  reader.readAsText(file);
 }
 
 // ── CSV IMPORT ────────────────────────────────────────────────────────────────
@@ -2741,5 +3210,47 @@ async function genProgramReport(){
   finally{const b=$('btn-prog-report');if(b){b.disabled=false;b.textContent='\u22b3 Program Report';}}
 }
 </script>
+<!-- ── Talkwalker Review Modal ──────────────────────────────────────────── -->
+<div id="tw-overlay">
+  <div id="tw-modal">
+    <div class="tw-mh">
+      <div class="tw-title">📡 Talkwalker Import — Review Mentions</div>
+      <button class="tw-close" id="tw-close">✕</button>
+    </div>
+    <div class="tw-toolbar">
+      <input class="tw-kw" id="tw-keywords" placeholder="Relevance keywords (comma-separated) e.g. Pixis, drone show, light show, [show name]">
+      <button class="mtn" id="tw-recheck">↻ Re-check</button>
+      <div class="tw-filters">
+        <button class="tw-fb on" data-twf="all">All</button>
+        <button class="tw-fb" data-twf="green">🟢 Include</button>
+        <button class="tw-fb" data-twf="yellow">🟡 Review</button>
+        <button class="tw-fb" data-twf="red">🔴 Exclude</button>
+      </div>
+      <span class="tw-stats" id="tw-stats"></span>
+    </div>
+    <div class="tw-body">
+      <table class="tw-tbl">
+        <thead><tr>
+          <th style="width:30px"></th>
+          <th style="width:96px">Status</th>
+          <th style="width:140px">Author / Source</th>
+          <th style="width:110px">Media Type</th>
+          <th style="width:80px;text-align:right">Reach</th>
+          <th>Headline / Snippet</th>
+          <th style="width:140px">Flag Reason</th>
+        </tr></thead>
+        <tbody id="tw-tbl-body"></tbody>
+      </table>
+    </div>
+    <div class="tw-foot">
+      <div class="tw-sel-count" id="tw-sel-count"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="mtn" id="tw-select-all">☑ Select Visible</button>
+        <button class="mtn" id="tw-deselect-all">☐ Deselect All</button>
+        <button class="btn" id="tw-import-btn" style="background:linear-gradient(135deg,var(--ind),#3a4fc8);color:#fff;font-size:11px;padding:8px 18px">↑ Import Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
