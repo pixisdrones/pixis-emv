@@ -303,6 +303,16 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 /* ── Press Mention Cards ──────────────────────────────────────────────────── */
 .press-section-hdr{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);padding:10px 18px 6px;border-top:1px solid var(--bd2)}
 #press-list-wom,#forum-list-wom{padding:0 12px 8px}
+/* ── AI spinner ───────────────────────────────────────────────────────────── */
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ── AI Settings section ──────────────────────────────────────────────────── */
+.ai-settings-box{background:linear-gradient(135deg,rgba(212,168,67,.08),rgba(90,110,248,.06));border:1px solid rgba(212,168,67,.3);border-radius:10px;padding:16px 18px;margin-bottom:18px}
+.ai-settings-title{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#d4a843;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ai-key-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.ai-key-inp{flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--tx);font-family:monospace}
+.ai-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ai-status-dot.ok{background:#2fd4b2}
+.ai-status-dot.missing{background:#ff6b6b}
 .press-card{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:8px;position:relative}
 .press-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .press-card-title{font-size:12px;font-weight:700;color:var(--tx);flex:1}
@@ -974,6 +984,39 @@ document.addEventListener('DOMContentLoaded',()=>{
 function buildBenchmarksPanel(){
   const body=$('bm-body');body._built=true;body.innerHTML='';
 
+  // ── AI Integration Settings ───────────────────────────────────────────────
+  const aiBox=document.createElement('div');aiBox.className='ai-settings-box';
+  const aiTitle=document.createElement('div');aiTitle.className='ai-settings-title';
+  aiTitle.innerHTML='🤖 AI Integration &nbsp;<span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">Power the \uD83D\uDCF8 AI screenshot analyzer on every influencer card</span>';
+  aiBox.appendChild(aiTitle);
+  const aiDesc=document.createElement('div');
+  aiDesc.style.cssText='font-size:10px;color:var(--ft);line-height:1.55;margin-bottom:10px';
+  aiDesc.innerHTML='Enter your <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener" style="color:#d4a843">Anthropic API key</a> to enable AI-powered metric extraction. When set, the tool will automatically screenshot imported URLs and extract all visible metrics (followers, likes, views, etc.) using Claude\'s vision model. Keys are stored <strong>only in this browser\'s local storage</strong> — never sent anywhere except directly to Anthropic\'s API.';
+  aiBox.appendChild(aiDesc);
+  const keyRow=document.createElement('div');keyRow.className='ai-key-row';
+  const dot=document.createElement('div');dot.className='ai-status-dot '+(getAIKey()?'ok':'missing');
+  const keyInp=document.createElement('input');keyInp.className='ai-key-inp';keyInp.type='password';
+  keyInp.placeholder='sk-ant-api…';keyInp.value=getAIKey();keyInp.autocomplete='off';
+  keyInp.addEventListener('input',()=>{
+    const k=keyInp.value.trim();
+    setAIKey(k);
+    dot.className='ai-status-dot '+(k?'ok':'missing');
+  });
+  const toggleBtn=document.createElement('button');toggleBtn.className='btn btn-g';toggleBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0';
+  toggleBtn.textContent='Show';
+  toggleBtn.addEventListener('click',()=>{
+    const show=keyInp.type==='password';keyInp.type=show?'text':'password';toggleBtn.textContent=show?'Hide':'Show';
+  });
+  const clearBtn=document.createElement('button');clearBtn.className='btn btn-g';clearBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0;color:#ff6b6b;border-color:rgba(255,107,107,.3)';
+  clearBtn.textContent='Clear';
+  clearBtn.addEventListener('click',()=>{keyInp.value='';setAIKey('');dot.className='ai-status-dot missing';notif('API key cleared');});
+  keyRow.appendChild(dot);keyRow.appendChild(keyInp);keyRow.appendChild(toggleBtn);keyRow.appendChild(clearBtn);
+  aiBox.appendChild(keyRow);
+  const aiNote=document.createElement('div');aiNote.style.cssText='font-size:9px;color:var(--ft);margin-top:8px;line-height:1.5';
+  aiNote.innerHTML='ℹ️ Uses <strong>claude-opus-4-5</strong> vision model · Typical cost: &lt;$0.01 per screenshot · Works best for public posts on X/Twitter, TikTok, YouTube, Reddit. For Instagram/Facebook (login-required), use the 📸 AI button on the card to upload your own screenshot.';
+  aiBox.appendChild(aiNote);
+  body.appendChild(aiBox);
+
   // ── Row builder — injects range bar into the Notes cell ──────────────────
   const mkRow=(key,label,note,step,unit)=>{
     const tr=document.createElement('tr');
@@ -1464,6 +1507,14 @@ function buildInfCard(opts){
   qmBtn.innerHTML='📋 Enter Metrics';
   qmBtn.addEventListener('click',()=>openQuickMetrics(card));
   urlWrap.appendChild(qmBtn);
+  if(!isPred){
+    const aiBtn=document.createElement('button');aiBtn.type='button';aiBtn.title='Analyze screenshot with Claude AI';
+    aiBtn.style.cssText='flex-shrink:0;padding:5px 9px;font-size:11px;background:rgba(212,168,67,.12);border:1px solid rgba(212,168,67,.35);color:#d4a843;border-radius:6px;cursor:pointer;white-space:nowrap';
+    aiBtn.innerHTML='📸 AI';
+    aiBtn.addEventListener('click',()=>openScreenshotAnalyzer(card,platSel.value));
+    urlWrap.appendChild(aiBtn);
+    card._analyzeBtn=aiBtn;
+  }
   const urlFld=document.createElement('div');urlFld.className='ff';
   const urlLbl=document.createElement('label');urlLbl.className='fl';urlLbl.textContent='Post URL';
   urlFld.appendChild(urlLbl);urlFld.appendChild(urlWrap);
@@ -1842,7 +1893,7 @@ function detectPlatformFromURL(url){
 
 async function importFromURL(secId,fixedAdj){
   const urlInput=$('import-url-'+secId);
-  const url=(urlInput?urlInput.value:''). trim();
+  const url=(urlInput?urlInput.value:'').trim();
   if(!url||url==='https://')return;
   const pl=detectPlatformFromURL(url);
 
@@ -1857,15 +1908,59 @@ async function importFromURL(secId,fixedAdj){
   // Clear import field
   if(urlInput)urlInput.value='';
 
-  // Try CORS proxy to extract og: metadata
+  // ── AI Vision path: if API key is set, screenshot + Claude ──────────────────
+  if(getAIKey()){
+    // Show spinner badge on card
+    const spinner=document.createElement('div');
+    spinner.style.cssText='font-size:10px;color:#d4a843;padding:4px 10px 0;display:flex;align-items:center;gap:5px';
+    spinner.innerHTML='<span style="display:inline-block;animation:spin 1s linear infinite;font-size:12px">⏳</span> Analyzing post with AI…';
+    card.appendChild(spinner);
+    card.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+    // Try thum.io screenshot → Claude vision (works for public pages)
+    const screenshotUrl='https://image.thum.io/get/width/1280/noanimate/'+url;
+    try{
+      const metrics=await extractMetricsFromImage({type:'url',url:screenshotUrl},pl);
+      spinner.remove();
+      if(metrics&&!metrics.error&&(metrics.likes!=null||metrics.views!=null||metrics.followers!=null)){
+        applyExtractedMetrics(card,metrics,pl);
+        notif('✓ AI extracted metrics from post');
+        return;
+      }
+    }catch(e){/* fall through */}
+    spinner.remove();
+
+    // Fallback: og: metadata (handles + name only)
+    try{
+      const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
+      const controller=new AbortController();
+      const tid=setTimeout(()=>controller.abort(),7000);
+      const res=await fetch(proxy,{signal:controller.signal});
+      clearTimeout(tid);
+      const html=(await res.json()).contents||'';
+      const parseTag=(name)=>{
+        const re1=new RegExp('<meta[^>]+(?:property|name)=["\']'+name+'["\'][^>]*content=["\']([^"\']*)["\']','i');
+        const re2=new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*(?:property|name)=["\']'+name+'["\']','i');
+        const m=html.match(re1)||html.match(re2);
+        return m?m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim():'';
+      };
+      const creator=parseTag('twitter:creator')||parseTag('article:author')||parseTag('og:site_name');
+      if(creator&&card._nameInp&&!card._nameInp.value)card._nameInp.value=creator.replace(/^@/,'');
+    }catch(e){}
+
+    notif('ℹ Login-protected post — use 📸 AI on the card to upload a screenshot');
+    setTimeout(()=>{if(card._metricsBtn)card._metricsBtn.click();},300);
+    return;
+  }
+
+  // ── No AI key: og: metadata only + open Enter Metrics ───────────────────────
   try{
     const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
     const controller=new AbortController();
-    const tid=setTimeout(()=>controller.abort(),8000);
+    const tid=setTimeout(()=>controller.abort(),7000);
     const res=await fetch(proxy,{signal:controller.signal});
     clearTimeout(tid);
-    const json=await res.json();
-    const html=json.contents||'';
+    const html=(await res.json()).contents||'';
     const parseTag=(name)=>{
       const re1=new RegExp('<meta[^>]+(?:property|name)=["\']'+name+'["\'][^>]*content=["\']([^"\']*)["\']','i');
       const re2=new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*(?:property|name)=["\']'+name+'["\']','i');
@@ -1873,17 +1968,166 @@ async function importFromURL(secId,fixedAdj){
       return m?m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim():'';
     };
     const creator=parseTag('twitter:creator')||parseTag('article:author')||parseTag('og:site_name');
-    const title=parseTag('og:title')||parseTag('twitter:title');
     if(creator&&card._nameInp&&!card._nameInp.value)card._nameInp.value=creator.replace(/^@/,'');
-    if(title&&card._urlInp){
-      // Store title in a tooltip or use as-is; no headline field on inf card — skip
-    }
-  }catch(e){
-    // Silently fail — card already created with URL and platform
-  }
+  }catch(e){}
 
-  // Open the Enter Metrics modal automatically
   setTimeout(()=>{if(card._metricsBtn)card._metricsBtn.click();},200);
+}
+
+// ── AI Vision helpers ─────────────────────────────────────────────────────────
+const AI_KEY_STORE='pixis_ai_key';
+function getAIKey(){return localStorage.getItem(AI_KEY_STORE)||'';}
+function setAIKey(k){if(k)localStorage.setItem(AI_KEY_STORE,k.trim());else localStorage.removeItem(AI_KEY_STORE);}
+
+async function extractMetricsFromImage(source,platformHint){
+  const apiKey=getAIKey();if(!apiKey)return null;
+  // source = {type:'url',url:'...'} or {type:'base64',data:'...',mediaType:'image/jpeg'}
+  const imgSource=source.type==='url'
+    ?{type:'url',url:source.url}
+    :{type:'base64',media_type:source.mediaType||'image/jpeg',data:source.data};
+
+  const prompt=`Analyze this social media post screenshot and extract all visible metrics and information.
+
+Return ONLY a valid JSON object — no explanation, no markdown:
+{
+  "platform": "${platformHint||'ig|tt|yt|yts|xx|fb|rd|th|qu'}",
+  "handle": "username or channel name (omit @)",
+  "followers": null,
+  "post_type": "Reel|Static / Photo|Carousel|Story|Standard Video|Standard|Post|Thread|Answer|etc",
+  "views": null,
+  "video_views": null,
+  "likes": null,
+  "comments": null,
+  "shares": null,
+  "reposts": null,
+  "bookmarks": null,
+  "reactions": null,
+  "upvotes": null,
+  "quote_tweets": null
+}
+
+Platform codes: ig=Instagram, tt=TikTok, yt=YouTube, yts=YouTube Shorts, xx=X/Twitter, fb=Facebook, rd=Reddit, th=Threads, qu=Quora.
+Convert abbreviated numbers: 1.2K=1200, 4.5M=4500000, 10K=10000.
+If this is a login/auth wall or the post content is not visible, return: {"error":"login_required"}`;
+
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'x-api-key':apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-allow-cors':'true',
+      'content-type':'application/json',
+    },
+    body:JSON.stringify({
+      model:'claude-opus-4-5',
+      max_tokens:600,
+      messages:[{
+        role:'user',
+        content:[
+          {type:'image',source:imgSource},
+          {type:'text',text:prompt}
+        ]
+      }]
+    })
+  });
+  if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||resp.statusText);}
+  const data=await resp.json();
+  const text=data.content?.[0]?.text||'';
+  const m=text.match(/\{[\s\S]*\}/);
+  if(m){try{return JSON.parse(m[0]);}catch(e){return null;}}
+  return null;
+}
+
+function applyExtractedMetrics(card,metrics,platformHint){
+  if(!metrics||metrics.error)return false;
+  if(metrics.handle&&card._nameInp&&!card._nameInp.value)card._nameInp.value=metrics.handle;
+  const pl=metrics.platform||platformHint;
+  if(pl&&card._platSel&&card._platSel.querySelector('option[value="'+pl+'"]')){
+    if(card._platSel.value!==pl){card._platSel.value=pl;card._platSel.dispatchEvent(new Event('change'));}
+  }
+  if(metrics.followers!=null&&card._setFollowers)card._setFollowers(Math.round(metrics.followers));
+  if(metrics.post_type&&card._setPostType)card._setPostType(metrics.post_type);
+  // Map extracted keys → ENG_TYPES ids
+  const engMap={
+    ig:{likes:'like',comments:'cmt',shares:'share',reposts:'repost'},
+    tt:{views:'view',likes:'like',comments:'cmt',shares:'share'},
+    yt:{views:'view',likes:'like',comments:'cmt'},
+    yts:{views:'view',likes:'like',comments:'cmt'},
+    xx:{views:'view',video_views:'vview',likes:'like',comments:'reply',reposts:'rt',bookmarks:'bkm',quote_tweets:'qt'},
+    fb:{reactions:'react',comments:'cmt',shares:'share'},
+    rd:{views:'view',upvotes:'upvote',comments:'cmt'},
+    th:{likes:'like',comments:'cmt',reposts:'repost',shares:'share'},
+    qu:{views:'view',upvotes:'upvote',comments:'cmt',shares:'share'},
+  };
+  const finalPl=card._platSel?.value||pl||'ig';
+  const mapping=engMap[finalPl]||{};
+  const qtys={};
+  Object.entries(mapping).forEach(([mk,eid])=>{if(metrics[mk]!=null)qtys[eid]=Math.round(metrics[mk]);});
+  if(Object.keys(qtys).length&&card._setEngQtys)card._setEngQtys(qtys);
+  return true;
+}
+
+function openScreenshotAnalyzer(card,platformHint){
+  if(!getAIKey()){
+    notif('\u26a0 Add your Anthropic API key in Benchmarks \u2192 AI Integration first');
+    return;
+  }
+  const bg=document.createElement('div');
+  bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--s2);border:1px solid var(--bd);border-radius:14px;padding:22px;width:100%;max-width:540px;box-shadow:0 24px 64px rgba(0,0,0,.5)';
+  box.innerHTML=
+    '<div style="font-size:14px;font-weight:700;color:var(--tx);margin-bottom:5px">\uD83D\uDCF8 AI Screenshot Analysis</div>'
+    +'<div style="font-size:11px;color:var(--ft);margin-bottom:14px;line-height:1.55">Upload or paste a screenshot of the post. Claude AI will extract the handle, followers, views, likes, and all other visible metrics automatically.</div>'
+    +'<div id="ss-drop" style="border:2px dashed var(--bd);border-radius:9px;padding:26px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s">'
+      +'<div style="font-size:28px;margin-bottom:7px">\uD83D\uDDBC\uFE0F</div>'
+      +'<div style="font-size:12px;color:var(--tx);font-weight:600">Click to upload screenshot</div>'
+      +'<div style="font-size:10px;color:var(--ft);margin-top:3px">or drag &amp; drop &nbsp;\u2022&nbsp; Ctrl/Cmd+V to paste</div>'
+      +'<input id="ss-file" type="file" accept="image/*" style="display:none">'
+    +'</div>'
+    +'<div id="ss-preview" style="display:none;margin-top:10px;text-align:center"><img id="ss-img" style="max-width:100%;max-height:260px;border-radius:7px;border:1px solid var(--bd)"></div>'
+    +'<div id="ss-status" style="margin-top:10px;font-size:11px;color:var(--ft);min-height:18px;line-height:1.45"></div>'
+    +'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:15px">'
+      +'<button id="ss-cancel" class="btn btn-g" style="font-size:11px">Cancel</button>'
+      +'<button id="ss-go" class="btn btn-s" style="font-size:11px;opacity:.4" disabled>\uD83E\uDD16 Analyze with AI</button>'
+    +'</div>';
+  bg.appendChild(box);document.body.appendChild(bg);
+  const drop=box.querySelector('#ss-drop'),fileInp=box.querySelector('#ss-file');
+  const preview=box.querySelector('#ss-preview'),previewImg=box.querySelector('#ss-img');
+  const status=box.querySelector('#ss-status'),goBtn=box.querySelector('#ss-go');
+  let currentB64=null,currentMT='image/jpeg';
+  const loadFile=file=>{
+    if(!file||!file.type.startsWith('image/'))return;
+    currentMT=file.type;
+    const r=new FileReader();
+    r.onload=e=>{
+      currentB64=e.target.result.split(',')[1];
+      previewImg.src=e.target.result;preview.style.display='block';
+      goBtn.disabled=false;goBtn.style.opacity='1';status.textContent='';
+    };
+    r.readAsDataURL(file);
+  };
+  drop.addEventListener('click',()=>fileInp.click());
+  fileInp.addEventListener('change',()=>loadFile(fileInp.files[0]));
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='#5a6ef8';drop.style.background='rgba(90,110,248,.06)';});
+  drop.addEventListener('dragleave',()=>{drop.style.borderColor='';drop.style.background='';});
+  drop.addEventListener('drop',e=>{e.preventDefault();drop.style.borderColor='';drop.style.background='';loadFile(e.dataTransfer.files[0]);});
+  const pasteH=e=>{const item=Array.from(e.clipboardData?.items||[]).find(i=>i.type.startsWith('image/'));if(item)loadFile(item.getAsFile());};
+  document.addEventListener('paste',pasteH);
+  goBtn.addEventListener('click',async()=>{
+    if(!currentB64)return;
+    goBtn.disabled=true;goBtn.style.opacity='.5';
+    status.innerHTML='\u23F3 Sending to Claude AI\u2026';
+    try{
+      const metrics=await extractMetricsFromImage({type:'base64',data:currentB64,mediaType:currentMT},card._platSel?.value||platformHint);
+      if(!metrics){status.innerHTML='\u26a0 No data returned. Check your API key and try again.';goBtn.disabled=false;goBtn.style.opacity='1';return;}
+      if(metrics.error==='login_required'){status.innerHTML='\u26a0 Post is behind a login wall. Log in first, take a screenshot, then upload here.';goBtn.disabled=false;goBtn.style.opacity='1';return;}
+      const ok=applyExtractedMetrics(card,metrics,card._platSel?.value||platformHint);
+      if(ok){notif('\u2713 AI metrics applied to card');document.removeEventListener('paste',pasteH);bg.remove();card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+      else{status.innerHTML='\u26a0 Could not read any metrics from this image. Try a clearer screenshot.';goBtn.disabled=false;goBtn.style.opacity='1';}
+    }catch(e){status.innerHTML='\u26a0 Error: '+(e.message||'Unknown');goBtn.disabled=false;goBtn.style.opacity='1';}
+  });
+  box.querySelector('#ss-cancel').addEventListener('click',()=>{document.removeEventListener('paste',pasteH);bg.remove();});
 }
 
 function buildStdSection(pb,sec){
