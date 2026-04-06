@@ -793,7 +793,7 @@ const PLAT_POST_TYPES={
   tt:[['1.0','Standard'],['1.3','Duet / Stitch']],
   yt:[['1.0','Standard Video'],['1.15','Live Stream']],
   yts:[['1.0','Standard'],['1.15','Remix']],
-  xx:[['1.0','Post'],['1.2','Thread']],
+  xx:[['1.0','Post'],['1.2','Thread'],['1.0','Repost']],
   fb:[['1.0','Static / Photo'],['1.3','Reel'],['0.25','Story']],
   rd:[['1.0','Post'],['1.1','Crosspost']],
   th:[['1.0','Post'],['1.2','Repost']],
@@ -1419,34 +1419,25 @@ function buildInfCard(opts){
   const nameInp=mkTxt('@handle or name');
   const platSel=mkSel(PLATS.map(([v,t])=>[v,t]));
   r1.appendChild(mkFld('Handle / Name',nameInp));r1.appendChild(mkFld('Platform',platSel));
-  // Followers field (actuals only — used to auto-calculate Est. Views)
-  let follInpActuals=null,rFollowers=null;
+  // Followers + Post Type row (actuals only)
+  let follInpActuals=null,postTypeSel=null,rFollowers=null;
+  const rebuildPostTypeOpts=(pl)=>{
+    if(!postTypeSel)return;
+    postTypeSel.innerHTML='';
+    (PLAT_POST_TYPES[pl]||[['1.0','Post']]).forEach(([,t])=>{
+      const o=document.createElement('option');o.value=t;o.textContent=t;postTypeSel.appendChild(o);
+    });
+  };
   if(!isPred){
     follInpActuals=mkNum(0,1,0);
     follInpActuals.placeholder='e.g. 25000';
     follInpActuals.addEventListener('input',()=>card._setFollowers(parseFloat(follInpActuals.value)||0));
-    rFollowers=document.createElement('div');rFollowers.style.cssText='margin-top:6px';
+    postTypeSel=document.createElement('select');postTypeSel.className='fi';postTypeSel.style.cursor='pointer';
+    rebuildPostTypeOpts(platSel.value);
+    postTypeSel.addEventListener('change',()=>{buildEngTypeRows(platSel.value);recalc();});
+    rFollowers=document.createElement('div');rFollowers.style.cssText='margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px';
     rFollowers.appendChild(mkFld('Followers',follInpActuals));
-  }
-
-  // Repost toggle (actuals + X/Twitter only)
-  let isRepostMode=false,rRepost=null,repostChk=null;
-  if(!isPred){
-    repostChk=document.createElement('input');repostChk.type='checkbox';
-    repostChk.style.cssText='margin-right:5px;cursor:pointer;accent-color:#7b8ff5';
-    const repostLbl=document.createElement('label');
-    repostLbl.style.cssText='font-size:11px;color:var(--ft);cursor:pointer;user-select:none;display:flex;align-items:center';
-    repostLbl.appendChild(repostChk);
-    const repostTxt=document.createElement('span');repostTxt.textContent='This is a Repost';
-    repostLbl.appendChild(repostTxt);
-    repostChk.addEventListener('change',()=>{
-      isRepostMode=repostChk.checked;
-      buildEngTypeRows(platSel.value);
-      recalc();
-    });
-    rRepost=document.createElement('div');
-    rRepost.style.cssText='margin-top:5px;display:none';// hidden until xx platform selected
-    rRepost.appendChild(repostLbl);
+    rFollowers.appendChild(mkFld('Post Type',postTypeSel));
   }
 
   // URL row + quick metrics entry button
@@ -1512,9 +1503,16 @@ function buildInfCard(opts){
     while(engWrap.children.length>1)engWrap.removeChild(engWrap.lastChild);
     engRows.length=0;
     estViewRow=null;
-    // Repost mode (X/Twitter actuals only): show only a single Est. Views row driven by followers × reach rate
-    const types=(!isPred&&pl==='xx'&&isRepostMode)
-      ?[{id:'view',n:'Est. Views',pr:0,isEst:true}]
+    // Repost mode (X/Twitter or Threads actuals): Est. Views + core engagement metrics
+    const isRepost=!isPred&&(pl==='xx'||pl==='th')&&postTypeSel?.value==='Repost';
+    const types=isRepost
+      ?[
+          {id:'view',  n:'Est. Views', pr:0, isEst:true},
+          {id:'reply', n:'Replies',    pr:0},
+          {id:'rt',    n:'Reposts',    pr:0},
+          {id:'like',  n:'Likes',      pr:0},
+          {id:'bkm',   n:'Bookmarks',  pr:0},
+        ]
       :(ENG_TYPES[pl]||[]);
     const engs=isPred?Math.round((parseFloat(follInp.value)||0)*((parseFloat(engInp.value)||0)/100)):0;
     types.forEach(t=>{
@@ -1616,14 +1614,11 @@ function buildInfCard(opts){
     onEMVChange();
   }
 
-  // When platform changes: update CPM default, show/hide repost toggle, rebuild eng type rows, recalc
+  // When platform changes: update CPM default, rebuild post type options, rebuild eng type rows, recalc
   platSel.addEventListener('change',()=>{
     const pl=platSel.value;
     valImpInp.value=getPlCPM(pl).toFixed(2);
-    if(rRepost){
-      rRepost.style.display=pl==='xx'?'block':'none';
-      if(pl!=='xx'){isRepostMode=false;if(repostChk)repostChk.checked=false;}
-    }
+    rebuildPostTypeOpts(pl);
     buildEngTypeRows(pl);
     recalc();
   });
@@ -1669,11 +1664,17 @@ function buildInfCard(opts){
       estViewRow.qtyInp.dispatchEvent(new Event('input'));
     }
   };
+  card._setPostType=(val)=>{
+    if(!postTypeSel)return;
+    // Find closest matching option value
+    const opts=Array.from(postTypeSel.options).map(o=>o.value);
+    const match=opts.find(v=>v===val)||opts[0];
+    if(match){postTypeSel.value=match;postTypeSel.dispatchEvent(new Event('change'));}
+  };
 
   card.appendChild(hd);
   card.appendChild(r1);
   if(rFollowers)card.appendChild(rFollowers);
-  if(rRepost)card.appendChild(rRepost);
   card.appendChild(rUrl);
   if(isPred){card.appendChild(r2);card.appendChild(statsWrap);card.appendChild(r4);}
   card.appendChild(engWrap);
@@ -2947,6 +2948,33 @@ function _twUpdateStats(){
   }
 }
 
+function _twDetectPostType(r,pl){
+  const url=(r.url||'').toLowerCase();
+  const tags=(r['tags_internal']||'').split(',').map(t=>t.trim());
+  const content=(r.content_snippet||r.title||'').trimStart();
+  const hasRepostTag=tags.includes('isRepost');
+  const hasVideo=tags.includes('containsVideo');
+  const isRTPrefix=content.startsWith('RT @');
+  switch(pl){
+    case 'xx': return (hasRepostTag||isRTPrefix)?'Repost':'Post';
+    case 'ig':
+      if(url.includes('/reel/'))return 'Reel';
+      if(url.includes('/stories/'))return 'Story';
+      return hasVideo?'Reel':'Static / Photo';
+    case 'fb':
+      if(url.includes('/reel'))return 'Reel';
+      if(url.includes('/stories'))return 'Story';
+      return hasVideo?'Reel':'Static / Photo';
+    case 'th': return (hasRepostTag||isRTPrefix)?'Repost':'Post';
+    case 'tt': return 'Standard';
+    case 'yt': return 'Standard Video';
+    case 'yts': return 'Standard';
+    case 'rd': return 'Post';
+    case 'qu': return 'Answer';
+    default: return null;
+  }
+}
+
 function _twImportSelected(){
   const selected=_twFlagged.filter(r=>r._sel&&r.type!=='skip');
   if(!selected.length){notif('No mentions selected for import');return;}
@@ -2976,11 +3004,15 @@ function _twImportSelected(){
     if(platSel&&platSel.tagName==='SELECT'){platSel.value=pl;platSel.dispatchEvent(new Event('change'));}
     // Set post URL
     if(card._urlInp&&r.url){card._urlInp.value=r.url;}
-    // After eng rows are built: set followers (for est. views auto-calc) then actual engagement quantities from CSV
+    // Auto-detect post type from CSV signals
+    const detectedType=_twDetectPostType(r,pl);
+    // After eng rows are built: set post type → followers → engagement quantities
     setTimeout(()=>{
-      // Set followers first so est. views row auto-calculates
+      // 1. Set post type first (may rebuild eng rows for repost mode)
+      if(detectedType&&card._setPostType)card._setPostType(detectedType);
+      // 2. Set followers so est. views row auto-calculates on the correct row set
       if(card._setFollowers)card._setFollowers(followers||reach);
-      // Set remaining eng type quantities from CSV actuals (est. views rows excluded from TW_ENG_MAP)
+      // 3. Set actual engagement quantities from CSV
       const engMap=TW_ENG_MAP[pl]||{};
       const qtys={};
       Object.entries(engMap).forEach(([typeId,col])=>{
