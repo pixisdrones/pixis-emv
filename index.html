@@ -1197,6 +1197,11 @@ function wireEvents(){
   $('tw-recheck').addEventListener('click',()=>{if(_twRawRows.length){_twReflag();const af=document.querySelector('.tw-fb.on');_twRenderTable(af?af.dataset.twf:'all');}});
   $('tw-select-all').addEventListener('click',()=>{document.querySelectorAll('.tw-chk').forEach(cb=>{cb.checked=true;_twFlagged[parseInt(cb.dataset.idx)]._sel=true;_twFlagged[parseInt(cb.dataset.idx)]._selOverride=true;});_twUpdateStats();});
   $('tw-deselect-all').addEventListener('click',()=>{document.querySelectorAll('.tw-chk').forEach(cb=>{cb.checked=false;_twFlagged[parseInt(cb.dataset.idx)]._sel=false;_twFlagged[parseInt(cb.dataset.idx)]._selOverride=false;});_twUpdateStats();});
+  $('tw-hdr-chk').addEventListener('change',()=>{
+    const on=$('tw-hdr-chk').checked;
+    document.querySelectorAll('.tw-chk').forEach(cb=>{cb.checked=on;_twFlagged[parseInt(cb.dataset.idx)]._sel=on;_twFlagged[parseInt(cb.dataset.idx)]._selOverride=on;});
+    _twUpdateStats();
+  });
   document.querySelectorAll('.tw-fb').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tw-fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');_twRenderTable(btn.dataset.twf);}));
   $('sv-ph').addEventListener('click',()=>{$('sv-panel').classList.toggle('open');});
 }
@@ -2907,10 +2912,13 @@ function _twRenderTable(filter){
     const reach=parseFloat(r.reach||0),eng=parseFloat(r.engagement||0);
     tdReach.innerHTML='<div class="tw-reach-val">'+_twFmtReach(reach)+'</div>'+(eng>0?'<div class="tw-reach-sub">eng '+_twFmtReach(eng)+'</div>':'');
     tr.appendChild(tdReach);
-    // Snippet
+    // Snippet + URL preview link
     const tdSnip=document.createElement('td');
     const snippet=(r.title_snippet||r.title||'(no headline)').substring(0,150);
-    tdSnip.innerHTML='<div class="tw-snippet">'+snippet+'</div>';tr.appendChild(tdSnip);
+    const previewLink=r.url
+      ?'<a href="'+r.url+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:9px;color:var(--ind);text-decoration:none;opacity:.75;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.75">↗ Preview</a>'
+      :'';
+    tdSnip.innerHTML='<div class="tw-snippet">'+snippet+'</div>'+previewLink;tr.appendChild(tdSnip);
     // Reason
     const tdReason=document.createElement('td');
     tdReason.innerHTML='<div style="font-size:9.5px;color:var(--ft);line-height:1.5">'+r.reason+'</div>';tr.appendChild(tdReason);
@@ -2926,6 +2934,17 @@ function _twUpdateStats(){
   const sel=_twFlagged.filter(r=>r._sel).length;
   $('tw-stats').textContent='🟢 '+g+'  🟡 '+y+'  🔴 '+rd+'  |  Total: '+_twFlagged.length;
   $('tw-sel-count').textContent=sel+' mention'+(sel!==1?'s':'')+' selected for import';
+  // Sync header checkbox — checked if all visible selected, indeterminate if some
+  const hdrChk=$('tw-hdr-chk');
+  if(hdrChk){
+    const visChks=Array.from(document.querySelectorAll('.tw-chk'));
+    if(visChks.length===0){hdrChk.checked=false;hdrChk.indeterminate=false;}
+    else{
+      const n=visChks.filter(c=>c.checked).length;
+      hdrChk.checked=n===visChks.length;
+      hdrChk.indeterminate=n>0&&n<visChks.length;
+    }
+  }
 }
 
 function _twImportSelected(){
@@ -3401,7 +3420,7 @@ async function genProgramReport(){
     <div class="tw-body">
       <table class="tw-tbl">
         <thead><tr>
-          <th style="width:30px"></th>
+          <th style="width:30px;text-align:center"><input type="checkbox" id="tw-hdr-chk" style="accent-color:var(--ind);width:14px;height:14px;cursor:pointer;display:block;margin:0 auto" title="Select / deselect all visible"></th>
           <th style="width:96px">Status</th>
           <th style="width:140px">Author / Source</th>
           <th style="width:110px">Media Type</th>
