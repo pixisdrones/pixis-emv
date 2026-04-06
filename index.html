@@ -623,7 +623,7 @@ const BM_DEFAULTS={
   // Views: qualified video/post view — Sprout Social 2024
   // Bookmarks: high-intent save (~15x like value) — X platform analytics benchmarks 2024
   // Quote Tweets: editorial amplification near repost value — Brandwatch 2024
-  evt_xx_view:0.003,evt_xx_like:0.01,evt_xx_reply:0.10,evt_xx_rt:0.09,evt_xx_bkm:0.15,evt_xx_qt:0.08,
+  evt_xx_view:0.003,evt_xx_vview:0.004,evt_xx_like:0.01,evt_xx_reply:0.10,evt_xx_rt:0.09,evt_xx_bkm:0.15,evt_xx_qt:0.08,
   // Facebook: imp, react, cmt, share
   evt_fb_imp:0.004, evt_fb_react:0.025,evt_fb_cmt:0.10,  evt_fb_share:0.175,
   // Reddit: upvote, cmt
@@ -666,7 +666,7 @@ const BM_RANGES={
   evt_yt_cmt:{lo:0.100,hi:0.350,fmt:'$'},
   evt_yts_view:{lo:0.001,hi:0.008,fmt:'$'},evt_yts_like:{lo:0.005,hi:0.030,fmt:'$'},
   evt_yts_cmt:{lo:0.040,hi:0.150,fmt:'$'},evt_yts_remix:{lo:0.100,hi:0.400,fmt:'$'},
-  evt_xx_view:{lo:0.001,hi:0.008,fmt:'$'},evt_xx_like:{lo:0.005,hi:0.025,fmt:'$'},
+  evt_xx_view:{lo:0.001,hi:0.008,fmt:'$'},evt_xx_vview:{lo:0.002,hi:0.010,fmt:'$'},evt_xx_like:{lo:0.005,hi:0.025,fmt:'$'},
   evt_xx_reply:{lo:0.050,hi:0.200,fmt:'$'},evt_xx_rt:{lo:0.050,hi:0.150,fmt:'$'},
   evt_xx_bkm:{lo:0.080,hi:0.300,fmt:'$'},evt_xx_qt:{lo:0.050,hi:0.150,fmt:'$'},
   evt_fb_imp:{lo:0.002,hi:0.008,fmt:'$'},evt_fb_react:{lo:0.010,hi:0.040,fmt:'$'},
@@ -745,12 +745,13 @@ const ENG_TYPES={
     {id:'remix', n:'Remix',    pr:0.05},
   ],
   xx:[
-    {id:'view',  n:'Views',        pr:0.45},
+    {id:'view',  n:'Views',        pr:0.40},
+    {id:'vview', n:'Video Views',  pr:0.15},
     {id:'reply', n:'Replies',      pr:0.10},
     {id:'rt',    n:'Reposts',      pr:0.10},
-    {id:'like',  n:'Likes',        pr:0.25},
-    {id:'bkm',   n:'Bookmarks',    pr:0.05},
-    {id:'qt',    n:'Quote Tweets', pr:0.05},
+    {id:'like',  n:'Likes',        pr:0.20},
+    {id:'bkm',   n:'Bookmarks',    pr:0.03},
+    {id:'qt',    n:'Quote Tweets', pr:0.02},
   ],
   fb:[
     {id:'imp',   n:'Est. Views', pr:0.40, isEst:true},
@@ -1423,6 +1424,26 @@ function buildInfCard(opts){
     rFollowers.appendChild(mkFld('Followers',follInpActuals));
   }
 
+  // Repost toggle (actuals + X/Twitter only)
+  let isRepostMode=false,rRepost=null,repostChk=null;
+  if(!isPred){
+    repostChk=document.createElement('input');repostChk.type='checkbox';
+    repostChk.style.cssText='margin-right:5px;cursor:pointer;accent-color:#7b8ff5';
+    const repostLbl=document.createElement('label');
+    repostLbl.style.cssText='font-size:11px;color:var(--ft);cursor:pointer;user-select:none;display:flex;align-items:center';
+    repostLbl.appendChild(repostChk);
+    const repostTxt=document.createElement('span');repostTxt.textContent='This is a Repost';
+    repostLbl.appendChild(repostTxt);
+    repostChk.addEventListener('change',()=>{
+      isRepostMode=repostChk.checked;
+      buildEngTypeRows(platSel.value);
+      recalc();
+    });
+    rRepost=document.createElement('div');
+    rRepost.style.cssText='margin-top:5px;display:none';// hidden until xx platform selected
+    rRepost.appendChild(repostLbl);
+  }
+
   // URL row + quick metrics entry button
   const rUrl=document.createElement('div');rUrl.style.cssText='margin-top:6px;margin-bottom:2px';
   const urlInp=mkTxt('https://post-url (optional)');
@@ -1486,7 +1507,10 @@ function buildInfCard(opts){
     while(engWrap.children.length>1)engWrap.removeChild(engWrap.lastChild);
     engRows.length=0;
     estViewRow=null;
-    const types=ENG_TYPES[pl]||[];
+    // Repost mode (X/Twitter actuals only): show only a single Est. Views row driven by followers × reach rate
+    const types=(!isPred&&pl==='xx'&&isRepostMode)
+      ?[{id:'view',n:'Est. Views',pr:0,isEst:true}]
+      :(ENG_TYPES[pl]||[]);
     const engs=isPred?Math.round((parseFloat(follInp.value)||0)*((parseFloat(engInp.value)||0)/100)):0;
     types.forEach(t=>{
       const row=document.createElement('div');
@@ -1587,10 +1611,14 @@ function buildInfCard(opts){
     onEMVChange();
   }
 
-  // When platform changes: update CPM default, rebuild eng type rows, recalc
+  // When platform changes: update CPM default, show/hide repost toggle, rebuild eng type rows, recalc
   platSel.addEventListener('change',()=>{
     const pl=platSel.value;
     valImpInp.value=getPlCPM(pl).toFixed(2);
+    if(rRepost){
+      rRepost.style.display=pl==='xx'?'block':'none';
+      if(pl!=='xx'){isRepostMode=false;if(repostChk)repostChk.checked=false;}
+    }
     buildEngTypeRows(pl);
     recalc();
   });
@@ -1640,6 +1668,7 @@ function buildInfCard(opts){
   card.appendChild(hd);
   card.appendChild(r1);
   if(rFollowers)card.appendChild(rFollowers);
+  if(rRepost)card.appendChild(rRepost);
   card.appendChild(rUrl);
   if(isPred){card.appendChild(r2);card.appendChild(statsWrap);card.appendChild(r4);}
   card.appendChild(engWrap);
@@ -2760,8 +2789,8 @@ const TW_PRESS_ROW={
 // 'reach' = top-level reach column (follower-based impression estimate)
 // Columns marked ✅ are directly available; ❌ must be entered manually
 const TW_ENG_MAP={
-  // X / Twitter — ✅ reach→view, ✅ twitter_likes→like, ✅ twitter_replies→reply, ✅ twitter_retweets→rt, ✅ twitter_quote_tweets→qt; ❌ bkm (manual)
-  xx:{view:'reach',like:'article_extended_attributes.twitter_likes',reply:'article_extended_attributes.twitter_replies',rt:'article_extended_attributes.twitter_retweets',qt:'article_extended_attributes.twitter_quote_tweets'},
+  // X / Twitter — ✅ all fields mapped directly from CSV columns
+  xx:{view:'article_extended_attributes.twitter_impressions',vview:'article_extended_attributes.twitter_video_views',reply:'article_extended_attributes.twitter_replies',rt:'article_extended_attributes.twitter_retweets',like:'article_extended_attributes.twitter_likes',bkm:'article_extended_attributes.twitter_shares',qt:'article_extended_attributes.twitter_quote_tweets'},
   // Instagram — ✅ instagram_likes→like, ✅ num_comments→cmt; ❌ imp (auto-calc from followers), ❌ shares/reposts (manual)
   ig:{like:'article_extended_attributes.instagram_likes',cmt:'article_extended_attributes.num_comments'},
   // YouTube — ✅ youtube_views→view, ✅ youtube_likes→like, ✅ num_comments→cmt
@@ -2805,8 +2834,14 @@ function _twFlagRow(row,keywords){
   const reach=parseFloat(row.reach||0);
   const eng=parseFloat(row.engagement||0);
   const text=((row.content_snippet||'')+' '+(row.title||'')+' '+(row['extra_author_attributes.name']||'')+' '+(row['extra_source_attributes.name']||'')).toLowerCase();
-  const kws=keywords.map(k=>k.toLowerCase().trim()).filter(Boolean);
-  const hasKW=kws.length>0&&kws.some(k=>k.length>1&&text.includes(k));
+  const kws=keywords.map(k=>k.toLowerCase().trim()).filter(k=>k.length>1);
+  // Logic: (Client OR Program) AND "drone"
+  // "drone" keywords must match, AND at least one non-drone keyword must match
+  const droneKws=kws.filter(k=>k.includes('drone'));
+  const otherKws=kws.filter(k=>!k.includes('drone'));
+  const hasDrone=droneKws.length===0||droneKws.some(k=>text.includes(k));
+  const hasOther=otherKws.length===0||otherKws.some(k=>text.includes(k));
+  const hasKW=kws.length>0&&hasDrone&&hasOther;
   const authorLow=(row['extra_author_attributes.name']||'').toLowerCase();
   const isWire=['associated press','^ap$','reuters','upi'].some(w=>authorLow===w||authorLow.startsWith('ap '));
 
@@ -3353,7 +3388,7 @@ async function genProgramReport(){
       <button class="tw-close" id="tw-close">✕</button>
     </div>
     <div class="tw-toolbar">
-      <input class="tw-kw" id="tw-keywords" placeholder="Relevance keywords (comma-separated) e.g. Pixis, drone show, light show, [show name]">
+      <input class="tw-kw" id="tw-keywords" placeholder="Keywords: (Client OR Program) AND drone — e.g. LA Dodgers, Opening Night, drone">
       <button class="mtn" id="tw-recheck">↻ Re-check</button>
       <div class="tw-filters">
         <button class="tw-fb on" data-twf="all">All</button>
