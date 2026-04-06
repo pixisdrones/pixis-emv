@@ -1013,7 +1013,7 @@ function buildBenchmarksPanel(){
   keyRow.appendChild(dot);keyRow.appendChild(keyInp);keyRow.appendChild(toggleBtn);keyRow.appendChild(clearBtn);
   aiBox.appendChild(keyRow);
   const aiNote=document.createElement('div');aiNote.style.cssText='font-size:9px;color:var(--ft);margin-top:8px;line-height:1.5';
-  aiNote.innerHTML='ℹ️ Uses <strong>claude-opus-4-5</strong> vision model · Typical cost: &lt;$0.01 per screenshot · Works best for public posts on X/Twitter, TikTok, YouTube, Reddit. For Instagram/Facebook (login-required), use the 📸 AI button on the card to upload your own screenshot.';
+  aiNote.innerHTML='ℹ️ Uses <strong>claude-opus-4-5</strong> vision model · Typical cost: &lt;$0.01 per screenshot · Works best for public posts on X/Twitter, TikTok, YouTube, Reddit. For Instagram/Facebook (login-required), use the 📸 AI button on the card to upload your own screenshot.<br><strong>Local file access:</strong> When opened from your desktop (file://), API calls are routed through <a href="https://corsproxy.io" target="_blank" rel="noopener" style="color:#d4a843">corsproxy.io</a> to bypass browser security restrictions. Your API key is transmitted in-transit but not stored. For fully direct access, use your GitHub Pages URL.';
   aiBox.appendChild(aiNote);
   body.appendChild(aiBox);
 
@@ -1982,6 +1982,12 @@ function setAIKey(k){if(k)localStorage.setItem(AI_KEY_STORE,k.trim());else local
 async function extractMetricsFromImage(source,platformHint){
   const apiKey=getAIKey();if(!apiKey)return null;
   // source = {type:'url',url:'...'} or {type:'base64',data:'...',mediaType:'image/jpeg'}
+  // When the file:// protocol is used, Chrome blocks direct cross-origin fetch entirely.
+  // We detect this and route through a CORS proxy (corsproxy.io) so it works from a local file.
+  const isLocalFile=location.protocol==='file:';
+
+  // For URL-type images, the Anthropic API fetches them server-side, so no browser CORS applies.
+  // For base64, we need to send directly to the API — proxy required on file://.
   const imgSource=source.type==='url'
     ?{type:'url',url:source.url}
     :{type:'base64',media_type:source.mediaType||'image/jpeg',data:source.data};
@@ -2010,14 +2016,24 @@ Platform codes: ig=Instagram, tt=TikTok, yt=YouTube, yts=YouTube Shorts, xx=X/Tw
 Convert abbreviated numbers: 1.2K=1200, 4.5M=4500000, 10K=10000.
 If this is a login/auth wall or the post content is not visible, return: {"error":"login_required"}`;
 
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+  const ANTHROPIC_URL='https://api.anthropic.com/v1/messages';
+  // CORS proxy is only used for file:// access. Requests go directly to Anthropic on any web server.
+  // Note: when using the proxy, your API key is transmitted through corsproxy.io in transit.
+  const endpoint=isLocalFile
+    ?'https://corsproxy.io/?url='+encodeURIComponent(ANTHROPIC_URL)
+    :ANTHROPIC_URL;
+
+  const headers={
+    'x-api-key':apiKey,
+    'anthropic-version':'2023-06-01',
+    'content-type':'application/json',
+  };
+  // anthropic-dangerous-allow-browser enables CORS on Anthropic's end (needed for web server access)
+  if(!isLocalFile)headers['anthropic-dangerous-allow-browser']='true';
+
+  const resp=await fetch(endpoint,{
     method:'POST',
-    headers:{
-      'x-api-key':apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-allow-browser':'true',
-      'content-type':'application/json',
-    },
+    headers,
     body:JSON.stringify({
       model:'claude-opus-4-5',
       max_tokens:600,
@@ -2128,7 +2144,7 @@ function openScreenshotAnalyzer(card,platformHint){
       else{status.innerHTML='\u26a0 Could not read any metrics from this image. Try a clearer screenshot.';goBtn.disabled=false;goBtn.style.opacity='1';}
     }catch(e){
       const msg=e.message||'Unknown error';
-      const hint=msg.toLowerCase().includes('fetch')?'<br><span style="font-size:10px;color:var(--ft)">Network error — make sure your API key is correct and try using the tool from a web server rather than a local file:// URL.</span>':'';
+      const hint=msg.toLowerCase().includes('fetch')?'<br><span style="font-size:10px;color:var(--ft)">Network error — check your internet connection and that your API key is correct. If corsproxy.io is unavailable, try accessing the tool via your GitHub Pages URL instead.</span>':'';
       status.innerHTML='\u26a0 '+msg+hint;goBtn.disabled=false;goBtn.style.opacity='1';
     }
   });
