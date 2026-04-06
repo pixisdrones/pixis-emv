@@ -302,7 +302,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .qm-foot{padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px}
 /* ── Press Mention Cards ──────────────────────────────────────────────────── */
 .press-section-hdr{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);padding:10px 18px 6px;border-top:1px solid var(--bd2)}
-#press-list-wom{padding:0 12px 8px}
+#press-list-wom,#forum-list-wom{padding:0 12px 8px}
 .press-card{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:8px;position:relative}
 .press-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .press-card-title{font-size:12px;font-weight:700;color:var(--tx);flex:1}
@@ -843,7 +843,7 @@ const SECS=[
     {id:'wQR',n:'QR Code Scans',                   m:0,    r:3,   a:1,  on:false,c:'cpc',tip:'Direct audience action. CPA $1-5.',qrOnly:true},
     {id:'wAW',n:'Industry Awards / Recognitions',  m:1,    r:2500,a:1,  on:false,c:'direct',dyn:true,tip:'PR value per award.'}
   ]},
-  {id:'earned-oinfs',peso:'E',num:'E3',title:'Organic Influencer Mentions',sub:'Unpaid authentic brand mentions from creators',col:'#d4a843',
+  {id:'earned-oinfs',peso:'E',num:'E3',title:'Social Media Mentions',sub:'Unpaid authentic brand mentions from creators',col:'#d4a843',
    type:'influencers',adj:2.5,
    ov:'Organic influencer posts earn a 2.5x authenticity premium. These are unpaid posts where creators organically feature the show.'},
   // ── SHARED ────────────────────────────────────────────────────────────────
@@ -1378,11 +1378,25 @@ function buildInfluencerSection(pb,sec){
   const note=document.createElement('div');note.className='cnote';note.style.margin='12px 18px 0';
   note.innerHTML='<strong>Adj Factor:</strong> '+adjLabel+'. <strong>Formula:</strong> (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 '+sec.adj+'x. Platform reach rates and default values from Benchmarks tab.';
   pb.appendChild(note);
+  const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 18px 0;flex-wrap:wrap';
   const addBtn=document.createElement('button');addBtn.className='btn btn-g';
-  addBtn.style.cssText='margin:10px 18px;font-size:11px;padding:7px 14px';
-  addBtn.textContent='+ Add Influencer';
+  addBtn.style.cssText='font-size:11px;padding:7px 14px';
+  addBtn.textContent='+ Add Mention';
   addBtn.addEventListener('click',()=>addActualsInfluencer(sec.id,sec.adj));
-  pb.appendChild(addBtn);
+  btnRow.appendChild(addBtn);
+  // URL import row
+  const impWrap=document.createElement('div');impWrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;min-width:220px';
+  const impInp=document.createElement('input');impInp.type='url';impInp.id='import-url-'+sec.id;
+  impInp.className='fi';impInp.placeholder='Paste post URL to import…';
+  impInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
+  const impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn btn-g';
+  impBtn.style.cssText='font-size:11px;padding:7px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
+  impBtn.innerHTML='🔗 Import from URL';
+  impBtn.addEventListener('click',()=>importFromURL(sec.id,sec.adj));
+  impInp.addEventListener('keydown',e=>{if(e.key==='Enter')importFromURL(sec.id,sec.adj);});
+  impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
+  btnRow.appendChild(impWrap);
+  pb.appendChild(btnRow);
   const listDiv=document.createElement('div');listDiv.id='inf-list-'+sec.id;
   listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
@@ -1645,6 +1659,8 @@ function buildInfCard(opts){
   };
   card._updateDisp=()=>{emvVal.textContent=fmt(card._getEMV());};
   card._platSel=platSel;
+  card._nameInp=nameInp;
+  card._metricsBtn=qmBtn;
   card._getEngQty=(id)=>{const er=engRows.find(r=>r.t.id===id);return er?parseFloat(er.qtyInp.value)||0:0;};
   card._setEngQtys=(qtysMap)=>{
     engRows.forEach(er=>{
@@ -1694,9 +1710,9 @@ function buildPressCard(opts){
   pressMentionCount++;
   const card=document.createElement('div');card.className='press-card';
 
-  const PRESS_TYPES=[['on','Online News'],['blog','Blog / Digital'],['nl','Newsletter'],['tv','TV / Broadcast'],['po','Podcast']];
-  const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20};
-  const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8};
+  const PRESS_TYPES=[['on','Online News'],['blog','Blog / Digital'],['nl','Newsletter'],['tv','TV / Broadcast'],['po','Podcast'],['print','Print Media'],['forum','Forum / Community']];
+  const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20,print:30,forum:5};
+  const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8,print:1.5,forum:1.2};
 
   const mkFld=(lbl,inp)=>{const f=document.createElement('div');f.className='ff';const l=document.createElement('label');l.className='fl';l.textContent=lbl;f.appendChild(l);f.appendChild(inp);return f;};
   const mkTxt=(ph,val)=>{const i=document.createElement('input');i.type='text';i.className='fi';i.placeholder=ph;if(val)i.value=val;return i;};
@@ -1753,10 +1769,19 @@ function buildPressCard(opts){
     if(onEMVChange)onEMVChange();
   }
 
+  const updateURLState=()=>{
+    const isPrint=typeSel.value==='print';
+    urlInp.disabled=isPrint;
+    urlInp.placeholder=isPrint?'(Not applicable for Print Media)':'https://article-url';
+    urlInp.style.opacity=isPrint?'0.4':'1';
+    if(isPrint)urlInp.value='';
+  };
+  updateURLState();
   typeSel.addEventListener('change',()=>{
     const t=typeSel.value;
     if(!d.cpm)cpmInp.value=DEFAULT_CPM[t]||10;
     if(!d.adj)adjInp.value=DEFAULT_ADJ[t]||1.5;
+    updateURLState();
     recalc();
   });
   [reachInp,cpmInp,adjInp].forEach(i=>i.addEventListener('input',recalc));
@@ -1788,11 +1813,77 @@ function addPressCard(){
   list.appendChild(card);runCalc();
 }
 
+function addForumMentionCard(){
+  const list=$('forum-list-wom');if(!list)return;
+  const card=buildPressCard({data:{mtype:'forum'},onEMVChange:runCalc,onRemove:runCalc});
+  list.appendChild(card);runCalc();
+}
+
 function addActualsInfluencer(secId,fixedAdj){
   actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
   const num=actualsInfCounts[secId];
   const card=buildInfCard({num,adjFactor:fixedAdj,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
   $('inf-list-'+secId).appendChild(card);runCalc();
+  return card;
+}
+
+function detectPlatformFromURL(url){
+  const u=(url||'').toLowerCase();
+  if(u.includes('instagram.com'))return 'ig';
+  if(u.includes('tiktok.com'))return 'tt';
+  if(u.includes('youtube.com')||u.includes('youtu.be'))return u.includes('/shorts/')?'yts':'yt';
+  if(u.includes('twitter.com')||u.includes('x.com'))return 'xx';
+  if(u.includes('facebook.com')||u.includes('fb.com'))return 'fb';
+  if(u.includes('reddit.com'))return 'rd';
+  if(u.includes('threads.net'))return 'th';
+  if(u.includes('quora.com'))return 'qu';
+  return null;
+}
+
+async function importFromURL(secId,fixedAdj){
+  const urlInput=$('import-url-'+secId);
+  const url=(urlInput?urlInput.value:''). trim();
+  if(!url||url==='https://')return;
+  const pl=detectPlatformFromURL(url);
+
+  // Create card and set basic fields
+  const card=addActualsInfluencer(secId,fixedAdj);
+  if(card._urlInp)card._urlInp.value=url;
+  if(pl&&card._platSel){
+    card._platSel.value=pl;
+    card._platSel.dispatchEvent(new Event('change'));
+  }
+
+  // Clear import field
+  if(urlInput)urlInput.value='';
+
+  // Try CORS proxy to extract og: metadata
+  try{
+    const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
+    const controller=new AbortController();
+    const tid=setTimeout(()=>controller.abort(),8000);
+    const res=await fetch(proxy,{signal:controller.signal});
+    clearTimeout(tid);
+    const json=await res.json();
+    const html=json.contents||'';
+    const parseTag=(name)=>{
+      const re1=new RegExp('<meta[^>]+(?:property|name)=["\']'+name+'["\'][^>]*content=["\']([^"\']*)["\']','i');
+      const re2=new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*(?:property|name)=["\']'+name+'["\']','i');
+      const m=html.match(re1)||html.match(re2);
+      return m?m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim():'';
+    };
+    const creator=parseTag('twitter:creator')||parseTag('article:author')||parseTag('og:site_name');
+    const title=parseTag('og:title')||parseTag('twitter:title');
+    if(creator&&card._nameInp&&!card._nameInp.value)card._nameInp.value=creator.replace(/^@/,'');
+    if(title&&card._urlInp){
+      // Store title in a tooltip or use as-is; no headline field on inf card — skip
+    }
+  }catch(e){
+    // Silently fail — card already created with URL and platform
+  }
+
+  // Open the Enter Metrics modal automatically
+  setTimeout(()=>{if(card._metricsBtn)card._metricsBtn.click();},200);
 }
 
 function buildStdSection(pb,sec){
@@ -1808,6 +1899,7 @@ function buildStdSection(pb,sec){
     foot.appendChild(addBtn);pb.appendChild(foot);
   }
   if(sec.id==='wom'){
+    // Press Mentions
     const phdr=document.createElement('div');phdr.className='press-section-hdr';phdr.textContent='Individual Press Mentions';
     pb.appendChild(phdr);
     const plist=document.createElement('div');plist.id='press-list-wom';
@@ -1816,6 +1908,15 @@ function buildStdSection(pb,sec){
     const pBtn=document.createElement('button');pBtn.className='btn btn-g';pBtn.style.cssText='font-size:11px;padding:7px 14px';pBtn.textContent='+ Add Press Mention';
     pBtn.addEventListener('click',addPressCard);
     pfoot.appendChild(pBtn);pb.appendChild(pfoot);
+    // Forum / Community Mentions
+    const fhdr=document.createElement('div');fhdr.className='press-section-hdr';fhdr.textContent='Individual Forum / Community Mentions';
+    pb.appendChild(fhdr);
+    const flist=document.createElement('div');flist.id='forum-list-wom';
+    pb.appendChild(flist);
+    const ffoot=document.createElement('div');ffoot.className='press-foot';
+    const fBtn=document.createElement('button');fBtn.className='btn btn-g';fBtn.style.cssText='font-size:11px;padding:7px 14px';fBtn.textContent='+ Add Forum Mention';
+    fBtn.addEventListener('click',addForumMentionCard);
+    ffoot.appendChild(fBtn);pb.appendChild(ffoot);
   }
 }
 
@@ -1982,7 +2083,7 @@ function runCalc(){
         const v=calcRowEMV(row);const el=row.querySelector('.ev');if(el)el.textContent=fmt(v);t+=v;
       });
       if(sec.id==='wom'){
-        document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
+        document.querySelectorAll('#press-list-wom .press-card, #forum-list-wom .press-card').forEach(card=>{
           if(card._getEMV)t+=card._getEMV();
         });
       }
@@ -2004,7 +2105,9 @@ function runCalc(){
 
 function resetAll(){
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
-  const pl=$('press-list-wom');if(pl)pl.innerHTML='';pressMentionCount=0;
+  const pl=$('press-list-wom');if(pl)pl.innerHTML='';
+  const fl=$('forum-list-wom');if(fl)fl.innerHTML='';
+  pressMentionCount=0;
   // Clear actuals influencer sections
   ['paid-infs','earned-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
@@ -2333,31 +2436,41 @@ async function genPdf(){
         +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
         +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
         +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
-      // Press mention cards sub-table for wom section — rendered AFTER sub-channel rows
+      // Press & Forum mention cards sub-tables for wom section — rendered AFTER sub-channel rows
       if(isWom){
-        let pressRows='';let pressTot=0;
-        document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
-          if(!card._data||!card._getEMV)return;
-          const pd=card._data();const pemv=card._getEMV();if(!pemv&&!pd.outlet)return;
-          pressTot+=pemv;
-          const urlCell=pd.url?'<a href="'+pd.url+'" style="color:#5a6ef8;font-size:9px;word-break:break-all">'+pd.url+'</a>':'—';
-          pressRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+(pd.outlet||'Unknown')+'</div><div style="font-size:9px;color:#555;margin-top:2px">'+(pd.headline||'')+'</div><div style="margin-top:2px">'+urlCell+'</div></td>'
-            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.reach||0).toLocaleString()+'</td>'
-            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+parseFloat(pd.cpm||0).toFixed(2)+'</td>'
-            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.adj||1).toFixed(1)+'x</td>'
-            +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pemv)+'</td></tr>';
-        });
+        const buildMentionRows=(selector)=>{
+          let rows='';let tot=0;
+          document.querySelectorAll(selector+' .press-card').forEach(card=>{
+            if(!card._data||!card._getEMV)return;
+            const pd=card._data();const pemv=card._getEMV();if(!pemv&&!pd.outlet)return;
+            tot+=pemv;
+            const urlCell=pd.url?'<a href="'+pd.url+'" style="color:#5a6ef8;font-size:9px;word-break:break-all">'+pd.url+'</a>':'—';
+            rows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+(pd.outlet||'Unknown')+'</div><div style="font-size:9px;color:#555;margin-top:2px">'+(pd.headline||'')+'</div><div style="margin-top:2px">'+urlCell+'</div></td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.reach||0).toLocaleString()+'</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+parseFloat(pd.cpm||0).toFixed(2)+'</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.adj||1).toFixed(1)+'x</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pemv)+'</td></tr>';
+          });
+          return{rows,tot};
+        };
+        const{rows:pressRows,tot:pressTot}=buildMentionRows('#press-list-wom');
+        const{rows:forumRows,tot:forumTot}=buildMentionRows('#forum-list-wom');
+        const mentionTableHdr='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">CPM</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj.</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>';
         if(pressRows){
           await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Press Mentions</div>'
-            +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">CPM</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj.</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>'
-            +'<tbody>'+pressRows+'</tbody></table></div>');
+            +mentionTableHdr+'<tbody>'+pressRows+'</tbody></table></div>');
         }
-        // Combined section total AFTER all press mentions
-        const combinedTot=secTot+pressTot;
+        if(forumRows){
+          await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Forum / Community Mentions</div>'
+            +mentionTableHdr+'<tbody>'+forumRows+'</tbody></table></div>');
+        }
+        // Combined section total AFTER all mention cards
+        const combinedTot=secTot+pressTot+forumTot;
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
           +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
           +'<tr style="background:#f0f2ff"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Sub-Channels Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(secTot)+'</td></tr>'
           +(pressTot?'<tr style="background:#fffbf0"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Press Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pressTot)+'</td></tr>':'')
+          +(forumTot?'<tr style="background:#f5fff5"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Forum Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(forumTot)+'</td></tr>':'')
           +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmt(combinedTot)+'</td></tr>'
           +'</table></div>');
       }
@@ -2439,8 +2552,10 @@ function svSerialize(){
 
   const pressCards=[];
   document.querySelectorAll('#press-list-wom .press-card').forEach(c=>{if(c._data)pressCards.push(c._data());});
+  const forumCards=[];
+  document.querySelectorAll('#forum-list-wom .press-card').forEach(c=>{if(c._data)forumCards.push(c._data());});
 
-  return{details,rows,mentions,bizRows,pressCards,
+  return{details,rows,mentions,bizRows,pressCards,forumCards,
     emv:$('r-emv').textContent,
     tot:$('s-tot').textContent,
     savedAt:new Date().toISOString()};
@@ -2519,11 +2634,20 @@ function svDeserialize(data){
 
   // Press mention cards
   const plist=$('press-list-wom');
+  const flist=$('forum-list-wom');
+  if(plist||flist){pressMentionCount=0;}
   if(plist){
-    plist.innerHTML='';pressMentionCount=0;
+    plist.innerHTML='';
     (data.pressCards||[]).forEach(d=>{
       const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
       plist.appendChild(card);
+    });
+  }
+  if(flist){
+    flist.innerHTML='';
+    (data.forumCards||[]).forEach(d=>{
+      const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
+      flist.appendChild(card);
     });
   }
 
