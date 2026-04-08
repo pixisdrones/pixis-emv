@@ -1017,6 +1017,51 @@ function buildBenchmarksPanel(){
   aiBox.appendChild(aiNote);
   body.appendChild(aiBox);
 
+  // ── Cloud Sync Settings ───────────────────────────────────────────────────
+  const cloudBox=document.createElement('div');cloudBox.className='ai-settings-box';
+  cloudBox.style.borderColor='rgba(90,110,248,.3)';cloudBox.style.background='linear-gradient(135deg,rgba(90,110,248,.06),rgba(47,212,178,.04))';
+  const cloudTitle=document.createElement('div');cloudTitle.className='ai-settings-title';
+  cloudTitle.style.color='#5a6ef8';
+  cloudTitle.innerHTML='\u2601 Cloud Sync &nbsp;<span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">Share saved shows across the whole team in real time</span>';
+  cloudBox.appendChild(cloudTitle);
+  const cloudDesc=document.createElement('div');
+  cloudDesc.style.cssText='font-size:10px;color:var(--ft);line-height:1.55;margin-bottom:10px';
+  cloudDesc.innerHTML='Connect a free <a href="https://console.firebase.google.com" target="_blank" rel="noopener" style="color:#5a6ef8">Firebase Realtime Database</a> to sync saved shows across all team members. Anyone with the tool can load any show saved by the team.<br><strong>Setup (2 min):</strong> Go to console.firebase.google.com → Create project → Build → Realtime Database → Create database → <em>Start in test mode</em> → copy the Database URL below.';
+  cloudBox.appendChild(cloudDesc);
+  const cloudKeyRow=document.createElement('div');cloudKeyRow.className='ai-key-row';
+  const cloudDot=document.createElement('div');cloudDot.className='ai-status-dot '+(getCloudURL()?'ok':'missing');
+  const cloudInp=document.createElement('input');cloudInp.className='ai-key-inp';cloudInp.type='url';
+  cloudInp.placeholder='https://your-project-default-rtdb.firebaseio.com';
+  cloudInp.value=getCloudURL();cloudInp.style.fontFamily='monospace';
+  cloudInp.addEventListener('change',()=>{
+    const u=cloudInp.value.trim();setCloudURL(u);
+    cloudDot.className='ai-status-dot '+(u?'ok':'missing');
+    _cloudShows=null;
+    if(u)cloudRefresh();
+  });
+  const cloudTestBtn=document.createElement('button');cloudTestBtn.className='btn btn-g';cloudTestBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0';
+  cloudTestBtn.textContent='Test';
+  cloudTestBtn.addEventListener('click',async()=>{
+    const u=cloudInp.value.trim();if(!u){notif('\u26a0 Enter a Firebase URL first');return;}
+    setCloudURL(u);cloudTestBtn.disabled=true;cloudTestBtn.textContent='Testing\u2026';
+    try{
+      const resp=await fetch(u+'/emv-shows.json');
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const data=await resp.json();
+      const count=data?Object.keys(data).length:0;
+      cloudDot.className='ai-status-dot ok';
+      notif('\u2601 Connected! '+count+' show(s) in cloud.');
+      _cloudShows=data||{};svRenderList();
+    }catch(e){cloudDot.className='ai-status-dot missing';notif('\u26a0 Connection failed: '+e.message);}
+    finally{cloudTestBtn.disabled=false;cloudTestBtn.textContent='Test';}
+  });
+  const cloudClearBtn=document.createElement('button');cloudClearBtn.className='btn btn-g';cloudClearBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0;color:#ff6b6b;border-color:rgba(255,107,107,.3)';
+  cloudClearBtn.textContent='Disconnect';
+  cloudClearBtn.addEventListener('click',()=>{cloudInp.value='';setCloudURL('');cloudDot.className='ai-status-dot missing';_cloudShows=null;svRenderList();notif('Cloud sync disconnected');});
+  cloudKeyRow.appendChild(cloudDot);cloudKeyRow.appendChild(cloudInp);cloudKeyRow.appendChild(cloudTestBtn);cloudKeyRow.appendChild(cloudClearBtn);
+  cloudBox.appendChild(cloudKeyRow);
+  body.appendChild(cloudBox);
+
   // ── Row builder — injects range bar into the Notes cell ──────────────────
   const mkRow=(key,label,note,step,unit)=>{
     const tr=document.createElement('tr');
@@ -1978,6 +2023,37 @@ async function importFromURL(secId,fixedAdj){
 const AI_KEY_STORE='pixis_ai_key';
 function getAIKey(){return localStorage.getItem(AI_KEY_STORE)||'';}
 function setAIKey(k){if(k)localStorage.setItem(AI_KEY_STORE,k.trim());else localStorage.removeItem(AI_KEY_STORE);}
+
+// ── Cloud Sync (Firebase Realtime Database REST API) ──────────────────────────
+const CLOUD_URL_STORE='pixis_cloud_url';
+function getCloudURL(){const u=localStorage.getItem(CLOUD_URL_STORE)||'';return u.replace(/\/$/,'');}
+function setCloudURL(u){if(u)localStorage.setItem(CLOUD_URL_STORE,u.trim().replace(/\/$/,''));else localStorage.removeItem(CLOUD_URL_STORE);}
+
+let _cloudShows=null;// null=not fetched, {}=fetched
+
+async function cloudGetAll(){
+  const base=getCloudURL();if(!base)return{};
+  const resp=await fetch(base+'/emv-shows.json');
+  if(!resp.ok)throw new Error('HTTP '+resp.status);
+  return(await resp.json())||{};
+}
+
+async function cloudSave(key,obj){
+  const base=getCloudURL();if(!base)return;
+  const resp=await fetch(base+'/emv-shows/'+key+'.json',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(obj)});
+  if(!resp.ok)throw new Error('HTTP '+resp.status);
+}
+
+async function cloudDelete(key){
+  const base=getCloudURL();if(!base)return;
+  await fetch(base+'/emv-shows/'+key+'.json',{method:'DELETE'});
+}
+
+async function cloudRefresh(){
+  if(!getCloudURL())return;
+  try{_cloudShows=await cloudGetAll();svRenderList();}
+  catch(e){console.warn('Cloud sync:',e);notif('\u26a0 Cloud sync failed: '+e.message);}
+}
 
 async function extractMetricsFromImage(source,platformHint){
   const apiKey=getAIKey();if(!apiKey)return null;
@@ -2943,14 +3019,25 @@ function svOpenSaveModal(){
   save.addEventListener('click',()=>{
     const name=inp.value.trim()||('Show '+new Date().toLocaleDateString());
     const state=svSerialize();state.name=name;
+    const key='sv_'+Date.now();
+    const entry={key,name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
     const all=svGetAll();
-    all.unshift({key:'sv_'+Date.now(),name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state});
+    all.unshift(entry);
     svSetAll(all);
-    svRenderList();
-    // Open the panel so user sees it
+    // Also save to cloud if configured
+    if(getCloudURL()){
+      const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+      cloudSave(key,cloudEntry).then(()=>{
+        if(_cloudShows)_cloudShows[key]=cloudEntry;
+        svRenderList();
+        notif('\u2601 "'+name+'" saved & synced to cloud');
+      }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+name+'" saved locally (cloud sync failed: '+e.message+')');});
+    }else{
+      svRenderList();
+    }
     $('sv-panel').classList.add('open');
     bg.remove();
-    notif('\uD83D\uDCBE "'+name+'" saved');
+    if(!getCloudURL())notif('\uD83D\uDCBE "'+name+'" saved');
   });
   bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')save.click();if(e.key==='Escape')bg.remove();});
@@ -2961,52 +3048,74 @@ function svOpenSaveModal(){
 }
 
 function svLoadShow(key){
-  const all=svGetAll();const entry=all.find(e=>e.key===key);
+  // Check local first
+  let entry=svGetAll().find(e=>e.key===key);
+  // If not local, check cloud cache
+  if(!entry&&_cloudShows&&_cloudShows[key]){
+    const cd=_cloudShows[key];
+    entry={key,...cd};
+    // Save locally for offline access
+    const all=svGetAll();all.unshift(entry);svSetAll(all);
+  }
   if(!entry)return;
-  // Clear existing biz row first (resetAll clears dm+bi rows and resets fields)
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
   svDeserialize(entry.state);
   notif('\uD83D\uDCE5 "'+entry.name+'" loaded');
 }
 
 function svDeleteShow(key){
-  const all=svGetAll().filter(e=>e.key!==key);
-  svSetAll(all);svRenderList();
+  if(getCloudURL()){cloudDelete(key).catch(e=>console.warn('Cloud delete:',e));if(_cloudShows)delete _cloudShows[key];}
+  svSetAll(svGetAll().filter(e=>e.key!==key));
+  svRenderList();
 }
 
 function svRenderList(){
-  const all=svGetAll();
-  const cnt=$('sv-cnt');if(cnt)cnt.textContent=all.length;
+  // Merge local + cloud shows
+  const local=svGetAll();
+  const cloudMap=_cloudShows||{};
+  const cloudKeys=new Set(Object.keys(cloudMap));
+  const merged=[];
+  // Cloud shows first
+  Object.entries(cloudMap).forEach(([key,data])=>{merged.push({...data,key,_isCloud:true});});
+  // Local-only shows (not in cloud)
+  local.forEach(entry=>{if(!cloudKeys.has(entry.key))merged.push(entry);});
+  // Sort newest first
+  merged.sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+
+  const cnt=$('sv-cnt');if(cnt)cnt.textContent=merged.length;
   const wrap=$('sv-list-wrap');if(!wrap)return;
   wrap.innerHTML='';
-  if(!all.length){
-    const em=document.createElement('div');em.className='sv-empty';em.textContent='No saved shows yet. Fill in show details and click \u201CSave Show\u201D.';
-    wrap.appendChild(em);return;
+  if(!merged.length){
+    const em=document.createElement('div');em.className='sv-empty';
+    em.textContent=getCloudURL()&&_cloudShows===null?'Syncing from cloud\u2026':'No saved shows yet. Fill in show details and click \u201CSave Show\u201D.';
+    wrap.appendChild(em);
+    // Trigger first load from cloud
+    if(getCloudURL()&&_cloudShows===null)cloudRefresh();
+    return;
   }
   const list=document.createElement('div');list.className='sv-list';
-  all.forEach(entry=>{
+  merged.forEach(entry=>{
     const card=document.createElement('div');card.className='sv-card';
     const cb=document.createElement('input');cb.type='checkbox';cb.className='sv-check';cb.dataset.key=entry.key;
     const info=document.createElement('div');info.className='sv-info';
-    const nm=document.createElement('div');nm.className='sv-show-name';nm.textContent=entry.name;
+    const nm=document.createElement('div');nm.className='sv-show-name';
+    nm.textContent=entry.name;
+    if(entry._isCloud){const badge=document.createElement('span');badge.style.cssText='font-size:9px;margin-left:5px;color:#5a6ef8;vertical-align:middle';badge.textContent='\u2601';nm.appendChild(badge);}
     const meta=document.createElement('div');meta.className='sv-meta';
     const dt=new Date(entry.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    meta.textContent='Saved '+dt;
+    meta.textContent='Saved '+dt+(entry._isCloud?' \u00b7 Cloud':'');
     info.appendChild(nm);info.appendChild(meta);
     const emvEl=document.createElement('div');emvEl.className='sv-emv';emvEl.textContent=entry.emv||'';
     const acts=document.createElement('div');acts.className='sv-acts';
     const loadBtn=document.createElement('button');loadBtn.className='sv-load';loadBtn.textContent='Load';
     loadBtn.addEventListener('click',()=>svLoadShow(entry.key));
     const delBtn=document.createElement('button');delBtn.className='sv-del';delBtn.textContent='Delete';
-    delBtn.addEventListener('click',()=>{
-      if(confirm('Delete "'+entry.name+'"?')){svDeleteShow(entry.key);}
-    });
+    delBtn.addEventListener('click',()=>{if(confirm('Delete "'+entry.name+'"?')){svDeleteShow(entry.key);}});
     acts.appendChild(loadBtn);acts.appendChild(delBtn);
     card.appendChild(cb);card.appendChild(info);card.appendChild(emvEl);card.appendChild(acts);
     list.appendChild(card);
   });
   wrap.appendChild(list);
-  // Footer: select controls + program report button
   const footer=document.createElement('div');footer.className='sv-footer';
   const selCtrl=document.createElement('div');selCtrl.className='sv-sel-ctrl';
   const selAll=document.createElement('button');selAll.className='sv-sel-btn';selAll.textContent='Select All';
@@ -3014,11 +3123,20 @@ function svRenderList(){
   const selNone=document.createElement('button');selNone.className='sv-sel-btn';selNone.textContent='None';
   selNone.addEventListener('click',()=>{wrap.querySelectorAll('.sv-check').forEach(c=>c.checked=false);});
   selCtrl.appendChild(selAll);selCtrl.appendChild(selNone);
+  if(getCloudURL()){
+    const syncBtn=document.createElement('button');syncBtn.className='sv-sel-btn';
+    syncBtn.style.cssText='color:#5a6ef8;border-color:rgba(90,110,248,.35)';
+    syncBtn.textContent='\u21ba Sync';
+    syncBtn.addEventListener('click',()=>{_cloudShows=null;cloudRefresh();});
+    selCtrl.appendChild(syncBtn);
+  }
   const progBtn=document.createElement('button');progBtn.className='sv-prog-btn';progBtn.id='btn-prog-report';
   progBtn.textContent='\u22b3 Program Report';
   progBtn.addEventListener('click',genProgramReport);
   footer.appendChild(selCtrl);footer.appendChild(progBtn);
   wrap.appendChild(footer);
+  // Auto-fetch cloud on first render if not yet fetched
+  if(getCloudURL()&&_cloudShows===null)cloudRefresh();
 }
 
 async function genPredPdf(){
