@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pixis Drones — EMV Intelligence Suite</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='49' fill='%23e8007d'/%3E%3Ccircle cx='50' cy='50' r='46' fill='%230a0a0a'/%3E%3Cpolygon points='18,14 26,14 53,41 53,53 41,53' fill='white'/%3E%3Cpolygon points='82,14 74,14 47,41 47,53 59,53' fill='white'/%3E%3Cpolygon points='18,86 26,86 53,59 53,47 41,47' fill='white'/%3E%3Cpolygon points='82,86 74,86 47,59 47,47 59,47' fill='white'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%23e8007d'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2269,17 +2270,14 @@ function buildStdSection(pb,sec){
     }
   }
   if(sec.id==='soc'){
-    // Individual brand post tracking — same UI and entry flow as Social Media Mentions
-    const divider=document.createElement('div');divider.className='press-section-hdr';
-    divider.textContent='Individual Post Tracking';
-    pb.appendChild(divider);
+    // Individual brand post tracking — identical UI to Social Media Mentions (buildInfluencerSection)
     const note=document.createElement('div');note.className='cnote';note.style.margin='12px 18px 0';
-    note.innerHTML='<strong>Track individual posts</strong> from brand-owned accounts. Enter exact metrics from each published post for precise EMV — use the aggregate rows above for broad channel estimates.';
+    note.innerHTML='<strong>Adj Factor:</strong> 1.0\xd7 owned media. <strong>Formula:</strong> (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 1.0x. Platform reach rates and default values from Benchmarks tab.';
     pb.appendChild(note);
     const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 18px 0;flex-wrap:wrap';
     const addBtn=document.createElement('button');addBtn.className='btn btn-g';
     addBtn.style.cssText='font-size:11px;padding:7px 14px';
-    addBtn.textContent='+ Add Post';
+    addBtn.textContent='+ Add Mention';
     addBtn.addEventListener('click',()=>addActualsInfluencer('soc',1.0));
     btnRow.appendChild(addBtn);
     const impWrap=document.createElement('div');impWrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;min-width:220px';
