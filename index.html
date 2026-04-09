@@ -2268,6 +2268,35 @@ function buildStdSection(pb,sec){
       flist.after(ffoot);
     }
   }
+  if(sec.id==='soc'){
+    // Individual brand post tracking — same UI and entry flow as Social Media Mentions
+    const divider=document.createElement('div');divider.className='press-section-hdr';
+    divider.textContent='Individual Post Tracking';
+    pb.appendChild(divider);
+    const note=document.createElement('div');note.className='cnote';note.style.margin='12px 18px 0';
+    note.innerHTML='<strong>Track individual posts</strong> from brand-owned accounts. Enter exact metrics from each published post for precise EMV — use the aggregate rows above for broad channel estimates.';
+    pb.appendChild(note);
+    const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 18px 0;flex-wrap:wrap';
+    const addBtn=document.createElement('button');addBtn.className='btn btn-g';
+    addBtn.style.cssText='font-size:11px;padding:7px 14px';
+    addBtn.textContent='+ Add Post';
+    addBtn.addEventListener('click',()=>addActualsInfluencer('soc',1.0));
+    btnRow.appendChild(addBtn);
+    const impWrap=document.createElement('div');impWrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;min-width:220px';
+    const impInp=document.createElement('input');impInp.type='url';impInp.id='import-url-soc';
+    impInp.className='fi';impInp.placeholder='Paste post URL to import\u2026';
+    impInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
+    const impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn btn-g';
+    impBtn.style.cssText='font-size:11px;padding:7px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
+    impBtn.innerHTML='\uD83D\uDD17 Import from URL';
+    impBtn.addEventListener('click',()=>importFromURL('soc',1.0));
+    impInp.addEventListener('keydown',e=>{if(e.key==='Enter')importFromURL('soc',1.0);});
+    impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
+    btnRow.appendChild(impWrap);
+    pb.appendChild(btnRow);
+    const listDiv=document.createElement('div');listDiv.id='inf-list-soc';
+    listDiv.className='ainf-wrap';pb.appendChild(listDiv);
+  }
 }
 
 function addCustomStdRow(sid){
@@ -2337,7 +2366,8 @@ function appendRow(sid,r){
 }
 
 function handleRowToggle(rid){
-  const on=$('tog-'+rid).checked;
+  const togEl=$('tog-'+rid);if(!togEl)return;
+  const on=togEl.checked;
   const row=$('row-'+rid);if(!row)return;
   row.classList.toggle('off',!on);
   row.querySelectorAll('.ni:not([readonly])').forEach(i=>i.disabled=!on);
@@ -2437,6 +2467,11 @@ function runCalc(){
           if(card._getEMV)t+=card._getEMV();
         });
       }
+      if(sec.id==='soc'){
+        document.querySelectorAll('#inf-list-soc .inf-card').forEach(card=>{
+          if(card._getEMV){const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();}
+        });
+      }
     }
     const tel=$('st-'+sec.id);if(tel)tel.textContent=fmt(t);
     if(sec.peso&&sec.peso!=='B')pesoTot[sec.peso]=(pesoTot[sec.peso]||0)+t;
@@ -2459,7 +2494,7 @@ function resetAll(){
   const fl=$('forum-list-wom');if(fl)fl.innerHTML='';
   pressMentionCount=0;
   // Clear actuals influencer sections
-  ['paid-infs','earned-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
+  ['paid-infs','earned-oinfs','soc'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
   ['s-client','s-prog','s-name','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-cost'].forEach(id=>{const e=$(id);if(e)e.value='';});
   $('s-len').value='12';$('cb-qr').checked=false;window._clientLogo=null;
@@ -2778,9 +2813,10 @@ async function genPdf(){
         rowsHTML+='<tr style="background:#fafbff"><td style="padding:6px 9px 6px 22px;border:1px solid #e5e7eb;font-style:italic;color:#555">'+desc+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+m.toLocaleString()+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+r.toFixed(2)+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+a.toFixed(1)+'x</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(val)+'</td></tr>';
       });
       if(!rowsHTML)continue;
-      // For wom: render sub-channel table WITHOUT section total (press cards come after)
+      // For wom/soc: render sub-channel table WITHOUT section total (individual cards come after)
       const isWom=sec.id==='wom';
-      const stdTotalRow=isWom?''
+      const isSoc=sec.id==='soc';
+      const stdTotalRow=(isWom||isSoc)?''
         :'<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr>';
       await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
         +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
@@ -2822,6 +2858,29 @@ async function genPdf(){
           +(pressTot?'<tr style="background:#fffbf0"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Press Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pressTot)+'</td></tr>':'')
           +(forumTot?'<tr style="background:#f5fff5"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Forum Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(forumTot)+'</td></tr>':'')
           +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmt(combinedTot)+'</td></tr>'
+          +'</table></div>');
+      }
+      // Individual post tracking cards for Official Brand Social
+      if(isSoc){
+        let socInfRows='';let socInfTot=0;
+        document.querySelectorAll('#inf-list-soc .inf-card').forEach(card=>{
+          if(!card._getEMV)return;const emv=card._getEMV();if(!emv)return;socInfTot+=emv;
+          const nm=card._nameInp?.value||card.querySelector('input[type="text"]')?.value||'Unknown';
+          const url=card._urlInp?.value||'';
+          const urlCell=url?'<a href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#999;font-size:9px">—</span>';
+          socInfRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+nm+'</div><div>'+urlCell+'</div></td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
+        });
+        if(socInfRows){
+          await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Post Tracking</div>'
+            +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Post / Account</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>'
+            +'<tbody>'+socInfRows+'</tbody></table></div>');
+        }
+        const socCombinedTot=secTot+socInfTot;
+        await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
+          +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
+          +'<tr style="background:#f0f2ff"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Channel Aggregates Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(secTot)+'</td></tr>'
+          +(socInfTot?'<tr style="background:#f0fff8"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Individual Posts Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(socInfTot)+'</td></tr>':'')
+          +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmt(socCombinedTot)+'</td></tr>'
           +'</table></div>');
       }
     }
