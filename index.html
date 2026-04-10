@@ -324,6 +324,18 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .press-emv-lbl{font-size:10px;font-weight:600;color:var(--ft);text-transform:uppercase;letter-spacing:.06em}
 .press-emv-val{font-size:14px;font-weight:700;color:#d4a843}
 .press-foot{padding:8px 18px 12px;border-top:1px solid var(--bd2)}
+/* ── WOM Overview auto-sum rows ─────────────────────────────────────── */
+.wom-auto-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr;gap:6px;padding:10px 18px;border-bottom:1px solid var(--bd2);align-items:center}
+.wom-auto-row:hover{background:rgba(255,255,255,.012)}
+.wom-auto-cnt{font-size:10px;color:var(--ft);padding:2px 8px;background:rgba(255,255,255,.06);border-radius:4px;white-space:nowrap;text-align:center}
+.wom-auto-emv{font-size:13px;font-weight:700;color:var(--gld);text-align:right}
+/* ── SOC Summary rows ────────────────────────────────────────────────── */
+.soc-sum-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr;gap:6px;padding:10px 18px;border-bottom:1px solid var(--bd2);align-items:center}
+.soc-sum-row:hover{background:rgba(255,255,255,.012)}
+.soc-sum-cnt{font-size:10px;color:var(--ft);padding:2px 8px;background:rgba(255,255,255,.06);border-radius:4px;white-space:nowrap;text-align:center}
+.soc-sum-emv{font-size:13px;font-weight:700;color:var(--tel);text-align:right}
+/* ── Overview section divider ────────────────────────────────────────── */
+.ov-divider{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);padding:10px 18px 8px;border-top:1px solid var(--bd2);background:var(--s3);margin-top:4px}
 /* ── Talkwalker Import Modal ──────────────────────────────────────────────── */
 #tw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
 #tw-overlay.open{display:flex}
@@ -841,18 +853,12 @@ const SECS=[
     {id:'oD',n:'Live Audience Engagement Duration',m:12,r:0.20,a:2,on:false,c:'dur',tip:'Sustained attention × show length × value/min. Synced to Show Length.',ro:true}
   ]},
   {id:'wom',peso:'E',num:'E2',title:'Press & Media Coverage',sub:'Press, broadcast & organic earned mentions',col:'#d4a843',
-   type:'std',addable:true,
+   type:'std',
    ov:'Measures organic buzz, third-party coverage and online conversations. Earned mentions carry higher credibility than paid ads.',
    rows:[
-    {id:'wTV',n:'Broadcast Media (TV / Radio)',    m:0,    r:25,  a:2.5,on:true, c:'cpm',dyn:true,tip:'CPM $20-50+. 2-4x credibility adj.'},
-    {id:'wON',n:'Online News / Blog Mentions',     m:75000,r:10,  a:2,  on:true, c:'cpm',dyn:true,tip:'CPM $5-15. Adj based on authority.'},
-    {id:'wPR',n:'Print Media Mentions',            m:0,    r:30,  a:1.5,on:false,c:'cpm',dyn:true,tip:'Print circulation. CPM $15-50+.'},
-    {id:'wFO',n:'Forum / Community Mentions',      m:10000,r:5,   a:1.2,on:false,c:'cpm',tip:'Community discussions.'},
-    {id:'wPO',n:'Podcast / Vlog Mentions (Earned)',m:0,    r:25,  a:1.8,on:false,c:'cpm',dyn:true,tip:'Earned listens/views.'},
-    {id:'wSE',n:'Branded Search Uplift',           m:500,  r:1.5, a:1,  on:true, c:'cpc',tip:'Additional branded searches. CPC $0.50-2.'},
-    {id:'wRF',n:'Referral Website Traffic',        m:300,  r:2,   a:1,  on:false,c:'val',tip:'Earned site visits.'},
-    {id:'wQR',n:'QR Code Scans',                   m:0,    r:3,   a:1,  on:false,c:'cpc',tip:'Direct audience action. CPA $1-5.',qrOnly:true},
-    {id:'wAW',n:'Industry Awards / Recognitions',  m:1,    r:2500,a:1,  on:false,c:'direct',dyn:true,tip:'PR value per award.'}
+    {id:'wSE',n:'Branded Search Uplift',   m:500,r:1.5,a:1,  on:true, c:'cpc',tip:'Additional branded searches. CPC $0.50-2.'},
+    {id:'wRF',n:'Referral Website Traffic',m:300,r:2,  a:1,  on:false,c:'val', tip:'Earned site visits.'},
+    {id:'wQR',n:'QR Code Scans',           m:0,  r:3,  a:1,  on:false,c:'cpc', tip:'Direct audience action. CPA $1-5.',qrOnly:true}
   ]},
   {id:'earned-oinfs',peso:'E',num:'E3',title:'Social Media Mentions',sub:'Unpaid authentic brand mentions from creators',col:'#d4a843',
    type:'influencers',adj:2.5,
@@ -869,15 +875,8 @@ const SECS=[
   // ── OWNED ─────────────────────────────────────────────────────────────────
   {id:'soc',peso:'O',num:'O1',title:'Official Brand Social',sub:'Brand-owned channels & planned posts',col:'#2fd4b2',
    type:'std',
-   ov:'Official brand social posts generate measurable reach through existing audiences. Organic posts earn a 2x earned media premium over pure paid reach.',
-   rows:[
-    {id:'sIG',n:'Official Instagram',             m:50000, r:10,a:2,  on:true, c:'cpm',tip:'Meta CPM $7-15. 1.5-3x earned visual.'},
-    {id:'sTT',n:'Official TikTok',                m:75000, r:6, a:2.2,on:true, c:'cpm',tip:'TikTok CPM $3-10. Viral potential adj.'},
-    {id:'sYT',n:'Official YouTube',               m:25000, r:8, a:2,  on:true, c:'cpm',tip:'YouTube CPM $2-12.'},
-    {id:'sXX',n:'Official X / Twitter',           m:20000, r:9, a:1.5,on:false,c:'cpm',tip:'X/Twitter CPM $5-12.'},
-    {id:'sFB',n:'Official Facebook',              m:15000, r:8, a:1.8,on:false,c:'cpm',tip:'Facebook CPM $6-11.'},
-    {id:'sIF',n:'Influencer Mentions (Aggregate)',m:0,     r:20,a:2,  on:true, c:'cpm',dyn:true,tip:'Aggregated influencer reach.'}
-  ]},
+   ov:'Official brand social posts generate measurable reach through existing audiences. Organic posts earn a 1.0\xd7 owned media factor.',
+   rows:[]},
   {id:'cont',peso:'O',num:'O2',title:'Content Assets Produced',sub:'Professional media assets created',col:'#2fd4b2',
    type:'std',
    ov:'Quantifies the tangible value of professional photos, video and aerial footage — representing hard-cost savings vs. commissioning independently.',
@@ -1490,6 +1489,109 @@ function buildInfluencerSection(pb,sec){
   listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
 
+function buildWomSection(pb,sec){
+  // Overview header (reuse same 6-col grid as .sc-hdr)
+  const hdr=document.createElement('div');hdr.className='sc-hdr';
+  hdr.innerHTML='<span>Media Type</span><span>Mentions</span><span style="text-align:right">Metric</span><span style="text-align:right">Rate ($)</span><span style="text-align:right">Adj.</span><span style="text-align:right">EMV</span>';
+  pb.appendChild(hdr);
+  // Container for both auto-sum rows and manual sc-rows (appendRow writes into rows-wom)
+  const wrap=document.createElement('div');wrap.id='rows-wom';pb.appendChild(wrap);
+  // Helper: append an auto-summed display row
+  const appendAutoRow=(key,name)=>{
+    const row=document.createElement('div');row.className='wom-auto-row';
+    const nameDiv=document.createElement('div');nameDiv.className='row-name';
+    const span=document.createElement('span');span.className='row-lbl';span.textContent=name;
+    nameDiv.appendChild(span);
+    const cntDiv=document.createElement('div');cntDiv.className='wom-auto-cnt';cntDiv.id='wom-cnt-'+key;cntDiv.textContent='\u2014';
+    const emvDiv=document.createElement('div');emvDiv.className='wom-auto-emv';emvDiv.id='wom-sum-'+key;emvDiv.textContent='$0';
+    row.appendChild(nameDiv);row.appendChild(cntDiv);
+    row.appendChild(document.createElement('div'));
+    row.appendChild(document.createElement('div'));
+    row.appendChild(document.createElement('div'));
+    row.appendChild(emvDiv);
+    wrap.appendChild(row);
+  };
+  // Build overview rows in user-specified order
+  appendAutoRow('blog','Blog / Digital');
+  appendRow('wom',{id:'wSE',n:'Branded Search Uplift',   m:500,r:1.5,a:1,  on:true, c:'cpc',tip:'Additional branded searches. CPC $0.50-2.'});
+  appendAutoRow('tv',  'Broadcast Media (TV / Radio)');
+  appendAutoRow('forum','Forum / Community');
+  appendAutoRow('award','Industry Awards / Recognition');
+  appendAutoRow('nl',  'Newsletter');
+  appendAutoRow('on',  'Online News / Blog');
+  appendAutoRow('print','Print');
+  appendAutoRow('po',  'Podcast / Vlog');
+  appendRow('wom',{id:'wQR',n:'QR Code Scans',           m:0,  r:3,  a:1,  on:false,c:'cpc',tip:'Direct audience action. CPA $1-5.',qrOnly:true});
+  appendRow('wom',{id:'wRF',n:'Referral Website Traffic',m:300,r:2,  a:1,  on:false,c:'val', tip:'Earned site visits.'});
+  // Individual Mentions divider
+  const divider=document.createElement('div');divider.className='ov-divider';divider.textContent='Individual Mentions';
+  pb.appendChild(divider);
+  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 0';
+  note.innerHTML='<strong>Formula:</strong> (Reach \xf7 1,000) \xd7 CPM \xd7 Adj. Factor. Add each press mention individually \u2014 totals auto-aggregate to the overview above.';
+  pb.appendChild(note);
+  const btnRow=document.createElement('div');btnRow.style.cssText='padding:10px 18px 0;display:flex;gap:8px;flex-wrap:wrap';
+  const addBtn=document.createElement('button');addBtn.className='btn btn-g';addBtn.style.cssText='font-size:11px;padding:7px 14px';
+  addBtn.textContent='+ Add Mention';
+  addBtn.addEventListener('click',addPressCard);
+  btnRow.appendChild(addBtn);
+  pb.appendChild(btnRow);
+  const listDiv=document.createElement('div');listDiv.id='press-list-wom';listDiv.style.cssText='padding:0 18px 12px';
+  pb.appendChild(listDiv);
+}
+
+function buildSocSection(pb,sec){
+  // Channel summary header (reuse same 6-col grid)
+  const hdr=document.createElement('div');hdr.className='sc-hdr';
+  hdr.innerHTML='<span>Platform</span><span>Posts</span><span style="text-align:right"></span><span style="text-align:right"></span><span style="text-align:right"></span><span style="text-align:right">EMV</span>';
+  pb.appendChild(hdr);
+  // Platform summary rows
+  const SOC_PLATS=[['fb','Facebook'],['ig','Instagram'],['qu','Quora'],['rd','Reddit'],
+    ['th','Threads'],['tt','TikTok'],['xx','X / Twitter'],['yt','YouTube'],['yts','YouTube Shorts']];
+  const sumWrap=document.createElement('div');pb.appendChild(sumWrap);
+  SOC_PLATS.forEach(([pl,name])=>{
+    const row=document.createElement('div');row.className='soc-sum-row';
+    const nameDiv=document.createElement('div');nameDiv.className='row-name';
+    const span=document.createElement('span');span.className='row-lbl';span.textContent=name;
+    nameDiv.appendChild(span);
+    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id='soc-cnt-'+pl;cntDiv.textContent='\u2014';
+    const emvDiv=document.createElement('div');emvDiv.className='soc-sum-emv';emvDiv.id='soc-sum-'+pl;emvDiv.textContent='$0';
+    row.appendChild(nameDiv);row.appendChild(cntDiv);
+    row.appendChild(document.createElement('div'));
+    row.appendChild(document.createElement('div'));
+    row.appendChild(document.createElement('div'));
+    row.appendChild(emvDiv);
+    sumWrap.appendChild(row);
+  });
+  // Dummy rows-soc so existing runCalc code doesn't crash on $('rows-soc')
+  const dummyWrap=document.createElement('div');dummyWrap.id='rows-soc';dummyWrap.style.display='none';
+  pb.appendChild(dummyWrap);
+  // Individual Posts divider + note + buttons
+  const divider=document.createElement('div');divider.className='ov-divider';divider.textContent='Individual Posts';
+  pb.appendChild(divider);
+  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 0';
+  note.innerHTML='<strong>Adj Factor:</strong> 1.0\xd7 owned media. <strong>Formula:</strong> (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 1.0x. Platform reach rates and default values from Benchmarks tab.';
+  pb.appendChild(note);
+  const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 18px 0;flex-wrap:wrap';
+  const addBtn=document.createElement('button');addBtn.className='btn btn-g';
+  addBtn.style.cssText='font-size:11px;padding:7px 14px';
+  addBtn.textContent='+ Add Mention';
+  addBtn.addEventListener('click',()=>addActualsInfluencer('soc',1.0));
+  btnRow.appendChild(addBtn);
+  const impWrap=document.createElement('div');impWrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;min-width:220px';
+  const impInp=document.createElement('input');impInp.type='url';impInp.id='import-url-soc';
+  impInp.className='fi';impInp.placeholder='Paste post URL to import\u2026';
+  impInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
+  const impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn btn-g';
+  impBtn.style.cssText='font-size:11px;padding:7px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
+  impBtn.innerHTML='\uD83D\uDD17 Import from URL';
+  impBtn.addEventListener('click',()=>importFromURL('soc',1.0));
+  impInp.addEventListener('keydown',e=>{if(e.key==='Enter')importFromURL('soc',1.0);});
+  impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
+  btnRow.appendChild(impWrap);
+  pb.appendChild(btnRow);
+  const listDiv=document.createElement('div');listDiv.id='inf-list-soc';listDiv.className='ainf-wrap';pb.appendChild(listDiv);
+}
+
 function buildInfCard(opts){
   // opts: {num, adjFactor, onEMVChange, onRemove, isPrediction}
   const {num,adjFactor,onEMVChange,onRemove}=opts;
@@ -1807,9 +1909,9 @@ function buildPressCard(opts){
   pressMentionCount++;
   const card=document.createElement('div');card.className='press-card';
 
-  const PRESS_TYPES=[['on','Online News'],['blog','Blog / Digital'],['nl','Newsletter'],['tv','TV / Broadcast'],['po','Podcast'],['print','Print Media'],['forum','Forum / Community']];
-  const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20,print:30,forum:5};
-  const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8,print:1.5,forum:1.2};
+  const PRESS_TYPES=[['blog','Blog / Digital'],['tv','Broadcast Media (TV / Radio)'],['forum','Forum / Community'],['award','Industry Awards / Recognition'],['nl','Newsletter'],['on','Online News / Blog'],['print','Print'],['po','Podcast / Vlog']];
+  const DEFAULT_CPM={blog:8,tv:25,forum:5,award:5,nl:5,on:10,print:30,po:20};
+  const DEFAULT_ADJ={blog:1.5,tv:2.5,forum:1.2,award:1.5,nl:1.2,on:2,print:1.5,po:1.8};
 
   const mkFld=(lbl,inp)=>{const f=document.createElement('div');f.className='ff';const l=document.createElement('label');l.className='fl';l.textContent=lbl;f.appendChild(l);f.appendChild(inp);return f;};
   const mkTxt=(ph,val)=>{const i=document.createElement('input');i.type='text';i.className='fi';i.placeholder=ph;if(val)i.value=val;return i;};
@@ -1819,7 +1921,8 @@ function buildPressCard(opts){
   // Header
   const hd=document.createElement('div');hd.className='press-card-hd';
   const titleSpan=document.createElement('span');titleSpan.className='press-card-title';titleSpan.textContent='Press Mention #'+pressMentionCount;
-  const typeBadge=document.createElement('span');typeBadge.className='press-type-badge';typeBadge.textContent='Online News';
+  const typeBadge=document.createElement('span');typeBadge.className='press-type-badge';typeBadge.textContent='Blog / Digital';
+  card.dataset.mtype=d.mtype||'blog';
   const rm=document.createElement('button');rm.className='rm-btn';rm.textContent='\xd7';
   rm.addEventListener('click',()=>{card.remove();onRemove();});
   hd.appendChild(titleSpan);hd.appendChild(typeBadge);hd.appendChild(rm);
@@ -1862,7 +1965,8 @@ function buildPressCard(opts){
     const adj=parseFloat(adjInp.value)||1;
     const emv=(reach/1000)*cpm*adj;
     emvVal.textContent=fmt(emv);
-    typeBadge.textContent=PRESS_TYPES.find(([v])=>v===typeSel.value)?.[1]||'Online News';
+    typeBadge.textContent=PRESS_TYPES.find(([v])=>v===typeSel.value)?.[1]||'Blog / Digital';
+    card.dataset.mtype=typeSel.value;
     if(onEMVChange)onEMVChange();
   }
 
@@ -1906,7 +2010,7 @@ function buildPressCard(opts){
 
 function addPressCard(){
   const list=$('press-list-wom');if(!list)return;
-  const card=buildPressCard({data:{mtype:'print'},onEMVChange:runCalc,onRemove:runCalc});
+  const card=buildPressCard({data:{mtype:'blog'},onEMVChange:runCalc,onRemove:runCalc});
   list.appendChild(card);runCalc();
 }
 
@@ -2229,6 +2333,8 @@ function openScreenshotAnalyzer(card,platformHint){
 }
 
 function buildStdSection(pb,sec){
+  if(sec.id==='wom'){buildWomSection(pb,sec);return;}
+  if(sec.id==='soc'){buildSocSection(pb,sec);return;}
   const hdr=document.createElement('div');hdr.className='sc-hdr';
   hdr.innerHTML='<span>Sub-Channel</span><span>Action</span><span style="text-align:right">Metric</span><span style="text-align:right">Rate ($)</span><span style="text-align:right">Adj.</span><span style="text-align:right">EMV</span>';
   pb.appendChild(hdr);
@@ -2239,61 +2345,6 @@ function buildStdSection(pb,sec){
     const addBtn=document.createElement('button');addBtn.className='btn btn-g';addBtn.style.cssText='font-size:11px;padding:7px 14px';addBtn.textContent='+ Add Channel';
     addBtn.addEventListener('click',()=>addCustomStdRow(sec.id));
     foot.appendChild(addBtn);pb.appendChild(foot);
-  }
-  if(sec.id==='wom'){
-    // ── Inject individual mention card lists inline, directly after their parent rows ──
-    const inlineCardStyle='padding:4px 18px 8px 28px;background:rgba(212,168,67,.04);border-left:2px solid rgba(212,168,67,.25)';
-    const inlineBtnStyle='padding:4px 18px 10px 28px';
-
-    // Print Media Mentions → inline cards after row-wPR
-    const wPRRow=$('row-wPR');
-    if(wPRRow){
-      const plist=document.createElement('div');plist.id='press-list-wom';plist.style.cssText=inlineCardStyle;
-      const pfoot=document.createElement('div');pfoot.style.cssText=inlineBtnStyle;
-      const pBtn=document.createElement('button');pBtn.className='btn btn-g';pBtn.style.cssText='font-size:11px;padding:6px 12px';pBtn.textContent='+ Add Print Mention';
-      pBtn.addEventListener('click',addPressCard);
-      pfoot.appendChild(pBtn);
-      wPRRow.after(plist);
-      plist.after(pfoot);
-    }
-
-    // Forum / Community Mentions → inline cards after row-wFO
-    const wFORow=$('row-wFO');
-    if(wFORow){
-      const flist=document.createElement('div');flist.id='forum-list-wom';flist.style.cssText=inlineCardStyle;
-      const ffoot=document.createElement('div');ffoot.style.cssText=inlineBtnStyle;
-      const fBtn=document.createElement('button');fBtn.className='btn btn-g';fBtn.style.cssText='font-size:11px;padding:6px 12px';fBtn.textContent='+ Add Forum Mention';
-      fBtn.addEventListener('click',addForumMentionCard);
-      ffoot.appendChild(fBtn);
-      wFORow.after(flist);
-      flist.after(ffoot);
-    }
-  }
-  if(sec.id==='soc'){
-    // Individual brand post tracking — identical UI to Social Media Mentions (buildInfluencerSection)
-    const note=document.createElement('div');note.className='cnote';note.style.margin='12px 18px 0';
-    note.innerHTML='<strong>Adj Factor:</strong> 1.0\xd7 owned media. <strong>Formula:</strong> (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 1.0x. Platform reach rates and default values from Benchmarks tab.';
-    pb.appendChild(note);
-    const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 18px 0;flex-wrap:wrap';
-    const addBtn=document.createElement('button');addBtn.className='btn btn-g';
-    addBtn.style.cssText='font-size:11px;padding:7px 14px';
-    addBtn.textContent='+ Add Mention';
-    addBtn.addEventListener('click',()=>addActualsInfluencer('soc',1.0));
-    btnRow.appendChild(addBtn);
-    const impWrap=document.createElement('div');impWrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;min-width:220px';
-    const impInp=document.createElement('input');impInp.type='url';impInp.id='import-url-soc';
-    impInp.className='fi';impInp.placeholder='Paste post URL to import\u2026';
-    impInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
-    const impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn btn-g';
-    impBtn.style.cssText='font-size:11px;padding:7px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
-    impBtn.innerHTML='\uD83D\uDD17 Import from URL';
-    impBtn.addEventListener('click',()=>importFromURL('soc',1.0));
-    impInp.addEventListener('keydown',e=>{if(e.key==='Enter')importFromURL('soc',1.0);});
-    impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
-    btnRow.appendChild(impWrap);
-    pb.appendChild(btnRow);
-    const listDiv=document.createElement('div');listDiv.id='inf-list-soc';
-    listDiv.className='ainf-wrap';pb.appendChild(listDiv);
   }
 }
 
@@ -2461,13 +2512,33 @@ function runCalc(){
         const v=calcRowEMV(row);const el=row.querySelector('.ev');if(el)el.textContent=fmt(v);t+=v;
       });
       if(sec.id==='wom'){
-        document.querySelectorAll('#press-list-wom .press-card, #forum-list-wom .press-card').forEach(card=>{
-          if(card._getEMV)t+=card._getEMV();
+        const typeTotals={};const typeCounts={};
+        document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
+          if(!card._getEMV||!card._data)return;
+          const emv=card._getEMV();t+=emv;
+          const mtype=card._data().mtype||'on';
+          typeTotals[mtype]=(typeTotals[mtype]||0)+emv;
+          typeCounts[mtype]=(typeCounts[mtype]||0)+1;
+        });
+        ['blog','tv','forum','award','nl','on','print','po'].forEach(type=>{
+          const sumEl=$('wom-sum-'+type);if(sumEl)sumEl.textContent=fmt(typeTotals[type]||0);
+          const cntEl=$('wom-cnt-'+type);
+          if(cntEl){const cnt=typeCounts[type]||0;cntEl.textContent=cnt?(cnt+' mention'+(cnt===1?'':'s')):'\u2014';}
         });
       }
       if(sec.id==='soc'){
+        const platTotals={};const platCounts={};
         document.querySelectorAll('#inf-list-soc .inf-card').forEach(card=>{
-          if(card._getEMV){const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();}
+          if(!card._getEMV)return;
+          const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();
+          const pl=card._platSel?.value||'ig';
+          platTotals[pl]=(platTotals[pl]||0)+v;
+          platCounts[pl]=(platCounts[pl]||0)+1;
+        });
+        [['fb'],['ig'],['qu'],['rd'],['th'],['tt'],['xx'],['yt'],['yts']].forEach(([pl])=>{
+          const sumEl=$('soc-sum-'+pl);if(sumEl)sumEl.textContent=fmt(platTotals[pl]||0);
+          const cntEl=$('soc-cnt-'+pl);
+          if(cntEl){const cnt=platCounts[pl]||0;cntEl.textContent=cnt?(cnt+' post'+(cnt===1?'':'s')):'\u2014';}
         });
       }
     }
@@ -2489,7 +2560,6 @@ function runCalc(){
 function resetAll(){
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
   const pl=$('press-list-wom');if(pl)pl.innerHTML='';
-  const fl=$('forum-list-wom');if(fl)fl.innerHTML='';
   pressMentionCount=0;
   // Clear actuals influencer sections
   ['paid-infs','earned-oinfs','soc'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
@@ -2810,16 +2880,21 @@ async function genPdf(){
         const ns=row.querySelectorAll('.ni');const m=parseFloat(ns[0]?.value)||0,r=parseFloat(ns[1]?.value)||0,a=parseFloat(ns[2]?.value)||0;secTot+=val;
         rowsHTML+='<tr style="background:#fafbff"><td style="padding:6px 9px 6px 22px;border:1px solid #e5e7eb;font-style:italic;color:#555">'+desc+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+m.toLocaleString()+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+r.toFixed(2)+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+a.toFixed(1)+'x</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(val)+'</td></tr>';
       });
-      if(!rowsHTML)continue;
       // For wom/soc: render sub-channel table WITHOUT section total (individual cards come after)
       const isWom=sec.id==='wom';
       const isSoc=sec.id==='soc';
+      if(!rowsHTML&&!isWom&&!isSoc)continue;
       const stdTotalRow=(isWom||isSoc)?''
         :'<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr>';
-      await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-        +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
-        +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
-        +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
+      if(rowsHTML){
+        await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
+          +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
+          +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
+          +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
+      } else {
+        await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
+          +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div></div>');
+      }
       // Press & Forum mention cards sub-tables for wom section — rendered AFTER sub-channel rows
       if(isWom){
         const buildMentionRows=(selector)=>{
@@ -2838,23 +2913,17 @@ async function genPdf(){
           return{rows,tot};
         };
         const{rows:pressRows,tot:pressTot}=buildMentionRows('#press-list-wom');
-        const{rows:forumRows,tot:forumTot}=buildMentionRows('#forum-list-wom');
         const mentionTableHdr='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">CPM</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj.</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>';
         if(pressRows){
           await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Press Mentions</div>'
             +mentionTableHdr+'<tbody>'+pressRows+'</tbody></table></div>');
         }
-        if(forumRows){
-          await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Forum / Community Mentions</div>'
-            +mentionTableHdr+'<tbody>'+forumRows+'</tbody></table></div>');
-        }
         // Combined section total AFTER all mention cards
-        const combinedTot=secTot+pressTot+forumTot;
+        const combinedTot=secTot+pressTot;
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
           +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
-          +'<tr style="background:#f0f2ff"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Sub-Channels Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(secTot)+'</td></tr>'
+          +(secTot?'<tr style="background:#f0f2ff"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Manual Entries Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(secTot)+'</td></tr>':'')
           +(pressTot?'<tr style="background:#fffbf0"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Press Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pressTot)+'</td></tr>':'')
-          +(forumTot?'<tr style="background:#f5fff5"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Forum Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(forumTot)+'</td></tr>':'')
           +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmt(combinedTot)+'</td></tr>'
           +'</table></div>');
       }
@@ -2873,10 +2942,9 @@ async function genPdf(){
             +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Post / Account</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>'
             +'<tbody>'+socInfRows+'</tbody></table></div>');
         }
-        const socCombinedTot=secTot+socInfTot;
+        const socCombinedTot=socInfTot;
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
           +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
-          +'<tr style="background:#f0f2ff"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Channel Aggregates Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(secTot)+'</td></tr>'
           +(socInfTot?'<tr style="background:#f0fff8"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Individual Posts Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(socInfTot)+'</td></tr>':'')
           +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmt(socCombinedTot)+'</td></tr>'
           +'</table></div>');
@@ -2959,10 +3027,8 @@ function svSerialize(){
 
   const pressCards=[];
   document.querySelectorAll('#press-list-wom .press-card').forEach(c=>{if(c._data)pressCards.push(c._data());});
-  const forumCards=[];
-  document.querySelectorAll('#forum-list-wom .press-card').forEach(c=>{if(c._data)forumCards.push(c._data());});
 
-  return{details,rows,mentions,bizRows,pressCards,forumCards,
+  return{details,rows,mentions,bizRows,pressCards,
     emv:$('r-emv').textContent,
     tot:$('s-tot').textContent,
     savedAt:new Date().toISOString()};
@@ -3039,22 +3105,18 @@ function svDeserialize(data){
     biWrap.appendChild(row);
   });
 
-  // Press mention cards
+  // Press mention cards (unified list; backward-compat: also load legacy forumCards)
   const plist=$('press-list-wom');
-  const flist=$('forum-list-wom');
-  if(plist||flist){pressMentionCount=0;}
   if(plist){
+    pressMentionCount=0;
     plist.innerHTML='';
     (data.pressCards||[]).forEach(d=>{
       const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
       plist.appendChild(card);
     });
-  }
-  if(flist){
-    flist.innerHTML='';
     (data.forumCards||[]).forEach(d=>{
       const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
-      flist.appendChild(card);
+      plist.appendChild(card);
     });
   }
 
