@@ -2835,7 +2835,24 @@ async function genPdf(){
       +'<div><strong>Launch Site:</strong> '+(gv('s-launch')||'--')+'</div><div><strong>Audience Location:</strong> '+(gv('s-audience')||'--')+'</div>'
       +'<div><strong>Date:</strong> '+(gv('s-date')||'--')+'</div><div><strong>Drones:</strong> '+(gv('s-drones')||'--')+'</div>'
       +'<div><strong>Duration:</strong> '+gv('s-len')+' min</div><div><strong>Cost:</strong> '+(gn('s-cost')>0?fmt(gn('s-cost')):'--')+'</div></div></div>');
+    let _lastPesoPdf=null;
+    const PESO_DESC={P:'Paid partnerships, contracted influencers & media buys',E:'Earned coverage, press, organic social & experiential reach',S:'Co-creations, brand collaborations & partnership activations',O:'Owned channels, content assets & brand media'};
     for(const sec of SECS){
+      // ── PESO group heading (Heading 1) ──────────────────────────────────────
+      if(sec.peso&&sec.peso!==_lastPesoPdf){
+        _lastPesoPdf=sec.peso;
+        const isBiz=sec.peso==='B';
+        const grpColor=PESO_COLS[sec.peso]||HC;
+        const grpName=isBiz?'Business Impact':(PESO_NAMES[sec.peso]||sec.peso)+' Media';
+        const grpDesc=isBiz?'Direct revenue impact attributable to the drone show':PESO_DESC[sec.peso]||'';
+        const grpTot=isBiz?$('r-biz')?.textContent:$('peso-'+sec.peso)?.textContent||'$0';
+        await stamp('<div style="margin-top:18px;margin-bottom:4px;background:'+grpColor+';color:#fff;padding:16px 22px;border-radius:8px;display:flex;align-items:center;gap:16px">'
+          +'<div style="width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;letter-spacing:0">'+sec.peso+'</div>'
+          +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.1">'+grpName+'</div>'
+          +'<div style="font-size:10px;opacity:.75;margin-top:4px;letter-spacing:.01em">'+grpDesc+'</div></div>'
+          +'<div style="text-align:right;flex-shrink:0"><div style="font-size:9px;opacity:.7;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Category Total</div>'
+          +'<div style="font-size:22px;font-weight:800;letter-spacing:.01em">'+grpTot+'</div></div></div>');
+      }
       if(sec.type==='biz'){
         let biRows='';let biTot=0;
         document.querySelectorAll('.bi-row').forEach(row=>{
