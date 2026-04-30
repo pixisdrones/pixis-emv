@@ -751,7 +751,7 @@ const ENG_TYPES={
     {id:'share',  n:'Shares',     pr:0.10},
   ],
   tt:[
-    {id:'view',  n:'Views',    pr:0.60},
+    {id:'view',  n:'Est. Views', pr:0.60, isEst:true},
     {id:'like',  n:'Likes',    pr:0.25},
     {id:'cmt',   n:'Comments', pr:0.10},
     {id:'share', n:'Shares',   pr:0.05},
@@ -795,7 +795,7 @@ const ENG_TYPES={
     {id:'share',  n:'Shares',     pr:0.05},
   ],
   qu:[
-    {id:'view',   n:'Views',    pr:0.08},
+    {id:'view',   n:'Est. Views', pr:0.08, isEst:true},
     {id:'upvote', n:'Upvotes',  pr:0.50},
     {id:'cmt',    n:'Comments', pr:0.30},
     {id:'share',  n:'Shares',   pr:0.10},
@@ -2005,6 +2005,25 @@ function buildInfCard(opts){
         valInp.addEventListener('input',recalc);
       }
     });
+    // Cross-field view estimation (actuals mode, platforms without public view counts)
+    if(!isPred&&estViewRow){
+      const EST_CROSS={tt:{src:'like',div:0.06},ig:{src:'like',div:0.05},
+        fb:{src:'react',div:0.03},th:{src:'like',div:0.04},qu:{src:'upvote',div:0.05}};
+      const cross=EST_CROSS[pl];
+      if(cross){
+        const srcRow=engRows.find(r=>r.t.id===cross.src);
+        if(srcRow){
+          const recalcEst=()=>{
+            if(estViewRow._manuallySet)return;
+            const v=parseFloat(srcRow.qtyInp.value)||0;
+            if(v>0){estViewRow.qtyInp.value=Math.round(v/cross.div);
+              estViewRow.qtyInp.dispatchEvent(new Event('input'));}
+          };
+          srcRow.qtyInp.addEventListener('input',recalcEst);
+          estViewRow.qtyInp.addEventListener('input',()=>{estViewRow._manuallySet=true;},{once:true});
+        }
+      }
+    }
   };
 
   // EMV row
@@ -2271,94 +2290,6 @@ function detectPlatformFromURL(url){
   return null;
 }
 
-// ── Direct public API fetch for platforms with open endpoints ────────────────
-// Called before AI Vision. Returns {metrics, followers, name, summary} or null.
-async function fetchPublicPostMetrics(url, pl){
-  const CORS = 'https://corsproxy.io/?url=';
-  const timeout = (ms) => new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), ms));
-  const fetchWithTimeout = (u, opts={}, ms=8000) =>
-    Promise.race([fetch(u, opts), timeout(ms)]);
-
-  // ── Reddit ──────────────────────────────────────────────────────────────────
-  if(pl === 'rd'){
-    try{
-      const clean = url.trim().replace(/\/$/,'').split('?')[0].split('#')[0];
-      const apiUrl = clean + '.json?limit=1&raw_json=1';
-      const resp = await fetchWithTimeout(CORS + encodeURIComponent(apiUrl));
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
-      const json = await resp.json();
-      const post = json[0]?.data?.children?.[0]?.data;
-      if(!post) throw new Error('No post data');
-      const upvotes = post.score || 0;
-      const comments = post.num_comments || 0;
-      const ratio = post.upvote_ratio || 0;
-      const subs = post.subreddit_subscribers || 0;
-      const estViews = Math.round(upvotes / 0.035);
-      return {
-        metrics: { upvote: upvotes, cmt: comments, view: estViews },
-        followers: subs,
-        name: 'r/' + (post.subreddit || ''),
-        summary: 'r/' + post.subreddit + ' \u2022 ' + upvotes.toLocaleString() + ' upvotes \u2022 '
-          + comments.toLocaleString() + ' comments \u2022 ' + Math.round(ratio*100) + '% upvoted'
-          + ' \u2022 ' + estViews.toLocaleString() + ' est. views'
-      };
-    } catch(e){ console.warn('Reddit direct fetch failed:', e.message); return null; }
-  }
-
-  // ── YouTube (standard videos) ───────────────────────────────────────────────
-  if(pl === 'yt' || pl === 'yts'){
-    try{
-      // Extract video ID
-      let vid = null;
-      const m1 = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-      const m2 = url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
-      const m3 = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-      if(m1) vid = m1[1]; else if(m2) vid = m2[1]; else if(m3) vid = m3[1];
-      if(!vid) throw new Error('No video ID');
-      const pageUrl = 'https://www.youtube.com/watch?v=' + vid;
-      const resp = await fetchWithTimeout(CORS + encodeURIComponent(pageUrl));
-      if(!resp.ok) throw new Error('HTTP ' + resp.status);
-      const html = await resp.text();
-      // viewCount — appears in multiple locations, take first reliable match
-      const vcMatch = html.match(/"viewCount":"(\d+)"/);
-      const viewCount = vcMatch ? parseInt(vcMatch[1]) : 0;
-      // likeCount — in accessibility text or raw property
-      const lcMatch = html.match(/"likeCount":(\d+)/);
-      const likeCount = lcMatch ? parseInt(lcMatch[1]) : 0;
-      // commentCount
-      const ccMatch = html.match(/"commentCount":"(\d+)"/);
-      const commentCount = ccMatch ? parseInt(ccMatch[1]) : 0;
-      // Title
-      const titleMatch = html.match(/"title":"([^"]{1,120})"/);
-      const title = titleMatch ? titleMatch[1].replace(/\\u[\da-f]{4}/gi, c =>
-        String.fromCharCode(parseInt(c.replace('\\u',''),16))) : vid;
-      // Channel name / subscriber count (approx from page)
-      const chanMatch = html.match(/"subscriberCountText":\{"simpleText":"([^"]+)"/);
-      const chanSubs = chanMatch ? chanMatch[1] : '';
-      // Remix count (Shorts only)
-      const remixMatch = html.match(/"repostCount":(\d+)/);
-      const remixCount = remixMatch ? parseInt(remixMatch[1]) : 0;
-      if(!viewCount && !likeCount) throw new Error('No metrics parsed');
-      const metrics = {view: viewCount, like: likeCount, cmt: commentCount};
-      if(pl === 'yts' && remixCount) metrics.remix = remixCount;
-      return {
-        metrics,
-        followers: 0, // subscriber count is a string like "1.2M subscribers", skip for now
-        name: title,
-        summary: title.substring(0,60) + (title.length>60?'\u2026':'')
-          + ' \u2022 ' + viewCount.toLocaleString() + ' views \u2022 '
-          + likeCount.toLocaleString() + ' likes'
-          + (commentCount ? ' \u2022 ' + commentCount.toLocaleString() + ' comments' : '')
-          + (chanSubs ? ' \u2022 ' + chanSubs : '')
-      };
-    } catch(e){ console.warn('YouTube direct fetch failed:', e.message); return null; }
-  }
-
-  // All other platforms — no public API, return null to fall through to AI/manual
-  return null;
-}
-
-
 async function importFromURL(secId,fixedAdj){
   const urlInput=$('import-url-'+secId);
   const url=(urlInput?urlInput.value:'').trim();
@@ -2375,19 +2306,6 @@ async function importFromURL(secId,fixedAdj){
 
   // Clear import field
   if(urlInput)urlInput.value='';
-
-  // ── Public API fetch (no AI key needed) — Reddit, YouTube, YouTube Shorts ────
-  {
-    const pubResult = await fetchPublicPostMetrics(url, pl);
-    if(pubResult){
-      if(pubResult.followers && card._setFollowers) card._setFollowers(pubResult.followers);
-      if(pubResult.metrics && card._setEngQtys) card._setEngQtys(pubResult.metrics);
-      if(pubResult.name && card._nameInp && !card._nameInp.value) card._nameInp.value = pubResult.name;
-      notif('✓ ' + (pubResult.summary || 'Metrics imported'));
-      card.scrollIntoView({behavior:'smooth',block:'nearest'});
-      return;
-    }
-  }
 
   // ── AI Vision path: if API key is set, screenshot + Claude ──────────────────
   if(getAIKey()){
@@ -3497,6 +3415,25 @@ function svDeserialize(data){
   runCalc();
 }
 
+function svUpdateShow(key){
+  const all=svGetAll();
+  const idx=all.findIndex(e=>e.key===key);
+  if(idx===-1){notif('Show not found');return;}
+  const oldName=all[idx].name;
+  const state=svSerialize();state.name=oldName;
+  all[idx]={key,name:oldName,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
+  svSetAll(all);
+  window._currentShowKey=key;
+  window._currentShowName=oldName;
+  if(getCloudURL()){
+    const ce={name:oldName,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+    cloudSave(key,ce).then(()=>{
+      if(_cloudShows)_cloudShows[key]=ce;
+      svRenderList();notif('\u2601 "'+oldName+'" updated & synced');
+    }).catch(()=>{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" updated locally');});
+  }else{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" updated');}
+}
+
 function svOpenSaveModal(){
   const bg=document.createElement('div');bg.className='sv-modal-bg';bg.id='sv-modal-bg';
   const modal=document.createElement('div');modal.className='sv-modal';
@@ -3508,7 +3445,18 @@ function svOpenSaveModal(){
   const acts=document.createElement('div');acts.className='sv-modal-acts';
   const cancel=document.createElement('button');cancel.className='btn btn-g';cancel.textContent='Cancel';
   cancel.addEventListener('click',()=>bg.remove());
-  const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save';
+  // If a show is currently loaded, show an Update button
+  if(window._currentShowKey){
+    const updateBtn=document.createElement('button');updateBtn.className='btn btn-g';
+    updateBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07)';
+    updateBtn.textContent='\u21ba Update "'+(window._currentShowName||'Current Show')+'"';
+    updateBtn.addEventListener('click',()=>{
+      svUpdateShow(window._currentShowKey);
+      bg.remove();
+    });
+    acts.appendChild(updateBtn);
+  }
+  const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save as New';
   save.addEventListener('click',()=>{
     const name=inp.value.trim()||('Show '+new Date().toLocaleDateString());
     const state=svSerialize();state.name=name;
@@ -3553,6 +3501,8 @@ function svLoadShow(key){
   if(!entry)return;
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
   svDeserialize(entry.state);
+  window._currentShowKey=entry.key;
+  window._currentShowName=entry.name;
   notif('\uD83D\uDCE5 "'+entry.name+'" loaded');
 }
 
@@ -3602,9 +3552,16 @@ function svRenderList(){
     const acts=document.createElement('div');acts.className='sv-acts';
     const loadBtn=document.createElement('button');loadBtn.className='sv-load';loadBtn.textContent='Load';
     loadBtn.addEventListener('click',()=>svLoadShow(entry.key));
+    const updBtn=document.createElement('button');updBtn.className='sv-load';
+    updBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07)';
+    updBtn.title='Overwrite this saved show with current data';
+    updBtn.textContent='\u21ba Update';
+    updBtn.addEventListener('click',()=>{
+      if(confirm('Overwrite "'+entry.name+'" with current show data?'))svUpdateShow(entry.key);
+    });
     const delBtn=document.createElement('button');delBtn.className='sv-del';delBtn.textContent='Delete';
     delBtn.addEventListener('click',()=>{if(confirm('Delete "'+entry.name+'"?')){svDeleteShow(entry.key);}});
-    acts.appendChild(loadBtn);acts.appendChild(delBtn);
+    acts.appendChild(loadBtn);acts.appendChild(updBtn);acts.appendChild(delBtn);
     card.appendChild(cb);card.appendChild(info);card.appendChild(emvEl);card.appendChild(acts);
     list.appendChild(card);
   });
