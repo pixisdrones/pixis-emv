@@ -215,6 +215,10 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .sv-modal-inp{width:100%;background:var(--s4);border:1px solid var(--bd);border-radius:7px;padding:10px 12px;color:var(--tx);font-family:'Outfit',sans-serif;font-size:13px;margin-bottom:14px}
 .sv-modal-inp:focus{outline:none;border-color:var(--ind)}
 .sv-modal-acts{display:flex;gap:9px;justify-content:flex-end}
+.imp-status{font-size:10px;padding:5px 12px;border-left:3px solid;line-height:1.4}
+.imp-status.loading{color:var(--gld);border-color:var(--gld);background:rgba(212,168,67,.06)}
+.imp-status.ok{color:var(--tel);border-color:var(--tel);background:rgba(47,212,178,.06)}
+.imp-status.err{color:var(--red);border-color:var(--red);background:rgba(240,90,90,.06)}
 #pdfStage{position:fixed;left:-9999px;top:0;width:760px;background:#fff;z-index:-1}
 .notif{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--s3);border:1px solid var(--bd);border-radius:9px;padding:11px 16px;font-size:12px;color:var(--tx);box-shadow:0 8px 28px rgba(0,0,0,.4);animation:nif .25s ease;display:flex;align-items:center;gap:9px}
 @keyframes nif{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -608,6 +612,8 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 'use strict';
+// ── Embedded show data (populated by Export HTML with Shows) ───────────
+const EMBEDDED_SHOWS=null; // EXPORT_PLACEHOLDER
 const PIXIS_LOGO_FC='data:image/png;base64,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';
 const PIXIS_LOGO_2C='data:image/png;base64,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';
 // ── Benchmark Metric Values ────────────────────────────────────────────────
@@ -751,7 +757,7 @@ const ENG_TYPES={
     {id:'share',  n:'Shares',     pr:0.10},
   ],
   tt:[
-    {id:'view',  n:'Views',    pr:0.60},
+    {id:'view',  n:'Est. Views', pr:0.60, isEst:true},
     {id:'like',  n:'Likes',    pr:0.25},
     {id:'cmt',   n:'Comments', pr:0.10},
     {id:'share', n:'Shares',   pr:0.05},
@@ -795,7 +801,7 @@ const ENG_TYPES={
     {id:'share',  n:'Shares',     pr:0.05},
   ],
   qu:[
-    {id:'view',   n:'Views',    pr:0.08},
+    {id:'view',   n:'Est. Views', pr:0.08, isEst:true},
     {id:'upvote', n:'Upvotes',  pr:0.50},
     {id:'cmt',    n:'Comments', pr:0.30},
     {id:'share',  n:'Shares',   pr:0.10},
@@ -861,7 +867,7 @@ const SECS=[
     {id:'wQR',n:'QR Code Scans',           m:0,  r:3,  a:1,  on:false,c:'cpc', tip:'Direct audience action. CPA $1-5.',qrOnly:true}
   ]},
   {id:'earned-oinfs',peso:'E',num:'E3',title:'Social Media Mentions',sub:'Unpaid authentic brand mentions from creators',col:'#d4a843',
-   type:'influencers',adj:2.5,
+   type:'earned-soc',adj:2.5,
    ov:'Organic influencer posts earn a 2.5x authenticity premium. These are unpaid posts where creators organically feature the show.'},
   // ── SHARED ────────────────────────────────────────────────────────────────
   {id:'shared-cc',peso:'S',num:'S1',title:'Co-Creations & Partnerships',sub:'Brand collaborations & partnership activations',col:'#5a6ef8',
@@ -874,7 +880,7 @@ const SECS=[
   ]},
   // ── OWNED ─────────────────────────────────────────────────────────────────
   {id:'soc',peso:'O',num:'O1',title:'Official Brand Social',sub:'Brand-owned channels & planned posts',col:'#2fd4b2',
-   type:'std',
+   type:'soc',
    ov:'Official brand social posts generate measurable reach through existing audiences. Organic posts earn a 1.0\xd7 owned media factor.',
    rows:[]},
   {id:'cont',peso:'O',num:'O2',title:'Content Assets Produced',sub:'Professional media assets created',col:'#2fd4b2',
@@ -978,7 +984,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildMults();
   runCalc();
   runCalcP();
+  // Seed saved shows from embedded export data (if present and local is empty)
+  if(EMBEDDED_SHOWS&&Array.isArray(EMBEDDED_SHOWS)&&EMBEDDED_SHOWS.length){
+    const existing=svGetAll();
+    if(!existing.length){
+      svSetAll(EMBEDDED_SHOWS);
+      setTimeout(()=>notif('\uD83D\uDCE5 '+EMBEDDED_SHOWS.length+' show'+(EMBEDDED_SHOWS.length===1?'':'s')+' loaded from file'),400);
+    }
+  }
   svRenderList();
+  cloudRefresh();// auto-load shows from Firestore on startup
 });
 
 function buildBenchmarksPanel(){
@@ -1017,49 +1032,37 @@ function buildBenchmarksPanel(){
   aiBox.appendChild(aiNote);
   body.appendChild(aiBox);
 
-  // ── Cloud Sync Settings ───────────────────────────────────────────────────
+  // Cloud Sync Settings (hardcoded Firestore — always on)
   const cloudBox=document.createElement('div');cloudBox.className='ai-settings-box';
-  cloudBox.style.borderColor='rgba(90,110,248,.3)';cloudBox.style.background='linear-gradient(135deg,rgba(90,110,248,.06),rgba(47,212,178,.04))';
+  cloudBox.style.borderColor='rgba(47,212,178,.3)';cloudBox.style.background='linear-gradient(135deg,rgba(47,212,178,.06),rgba(90,110,248,.04))';
   const cloudTitle=document.createElement('div');cloudTitle.className='ai-settings-title';
-  cloudTitle.style.color='#5a6ef8';
-  cloudTitle.innerHTML='\u2601 Cloud Sync &nbsp;<span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">Share saved shows across the whole team in real time</span>';
+  cloudTitle.style.color='#2fd4b2';
+  cloudTitle.innerHTML='\u2601 Cloud Sync &nbsp;<span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">Shows save automatically across all devices</span>';
   cloudBox.appendChild(cloudTitle);
-  const cloudDesc=document.createElement('div');
-  cloudDesc.style.cssText='font-size:10px;color:var(--ft);line-height:1.55;margin-bottom:10px';
-  cloudDesc.innerHTML='Connect a free <a href="https://console.firebase.google.com" target="_blank" rel="noopener" style="color:#5a6ef8">Firebase Realtime Database</a> to sync saved shows across all team members. Anyone with the tool can load any show saved by the team.<br><strong>Setup (2 min):</strong> Go to console.firebase.google.com → Create project → Build → Realtime Database → Create database → <em>Start in test mode</em> → copy the Database URL below.';
-  cloudBox.appendChild(cloudDesc);
-  const cloudKeyRow=document.createElement('div');cloudKeyRow.className='ai-key-row';
-  const cloudDot=document.createElement('div');cloudDot.className='ai-status-dot '+(getCloudURL()?'ok':'missing');
-  const cloudInp=document.createElement('input');cloudInp.className='ai-key-inp';cloudInp.type='url';
-  cloudInp.placeholder='https://your-project-default-rtdb.firebaseio.com';
-  cloudInp.value=getCloudURL();cloudInp.style.fontFamily='monospace';
-  cloudInp.addEventListener('change',()=>{
-    const u=cloudInp.value.trim();setCloudURL(u);
-    cloudDot.className='ai-status-dot '+(u?'ok':'missing');
-    _cloudShows=null;
-    if(u)cloudRefresh();
-  });
-  const cloudTestBtn=document.createElement('button');cloudTestBtn.className='btn btn-g';cloudTestBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0';
-  cloudTestBtn.textContent='Test';
-  cloudTestBtn.addEventListener('click',async()=>{
-    const u=cloudInp.value.trim();if(!u){notif('\u26a0 Enter a Firebase URL first');return;}
-    setCloudURL(u);cloudTestBtn.disabled=true;cloudTestBtn.textContent='Testing\u2026';
+  const cloudStatusRow=document.createElement('div');cloudStatusRow.style.cssText='display:flex;align-items:center;gap:10px;padding:4px 0 8px';
+  const cloudDot=document.createElement('div');cloudDot.className='ai-status-dot ok';cloudDot.id='cloud-status-dot';
+  const cloudStatusTxt=document.createElement('span');cloudStatusTxt.id='cloud-status-txt';
+  cloudStatusTxt.style.cssText='font-size:11px;color:var(--tel);flex:1';
+  cloudStatusTxt.textContent='Connected \u2014 Firebase Firestore (pixis-emv-79fee)';
+  const cloudRefBtn=document.createElement('button');cloudRefBtn.className='btn btn-g';
+  cloudRefBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0';
+  cloudRefBtn.textContent='\u21ba Refresh';
+  cloudRefBtn.addEventListener('click',async()=>{
+    cloudRefBtn.disabled=true;cloudRefBtn.textContent='Syncing\u2026';
     try{
-      const resp=await fetch(u+'/emv-shows.json');
-      if(!resp.ok)throw new Error('HTTP '+resp.status);
-      const data=await resp.json();
-      const count=data?Object.keys(data).length:0;
+      _cloudShows=null;await cloudRefresh();
+      const cnt=Object.keys(_cloudShows||{}).length;
       cloudDot.className='ai-status-dot ok';
-      notif('\u2601 Connected! '+count+' show(s) in cloud.');
-      _cloudShows=data||{};svRenderList();
-    }catch(e){cloudDot.className='ai-status-dot missing';notif('\u26a0 Connection failed: '+e.message);}
-    finally{cloudTestBtn.disabled=false;cloudTestBtn.textContent='Test';}
+      cloudStatusTxt.textContent='Connected \u2014 '+cnt+' show'+(cnt===1?'':'s')+' in cloud';
+      notif('\u2601 Synced \u2014 '+cnt+' show'+(cnt===1?'':'s')+' in cloud');
+    }catch(e){
+      cloudDot.className='ai-status-dot missing';
+      cloudStatusTxt.textContent='Sync failed: '+e.message;
+    }
+    finally{cloudRefBtn.disabled=false;cloudRefBtn.textContent='\u21ba Refresh';}
   });
-  const cloudClearBtn=document.createElement('button');cloudClearBtn.className='btn btn-g';cloudClearBtn.style.cssText='font-size:10px;padding:5px 10px;flex-shrink:0;color:#ff6b6b;border-color:rgba(255,107,107,.3)';
-  cloudClearBtn.textContent='Disconnect';
-  cloudClearBtn.addEventListener('click',()=>{cloudInp.value='';setCloudURL('');cloudDot.className='ai-status-dot missing';_cloudShows=null;svRenderList();notif('Cloud sync disconnected');});
-  cloudKeyRow.appendChild(cloudDot);cloudKeyRow.appendChild(cloudInp);cloudKeyRow.appendChild(cloudTestBtn);cloudKeyRow.appendChild(cloudClearBtn);
-  cloudBox.appendChild(cloudKeyRow);
+  cloudStatusRow.appendChild(cloudDot);cloudStatusRow.appendChild(cloudStatusTxt);cloudStatusRow.appendChild(cloudRefBtn);
+  cloudBox.appendChild(cloudStatusRow);
   body.appendChild(cloudBox);
 
   // ── Row builder — injects range bar into the Notes cell ──────────────────
@@ -1344,6 +1347,8 @@ function buildSections(){
     if(sec.type==='biz')buildBizSection(pb);
     else if(sec.type==='pmb')buildPMBSection(pb,sec);
     else if(sec.type==='influencers')buildInfluencerSection(pb,sec);
+    else if(sec.type==='soc')buildSocSection(pb,sec);
+    else if(sec.type==='earned-soc')buildEarnedSocSection(pb,sec);
     else buildStdSection(pb,sec);
   });
 }
@@ -1461,6 +1466,143 @@ function appendPMBRow(sid,r){
 }
 
 let actualsInfCounts={};
+function buildEarnedSocSection(pb,sec){
+  // Earned Social Media Mentions — per-platform toggles + "Add [Platform] Mention" buttons
+  // Same structure as Official Brand Social (buildSocSection) but with 2.5x adj factor
+  // and "Mention" language instead of "Post"
+  window._earnedSocToggles = window._earnedSocToggles || {};
+
+  const SOC_PLATS=[
+    ['fb','Facebook',      '#1877f2','f'],
+    ['ig','Instagram',     '#e1306c','IG'],
+    ['qu','Quora',         '#a82400','Q'],
+    ['rd','Reddit',        '#ff4500','\u25cf'],
+    ['th','Threads',       '#aaa','@'],
+    ['tt','TikTok',        '#2fd4b2','\u266a'],
+    ['xx','X / Twitter',   '#ccc','\u{1D54F}'],
+    ['yt','YouTube',       '#ff0000','\u25b6'],
+    ['yts','YouTube Shorts','#ff4444','\u26a1'],
+  ];
+
+  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 6px';
+  note.innerHTML='<strong>2.5\xd7 authenticity premium</strong> \u2022 Toggle channels on/off \u2022 <strong>+ Add Mention</strong> logs a post with full engagement metrics \u2022 <strong>Import from URL</strong> auto-detects platform. Formula: (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 2.5\xd7.';
+  pb.appendChild(note);
+
+  // Per-platform rows
+  SOC_PLATS.forEach(([pl,name,col,icon])=>{
+    window._earnedSocToggles[pl]=true;
+
+    const platRow=document.createElement('div');
+    platRow.className='soc-sum-row';
+    platRow.id='esoc-plat-row-'+pl;
+    platRow.style.cssText='display:grid;grid-template-columns:24px 22px minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--bd2);transition:background .12s';
+
+    // Toggle
+    const togW=document.createElement('label');togW.className='tg';
+    const togI=document.createElement('input');togI.type='checkbox';togI.checked=true;
+    togI.id='esoc-tog-'+pl;
+    const togS=document.createElement('span');togS.className='tgt';
+    togW.appendChild(togI);togW.appendChild(togS);
+
+    // Icon
+    const iconEl=document.createElement('span');
+    iconEl.style.cssText='font-size:14px;font-weight:700;text-align:center;flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center';
+    if(pl==='ig'){
+      iconEl.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ig-g2" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#ffd879"/><stop offset="10%" stop-color="#feda75"/><stop offset="25%" stop-color="#fa7e1e"/><stop offset="50%" stop-color="#d62976"/><stop offset="75%" stop-color="#962fbf"/><stop offset="100%" stop-color="#4f5bd5"/></radialGradient></defs><rect x="2" y="2" width="20" height="20" rx="5.5" ry="5.5" stroke="url(#ig-g2)" stroke-width="2.2" fill="none"/><circle cx="12" cy="12" r="4" stroke="url(#ig-g2)" stroke-width="2" fill="none"/><circle cx="17.5" cy="6.5" r="1.3" fill="url(#ig-g2)"/></svg>';
+    } else {
+      iconEl.style.color=col;
+      iconEl.textContent=icon;
+    }
+
+    // Name + count badge
+    const nameWrap=document.createElement('div');nameWrap.style.cssText='display:flex;align-items:center;gap:7px;min-width:0';
+    const nameEl=document.createElement('span');nameEl.className='row-lbl';nameEl.textContent=name;
+    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id='esoc-cnt-'+pl;cntDiv.textContent='\u2014';
+    nameWrap.appendChild(nameEl);nameWrap.appendChild(cntDiv);
+
+    // EMV display
+    const emvDiv=document.createElement('div');emvDiv.id='esoc-sum-'+pl;emvDiv.textContent='$0';
+    emvDiv.style.cssText='font-family:"DM Mono",monospace;font-size:12px;font-weight:500;color:var(--gld);text-align:right;white-space:nowrap';
+
+    // Import URL toggle button
+    const urlTogBtn=document.createElement('button');urlTogBtn.type='button';
+    urlTogBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.12);border:1px solid rgba(90,110,248,.28);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
+    urlTogBtn.innerHTML='\uD83D\uDD17 Import URL';
+    urlTogBtn.id='esoc-url-btn-'+pl;
+
+    // Add Mention button — uniform style matching urlTogBtn
+    const addBtn=document.createElement('button');addBtn.type='button';
+    addBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.1);border:1px solid rgba(90,110,248,.25);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
+    addBtn.textContent='+ Add '+name+' Mention';
+    addBtn.id='esoc-add-'+pl;
+
+    platRow.appendChild(togW);
+    platRow.appendChild(iconEl);
+    platRow.appendChild(nameWrap);
+    platRow.appendChild(emvDiv);
+    platRow.appendChild(urlTogBtn);
+    platRow.appendChild(addBtn);
+    pb.appendChild(platRow);
+
+    // URL import row (hidden by default)
+    const urlRow=document.createElement('div');
+    urlRow.id='esoc-url-row-'+pl;
+    urlRow.style.cssText='display:none;padding:8px 18px 10px;background:rgba(90,110,248,.04);border-bottom:1px solid var(--bd2);gap:6px;align-items:center';
+    const urlInp=document.createElement('input');urlInp.type='url';urlInp.id='esoc-url-inp-'+pl;
+    urlInp.className='fi';urlInp.placeholder='Paste '+name+' post URL\u2026';
+    urlInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
+    const goBtn=document.createElement('button');goBtn.type='button';goBtn.className='btn btn-g';
+    goBtn.style.cssText='font-size:11px;padding:6px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
+    goBtn.textContent='Import \u2192';
+    urlRow.appendChild(urlInp);urlRow.appendChild(goBtn);
+    pb.appendChild(urlRow);
+
+    // Wire toggle
+    togI.addEventListener('change',()=>{
+      const on=togI.checked;
+      window._earnedSocToggles[pl]=on;
+      platRow.classList.toggle('off',!on);
+      addBtn.disabled=!on;
+      urlTogBtn.disabled=!on;
+      if(!on)urlRow.style.display='none';
+      runCalc();
+    });
+
+    // Wire Import URL toggle
+    urlTogBtn.addEventListener('click',()=>{
+      const showing=urlRow.style.display!=='none';
+      urlRow.style.display=showing?'none':'flex';
+      if(!showing)urlInp.focus();
+    });
+
+    // Wire Add Mention button — add card pre-selected to this platform
+    addBtn.addEventListener('click',()=>{
+      const card=addActualsInfluencer('earned-oinfs',2.5);
+      if(card&&card._platSel){
+        card._platSel.value=pl;
+        card._platSel.dispatchEvent(new Event('change'));
+      }
+      const list=$('inf-list-earned-oinfs');
+      if(list)list.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+
+    // Wire Import URL go
+    goBtn.addEventListener('click',()=>{
+      const url=urlInp.value.trim();if(!url)return;
+      let tmpInp=$('import-url-earned-oinfs');
+      if(!tmpInp){tmpInp=document.createElement('input');tmpInp.id='import-url-earned-oinfs';tmpInp.style.display='none';document.body.appendChild(tmpInp);}
+      tmpInp.value=url;
+      importFromURL('earned-oinfs',2.5).then(()=>{urlInp.value='';urlRow.style.display='none';});
+    });
+    urlInp.addEventListener('keydown',e=>{if(e.key==='Enter')goBtn.click();});
+  });
+
+  // All mention cards container
+  const listDiv=document.createElement('div');listDiv.id='inf-list-earned-oinfs';
+  listDiv.className='ainf-wrap';pb.appendChild(listDiv);
+}
+
+
 function buildInfluencerSection(pb,sec){
   const adjLabel=sec.adj>=2.5?'2.5\xd7 authenticity premium':'1.2\xd7 contracted premium';
   const note=document.createElement('div');note.className='cnote';note.style.margin='12px 18px 0';
@@ -1490,105 +1632,247 @@ function buildInfluencerSection(pb,sec){
 }
 
 function buildWomSection(pb,sec){
-  // Overview header (reuse same 6-col grid as .sc-hdr)
-  const hdr=document.createElement('div');hdr.className='sc-hdr';
-  hdr.innerHTML='<span>Media Type</span><span>Mentions</span><span style="text-align:right">Metric</span><span style="text-align:right">Rate ($)</span><span style="text-align:right">Adj.</span><span style="text-align:right">EMV</span>';
-  pb.appendChild(hdr);
-  // Container for both auto-sum rows and manual sc-rows (appendRow writes into rows-wom)
-  const wrap=document.createElement('div');wrap.id='rows-wom';pb.appendChild(wrap);
-  // Helper: append an auto-summed display row
-  const appendAutoRow=(key,name)=>{
-    const row=document.createElement('div');row.className='wom-auto-row';
-    const nameDiv=document.createElement('div');nameDiv.className='row-name';
-    const span=document.createElement('span');span.className='row-lbl';span.textContent=name;
-    nameDiv.appendChild(span);
-    const cntDiv=document.createElement('div');cntDiv.className='wom-auto-cnt';cntDiv.id='wom-cnt-'+key;cntDiv.textContent='\u2014';
-    const emvDiv=document.createElement('div');emvDiv.className='wom-auto-emv';emvDiv.id='wom-sum-'+key;emvDiv.textContent='$0';
-    row.appendChild(nameDiv);row.appendChild(cntDiv);
-    row.appendChild(document.createElement('div'));
-    row.appendChild(document.createElement('div'));
-    row.appendChild(document.createElement('div'));
-    row.appendChild(emvDiv);
-    wrap.appendChild(row);
-  };
-  // Build overview rows in user-specified order
-  appendAutoRow('blog','Blog / Digital');
-  appendRow('wom',{id:'wSE',n:'Branded Search Uplift',   m:500,r:1.5,a:1,  on:true, c:'cpc',tip:'Additional branded searches. CPC $0.50-2.'});
-  appendAutoRow('tv',  'Broadcast Media (TV / Radio)');
-  appendAutoRow('forum','Forum / Community');
-  appendAutoRow('award','Industry Awards / Recognition');
-  appendAutoRow('nl',  'Newsletter');
-  appendAutoRow('on',  'Online News / Blog');
-  appendAutoRow('print','Print');
-  appendAutoRow('po',  'Podcast / Vlog');
-  appendRow('wom',{id:'wQR',n:'QR Code Scans',           m:0,  r:3,  a:1,  on:false,c:'cpc',tip:'Direct audience action. CPA $1-5.',qrOnly:true});
-  appendRow('wom',{id:'wRF',n:'Referral Website Traffic',m:300,r:2,  a:1,  on:false,c:'val', tip:'Earned site visits.'});
-  // Individual Mentions divider
-  const divider=document.createElement('div');divider.className='ov-divider';divider.textContent='Individual Mentions';
-  pb.appendChild(divider);
-  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 0';
-  note.innerHTML='<strong>Formula:</strong> (Reach \xf7 1,000) \xd7 CPM \xd7 Adj. Factor. Add each press mention individually \u2014 totals auto-aggregate to the overview above.';
+  // Toggle state per press channel
+  window._womToggles = window._womToggles || {};
+
+  // Press channel definitions: [key, display name, icon]
+  const WOM_CHANNELS=[
+    ['blog',  'Blog / Digital',              '✍'],
+    ['tv',    'Broadcast Media (TV / Radio)', '📺'],
+    ['forum', 'Forum / Community',            '💬'],
+    ['award', 'Industry Awards / Recognition','🏆'],
+    ['nl',    'Newsletter',                   '📧'],
+    ['on',    'Online News',                  '📰'],
+    ['print', 'Print Media',                  '🗞'],
+    ['po',    'Podcast / Vlog',               '🎙'],
+  ];
+
+  // Note
+  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 6px';
+  note.innerHTML='<strong>Toggle</strong> channels on/off \u2022 Click <strong>+ Add Mention</strong> to log an individual press hit with full reach & CPM data. <strong>Formula:</strong> (Reach \xf7 1,000) \xd7 CPM \xd7 Adj. Factor.';
   pb.appendChild(note);
-  const btnRow=document.createElement('div');btnRow.style.cssText='padding:10px 18px 0;display:flex;gap:8px;flex-wrap:wrap';
-  const addBtn=document.createElement('button');addBtn.className='btn btn-g';addBtn.style.cssText='font-size:11px;padding:7px 14px';
-  addBtn.textContent='+ Add Mention';
-  addBtn.addEventListener('click',addPressCard);
-  btnRow.appendChild(addBtn);
-  pb.appendChild(btnRow);
-  const listDiv=document.createElement('div');listDiv.id='press-list-wom';listDiv.style.cssText='padding:0 18px 12px';
-  pb.appendChild(listDiv);
+
+  // Container for sc-rows (Branded Search, QR, Referral) — hidden dummy so runCalc finds rows-wom
+  const wrap=document.createElement('div');wrap.id='rows-wom';pb.appendChild(wrap);
+  appendRow('wom',{id:'wSE',n:'Branded Search Uplift',   m:500,r:1.5,a:1,  on:true, c:'cpc',tip:'Additional branded searches. CPC $0.50-2.'});
+  appendRow('wom',{id:'wQR',n:'QR Code Scans',           m:0,  r:3,  a:1,  on:false,c:'cpc',tip:'Direct audience action. CPA $1-5.',qrOnly:true});
+  appendRow('wom',{id:'wRF',n:'Referral Website Traffic',m:300,r:2,  a:1,  on:false,c:'val',tip:'Earned site visits.'});
+
+  // Divider
+  const divider=document.createElement('div');divider.className='ov-divider';divider.textContent='Press Mentions by Channel';
+  pb.appendChild(divider);
+
+  // Per-channel rows
+  WOM_CHANNELS.forEach(([key, name, icon])=>{
+    window._womToggles[key] = true;
+
+    const chanRow=document.createElement('div');
+    chanRow.id='wom-chan-row-'+key;
+    chanRow.style.cssText='display:grid;grid-template-columns:24px 22px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--bd2);transition:opacity .15s';
+
+    // Toggle
+    const togW=document.createElement('label');togW.className='tg';
+    const togI=document.createElement('input');togI.type='checkbox';togI.checked=true;
+    togI.id='wom-tog-'+key;
+    const togS=document.createElement('span');togS.className='tgt';
+    togW.appendChild(togI);togW.appendChild(togS);
+
+    // Icon
+    const iconEl=document.createElement('span');
+    iconEl.style.cssText='font-size:14px;text-align:center;flex-shrink:0;width:20px';
+    iconEl.textContent=icon;
+
+    // Name + count badge
+    const nameWrap=document.createElement('div');nameWrap.style.cssText='display:flex;align-items:center;gap:7px;min-width:0';
+    const nameEl=document.createElement('span');nameEl.className='row-lbl';nameEl.textContent=name;
+    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id='wom-cnt-'+key;cntDiv.textContent='\u2014';
+    nameWrap.appendChild(nameEl);nameWrap.appendChild(cntDiv);
+
+    // EMV display
+    const emvDiv=document.createElement('div');emvDiv.id='wom-sum-'+key;emvDiv.textContent='$0';
+    emvDiv.style.cssText='font-family:"DM Mono",monospace;font-size:12px;font-weight:500;color:var(--gld);text-align:right;white-space:nowrap';
+
+    // Add Mention button
+    const addBtn=document.createElement('button');addBtn.type='button';
+    addBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.1);border:1px solid rgba(90,110,248,.25);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
+    addBtn.textContent='+ Add Mention';
+    addBtn.id='wom-add-'+key;
+
+    chanRow.appendChild(togW);
+    chanRow.appendChild(iconEl);
+    chanRow.appendChild(nameWrap);
+    chanRow.appendChild(emvDiv);
+    chanRow.appendChild(addBtn);
+    pb.appendChild(chanRow);
+
+    // Wire toggle
+    togI.addEventListener('change',()=>{
+      const on=togI.checked;
+      window._womToggles[key]=on;
+      chanRow.style.opacity=on?'1':'0.38';
+      addBtn.disabled=!on;
+      runCalc();
+    });
+
+    // Wire Add Mention button — build card with mtype pre-set
+    addBtn.addEventListener('click',()=>{
+      const card=buildPressCard({
+        data:{mtype:key},
+        onEMVChange:runCalc,
+        onRemove:runCalc
+      });
+      pressList.appendChild(card);
+      card.scrollIntoView({behavior:'smooth',block:'nearest'});
+      runCalc();
+    });
+  });
+
+  // All press cards container
+  const pressList=document.createElement('div');pressList.id='press-list-wom';pressList.style.cssText='padding:0 18px';
+  pb.appendChild(pressList);
 }
 
 function buildSocSection(pb,sec){
-  // Channel summary header (reuse same 6-col grid)
-  const hdr=document.createElement('div');hdr.className='sc-hdr';
-  hdr.innerHTML='<span>Platform</span><span>Posts</span><span style="text-align:right"></span><span style="text-align:right"></span><span style="text-align:right"></span><span style="text-align:right">EMV</span>';
-  pb.appendChild(hdr);
-  // Platform summary rows
-  const SOC_PLATS=[['fb','Facebook'],['ig','Instagram'],['qu','Quora'],['rd','Reddit'],
-    ['th','Threads'],['tt','TikTok'],['xx','X / Twitter'],['yt','YouTube'],['yts','YouTube Shorts']];
-  const sumWrap=document.createElement('div');pb.appendChild(sumWrap);
-  SOC_PLATS.forEach(([pl,name])=>{
-    const row=document.createElement('div');row.className='soc-sum-row';
-    const nameDiv=document.createElement('div');nameDiv.className='row-name';
-    const span=document.createElement('span');span.className='row-lbl';span.textContent=name;
-    nameDiv.appendChild(span);
-    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id='soc-cnt-'+pl;cntDiv.textContent='\u2014';
-    const emvDiv=document.createElement('div');emvDiv.className='soc-sum-emv';emvDiv.id='soc-sum-'+pl;emvDiv.textContent='$0';
-    row.appendChild(nameDiv);row.appendChild(cntDiv);
-    row.appendChild(document.createElement('div'));
-    row.appendChild(document.createElement('div'));
-    row.appendChild(document.createElement('div'));
-    row.appendChild(emvDiv);
-    sumWrap.appendChild(row);
-  });
-  // Dummy rows-soc so existing runCalc code doesn't crash on $('rows-soc')
-  const dummyWrap=document.createElement('div');dummyWrap.id='rows-soc';dummyWrap.style.display='none';
+  // Global platform toggle state — tracks which platforms are enabled
+  window._socPlatToggles = window._socPlatToggles || {};
+
+  // Platform definitions: [code, display name, hex color, icon char]
+  const SOC_PLATS=[
+    ['fb','Facebook',      '#1877f2','f'],
+    ['ig','Instagram',     '#e1306c','IG'],
+    ['qu','Quora',         '#a82400','Q'],
+    ['rd','Reddit',        '#ff4500','\u25cf'],
+    ['th','Threads',       '#aaa','@'],
+    ['tt','TikTok',        '#2fd4b2','\u266a'],
+    ['xx','X / Twitter',   '#ccc','\u{1D54F}'],
+    ['yt','YouTube',       '#ff0000','\u25b6'],
+    ['yts','YouTube Shorts','#ff4444','\u26a1'],
+  ];
+
+  // Hidden dummy rows-soc (keeps runCalc from crashing on $('rows-soc'))
+  const dummyWrap=document.createElement('div');
+  dummyWrap.id='rows-soc';dummyWrap.style.display='none';
   pb.appendChild(dummyWrap);
-  // Individual Posts divider + note + buttons
-  const divider=document.createElement('div');divider.className='ov-divider';divider.textContent='Individual Posts';
-  pb.appendChild(divider);
-  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 0';
-  note.innerHTML='<strong>Adj Factor:</strong> 1.0\xd7 owned media. <strong>Formula:</strong> (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 1.0x. Platform reach rates and default values from Benchmarks tab.';
+
+  // Section note
+  const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 6px';
+  note.innerHTML='<strong>Toggle</strong> channels on/off \u2022 Click <strong>+ Add Post</strong> to log an individual post with full engagement metrics \u2022 <strong>Import from URL</strong> auto-detects platform and pre-fills fields.';
   pb.appendChild(note);
-  const btnRow=document.createElement('div');btnRow.style.cssText='display:flex;align-items:center;gap:8px;margin:10px 18px 0;flex-wrap:wrap';
-  const addBtn=document.createElement('button');addBtn.className='btn btn-g';
-  addBtn.style.cssText='font-size:11px;padding:7px 14px';
-  addBtn.textContent='+ Add Mention';
-  addBtn.addEventListener('click',()=>addActualsInfluencer('soc',1.0));
-  btnRow.appendChild(addBtn);
-  const impWrap=document.createElement('div');impWrap.style.cssText='display:flex;align-items:center;gap:6px;flex:1;min-width:220px';
-  const impInp=document.createElement('input');impInp.type='url';impInp.id='import-url-soc';
-  impInp.className='fi';impInp.placeholder='Paste post URL to import\u2026';
-  impInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
-  const impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn btn-g';
-  impBtn.style.cssText='font-size:11px;padding:7px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
-  impBtn.innerHTML='\uD83D\uDD17 Import from URL';
-  impBtn.addEventListener('click',()=>importFromURL('soc',1.0));
-  impInp.addEventListener('keydown',e=>{if(e.key==='Enter')importFromURL('soc',1.0);});
-  impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
-  btnRow.appendChild(impWrap);
-  pb.appendChild(btnRow);
+
+  // Per-platform rows
+  SOC_PLATS.forEach(([pl,name,col,icon])=>{
+    window._socPlatToggles[pl]=true; // default on
+
+    const platRow=document.createElement('div');
+    platRow.className='soc-sum-row';
+    platRow.id='soc-plat-row-'+pl;
+    platRow.style.cssText='display:grid;grid-template-columns:24px 22px minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--bd2);transition:background .12s';
+
+    // Col 1: toggle
+    const togW=document.createElement('label');togW.className='tg';
+    const togI=document.createElement('input');togI.type='checkbox';togI.checked=true;
+    togI.id='soc-tog-'+pl;
+    const togS=document.createElement('span');togS.className='tgt';
+    togW.appendChild(togI);togW.appendChild(togS);
+
+    // Col 2: platform icon
+    const iconEl=document.createElement('span');
+    iconEl.style.cssText='font-size:14px;font-weight:700;text-align:center;flex-shrink:0;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center';
+    if(pl==='ig'){
+      // Instagram gradient icon (official camera glyph approximation in SVG)
+      iconEl.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="ig-g" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#ffd879"/><stop offset="10%" stop-color="#feda75"/><stop offset="25%" stop-color="#fa7e1e"/><stop offset="50%" stop-color="#d62976"/><stop offset="75%" stop-color="#962fbf"/><stop offset="100%" stop-color="#4f5bd5"/></radialGradient></defs><rect x="2" y="2" width="20" height="20" rx="5.5" ry="5.5" stroke="url(#ig-g)" stroke-width="2.2" fill="none"/><circle cx="12" cy="12" r="4" stroke="url(#ig-g)" stroke-width="2" fill="none"/><circle cx="17.5" cy="6.5" r="1.3" fill="url(#ig-g)"/></svg>';
+    } else {
+      iconEl.style.color=col;
+      iconEl.textContent=icon;
+    }
+
+    // Col 3: platform name + count badge
+    const nameWrap=document.createElement('div');nameWrap.style.cssText='display:flex;align-items:center;gap:7px;min-width:0';
+    const nameEl=document.createElement('span');nameEl.className='row-lbl';nameEl.textContent=name;
+    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id='soc-cnt-'+pl;cntDiv.textContent='\u2014';
+    nameWrap.appendChild(nameEl);nameWrap.appendChild(cntDiv);
+
+    // Col 4: EMV display
+    const emvDiv=document.createElement('div');emvDiv.className='soc-sum-emv';emvDiv.id='soc-sum-'+pl;emvDiv.textContent='$0';
+    emvDiv.style.cssText='font-family:"DM Mono",monospace;font-size:12px;font-weight:500;color:var(--tel);text-align:right;white-space:nowrap';
+
+    // Col 5: Import URL button (opens mini URL row below)
+    const urlTogBtn=document.createElement('button');urlTogBtn.type='button';
+    urlTogBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.12);border:1px solid rgba(90,110,248,.28);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
+    urlTogBtn.innerHTML='\uD83D\uDD17 Import URL';
+    urlTogBtn.id='soc-url-btn-'+pl;
+
+    // Col 6: Add Post button
+    const addBtn=document.createElement('button');addBtn.type='button';
+    addBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.1);border:1px solid rgba(90,110,248,.25);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
+    addBtn.textContent='+ Add '+name+' Post';
+    addBtn.id='soc-add-'+pl;
+
+    platRow.appendChild(togW);
+    platRow.appendChild(iconEl);
+    platRow.appendChild(nameWrap);
+    platRow.appendChild(emvDiv);
+    platRow.appendChild(urlTogBtn);
+    platRow.appendChild(addBtn);
+    pb.appendChild(platRow);
+
+    // URL import row (hidden by default, shown when Import URL is clicked)
+    const urlRow=document.createElement('div');
+    urlRow.id='soc-url-row-'+pl;
+    urlRow.style.cssText='display:none;padding:8px 18px 10px;background:rgba(90,110,248,.04);border-bottom:1px solid var(--bd2);gap:6px;align-items:center';
+    const urlInp=document.createElement('input');urlInp.type='url';urlInp.id='soc-url-inp-'+pl;
+    urlInp.className='fi';urlInp.placeholder='Paste '+name+' post URL\u2026';
+    urlInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
+    const goBtn=document.createElement('button');goBtn.type='button';goBtn.className='btn btn-g';
+    goBtn.style.cssText='font-size:11px;padding:6px 12px;white-space:nowrap;flex-shrink:0;background:rgba(90,110,248,.15);border-color:rgba(90,110,248,.35);color:#7b8ff5';
+    goBtn.textContent='Import \u2192';
+    urlRow.style.display='none';
+    urlRow.appendChild(urlInp);urlRow.appendChild(goBtn);
+    pb.appendChild(urlRow);
+
+    // Wire: Toggle → enable/disable add+url buttons, filter from EMV
+    togI.addEventListener('change',()=>{
+      const on=togI.checked;
+      window._socPlatToggles[pl]=on;
+      platRow.classList.toggle('off',!on);
+      addBtn.disabled=!on;
+      urlTogBtn.disabled=!on;
+      if(!on){urlRow.style.display='none';}
+      runCalc();
+    });
+
+    // Wire: Import URL toggle button
+    urlTogBtn.addEventListener('click',()=>{
+      const showing=urlRow.style.display!=='none';
+      urlRow.style.display=showing?'none':'flex';
+      if(!showing)urlInp.focus();
+    });
+
+    // Wire: Add Post button → add card pre-selected to this platform
+    addBtn.addEventListener('click',()=>{
+      const card=addActualsInfluencer('soc',1.0);
+      if(card&&card._platSel){
+        card._platSel.value=pl;
+        card._platSel.dispatchEvent(new Event('change'));
+      }
+      // Scroll card into view
+      const list=$('inf-list-soc');
+      if(list)list.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+
+    // Wire: Import URL go button
+    goBtn.addEventListener('click',()=>{
+      const url=urlInp.value.trim();if(!url)return;
+      // Temporarily set import-url-soc so importFromURL can read it
+      let tmpInp=$('import-url-soc');
+      if(!tmpInp){tmpInp=document.createElement('input');tmpInp.id='import-url-soc';tmpInp.style.display='none';document.body.appendChild(tmpInp);}
+      tmpInp.value=url;
+      importFromURL('soc',1.0).then(()=>{urlInp.value='';urlRow.style.display='none';});
+    });
+    urlInp.addEventListener('keydown',e=>{if(e.key==='Enter')goBtn.click();});
+  });
+
+  // All cards container
   const listDiv=document.createElement('div');listDiv.id='inf-list-soc';listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
 
@@ -1775,6 +2059,25 @@ function buildInfCard(opts){
         valInp.addEventListener('input',recalc);
       }
     });
+    // Cross-field view estimation (actuals mode, platforms without public view counts)
+    if(!isPred&&estViewRow){
+      const EST_CROSS={tt:{src:'like',div:0.06},ig:{src:'like',div:0.05},
+        fb:{src:'react',div:0.03},th:{src:'like',div:0.04},qu:{src:'upvote',div:0.05}};
+      const cross=EST_CROSS[pl];
+      if(cross){
+        const srcRow=engRows.find(r=>r.t.id===cross.src);
+        if(srcRow){
+          const recalcEst=()=>{
+            if(estViewRow._manuallySet)return;
+            const v=parseFloat(srcRow.qtyInp.value)||0;
+            if(v>0){estViewRow.qtyInp.value=Math.round(v/cross.div);
+              estViewRow.qtyInp.dispatchEvent(new Event('input'));}
+          };
+          srcRow.qtyInp.addEventListener('input',recalcEst);
+          estViewRow.qtyInp.addEventListener('input',()=>{estViewRow._manuallySet=true;},{once:true});
+        }
+      }
+    }
   };
 
   // EMV row
@@ -2041,6 +2344,118 @@ function detectPlatformFromURL(url){
   return null;
 }
 
+// ── Direct public API fetch — Reddit (3-proxy cascade) + YouTube ─────────────
+// Runs before AI Vision. Returns {metrics, followers, name, summary} or null.
+async function fetchPublicPostMetrics(url, pl, statusEl){
+  const setStatus=(msg,cls)=>{
+    if(!statusEl)return;
+    statusEl.textContent=msg;
+    statusEl.className='imp-status '+(cls||'loading');
+  };
+  const withTimeout=(p,ms=9000)=>
+    Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms))]);
+
+  // ── REDDIT ────────────────────────────────────────────────────────────────
+  if(pl==='rd'){
+    const clean=url.trim().replace(/\/$/,'').split('?')[0].split('#')[0];
+    const jsonPath=clean+'.json?limit=1&raw_json=1';
+    const tryDirect=async()=>{
+      const r=await withTimeout(fetch(jsonPath,{headers:{'Accept':'application/json'}}));
+      if(!r.ok)throw new Error('HTTP '+r.status);return r.json();
+    };
+    const tryAllOrigins=async()=>{
+      const r=await withTimeout(fetch('https://api.allorigins.win/get?url='+encodeURIComponent(jsonPath)));
+      if(!r.ok)throw new Error('allorigins '+r.status);
+      return JSON.parse((await r.json()).contents);
+    };
+    const tryCorsproxy=async()=>{
+      const r=await withTimeout(fetch('https://corsproxy.io/?url='+encodeURIComponent(jsonPath)));
+      if(!r.ok)throw new Error('corsproxy '+r.status);return r.json();
+    };
+    for(const [name,fn] of [['Direct',tryDirect],['allorigins',tryAllOrigins],['corsproxy',tryCorsproxy]]){
+      setStatus('Fetching from Reddit via '+name+'…');
+      try{
+        const json=await fn();
+        const post=json[0]?.data?.children?.[0]?.data;
+        if(!post)throw new Error('No post data');
+        const upvotes=parseInt(post.score)||0;
+        const comments=parseInt(post.num_comments)||0;
+        const ratio=parseFloat(post.upvote_ratio)||0;
+        const subs=parseInt(post.subreddit_subscribers)||0;
+        const title=String(post.title||'').substring(0,80);
+        const estViews=Math.round(upvotes/0.035);
+        setStatus('✓ Imported via '+name,'ok');
+        return{
+          metrics:{view:estViews,upvote:upvotes,cmt:comments},
+          followers:subs,
+          name:'r/'+post.subreddit,
+          summary:'r/'+post.subreddit+' \u2022 '+upvotes.toLocaleString()+' upvotes \u2022 '
+            +comments.toLocaleString()+' comments \u2022 '+Math.round(ratio*100)+'% upvoted'
+            +' \u2022 ~'+estViews.toLocaleString()+' est. views'+(title?' \u2022 '+title:'')
+        };
+      }catch(e){console.warn('[EMV] Reddit via '+name+' failed:',e.message);}
+    }
+    setStatus('\u26a0 Auto-import failed \u2014 enter metrics manually','err');
+    return null;
+  }
+
+  // ── YOUTUBE / YOUTUBE SHORTS ─────────────────────────────────────────────
+  if(pl==='yt'||pl==='yts'){
+    let vid=null;
+    const m1=url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    const m2=url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
+    const m3=url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if(m1)vid=m1[1];else if(m2)vid=m2[1];else if(m3)vid=m3[1];
+    if(!vid){setStatus('\u26a0 Could not extract video ID from URL','err');return null;}
+    const pageUrl='https://www.youtube.com/watch?v='+vid;
+    const tryYTAllOrigins=async()=>{
+      const r=await withTimeout(fetch('https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl)));
+      if(!r.ok)throw new Error('allorigins '+r.status);
+      return(await r.json()).contents||'';
+    };
+    const tryYTCorsproxy=async()=>{
+      const r=await withTimeout(fetch('https://corsproxy.io/?url='+encodeURIComponent(pageUrl)));
+      if(!r.ok)throw new Error('corsproxy '+r.status);return r.text();
+    };
+    const parseYT=(html)=>{
+      if(!html||html.length<1000)throw new Error('Response too short \u2014 bot wall?');
+      const vcM=html.match(/"viewCount":"(\d+)"/);
+      const lcM=html.match(/"likeCount":(\d+)/);
+      const ccM=html.match(/"commentCount":"(\d+)"/);
+      const titM=html.match(/"title":"([^"]{1,120})"/);
+      const rmM=html.match(/"repostCount":(\d+)/);
+      const vc=vcM?parseInt(vcM[1]):0;
+      const lc=lcM?parseInt(lcM[1]):0;
+      if(!vc&&!lc)throw new Error('No viewCount/likeCount \u2014 consent wall?');
+      const cc=ccM?parseInt(ccM[1]):0;
+      const rm=rmM?parseInt(rmM[1]):0;
+      const title=titM?titM[1].replace(/\\u[\da-f]{4}/gi,c=>String.fromCharCode(parseInt(c.slice(2),16))):vid;
+      const metrics={view:vc,like:lc,cmt:cc};
+      if(pl==='yts'&&rm)metrics.remix=rm;
+      return{metrics,title};
+    };
+    for(const [name,fn] of [['allorigins',tryYTAllOrigins],['corsproxy',tryYTCorsproxy]]){
+      setStatus('Fetching YouTube page via '+name+'…');
+      try{
+        const html=await fn();
+        const{metrics,title}=parseYT(html);
+        setStatus('✓ Imported via '+name,'ok');
+        return{
+          metrics,followers:0,name:title,
+          summary:title.substring(0,60)+(title.length>60?'\u2026':'')
+            +' \u2022 '+metrics.view.toLocaleString()+' views'
+            +(metrics.like?' \u2022 '+metrics.like.toLocaleString()+' likes':'')
+        };
+      }catch(e){console.warn('[EMV] YouTube via '+name+' failed:',e.message);}
+    }
+    setStatus('\u26a0 Auto-import failed \u2014 enter metrics manually','err');
+    return null;
+  }
+
+  return null;// other platforms: fall through to AI/manual
+}
+
+
 async function importFromURL(secId,fixedAdj){
   const urlInput=$('import-url-'+secId);
   const url=(urlInput?urlInput.value:'').trim();
@@ -2057,6 +2472,25 @@ async function importFromURL(secId,fixedAdj){
 
   // Clear import field
   if(urlInput)urlInput.value='';
+
+  // ── Public API fetch (Reddit & YouTube — no AI key needed) ─────────────
+  if(pl==='rd'||pl==='yt'||pl==='yts'){
+    const statusEl=document.createElement('div');
+    statusEl.className='imp-status loading';
+    statusEl.textContent='Fetching metrics…';
+    card.insertBefore(statusEl,card.firstChild);
+    card.scrollIntoView({behavior:'smooth',block:'nearest'});
+    const pubResult=await fetchPublicPostMetrics(url,pl,statusEl);
+    if(pubResult){
+      if(pubResult.followers&&card._setFollowers)card._setFollowers(pubResult.followers);
+      if(pubResult.metrics&&card._setEngQtys)card._setEngQtys(pubResult.metrics);
+      if(pubResult.name&&card._nameInp&&!card._nameInp.value)card._nameInp.value=pubResult.name;
+      statusEl.className='imp-status ok';
+      statusEl.textContent='✓ '+(pubResult.summary||'Metrics imported');
+      notif('✓ Metrics auto-imported');
+    }
+    return;// never open the manual modal for these platforms
+  }
 
   // ── AI Vision path: if API key is set, screenshot + Claude ──────────────────
   if(getAIKey()){
@@ -2129,33 +2563,60 @@ const AI_KEY_STORE='pixis_ai_key';
 function getAIKey(){return localStorage.getItem(AI_KEY_STORE)||'';}
 function setAIKey(k){if(k)localStorage.setItem(AI_KEY_STORE,k.trim());else localStorage.removeItem(AI_KEY_STORE);}
 
-// ── Cloud Sync (Firebase Realtime Database REST API) ──────────────────────────
-const CLOUD_URL_STORE='pixis_cloud_url';
-function getCloudURL(){const u=localStorage.getItem(CLOUD_URL_STORE)||'';return u.replace(/\/$/,'');}
-function setCloudURL(u){if(u)localStorage.setItem(CLOUD_URL_STORE,u.trim().replace(/\/$/,''));else localStorage.removeItem(CLOUD_URL_STORE);}
+// Firebase Firestore config \u2014 hardcoded, always-on cloud sync
+const FS_PROJECT='pixis-emv-79fee';
+const FS_API_KEY='AIzaSyDRLWplyn1jix19Kl_4BpKQFkuXbLOWdLU';
+const FS_BASE='https://firestore.googleapis.com/v1/projects/'+FS_PROJECT+'/databases/(default)/documents';
 
-let _cloudShows=null;// null=not fetched, {}=fetched
+let _cloudShows=null;// null=not yet fetched, {}=fetched
+
+// Encode a plain JS object into Firestore typed fields
+function _fsEncode(obj){
+  const fields={};
+  Object.entries(obj).forEach(([k,v])=>{
+    if(v===null||v===undefined)return;
+    if(typeof v==='string')fields[k]={stringValue:v};
+    else if(typeof v==='number')fields[k]={doubleValue:v};
+    else if(typeof v==='boolean')fields[k]={booleanValue:v};
+    else fields[k]={stringValue:String(v)};
+  });
+  return fields;
+}
+// Decode Firestore typed fields into a plain JS object
+function _fsDecode(fields){
+  const out={};
+  Object.entries(fields||{}).forEach(([k,fv])=>{
+    out[k]=fv.stringValue??fv.doubleValue??fv.integerValue??fv.booleanValue??null;
+  });
+  return out;
+}
 
 async function cloudGetAll(){
-  const base=getCloudURL();if(!base)return{};
-  const resp=await fetch(base+'/emv-shows.json');
+  const resp=await fetch(FS_BASE+'/shows?key='+FS_API_KEY+'&pageSize=200');
   if(!resp.ok)throw new Error('HTTP '+resp.status);
-  return(await resp.json())||{};
+  const data=await resp.json();
+  const result={};
+  (data.documents||[]).forEach(doc=>{
+    const key=doc.name.split('/').pop();
+    const f=_fsDecode(doc.fields);
+    let state={};try{state=JSON.parse(f.stateJson||'{}');}catch{}
+    result[key]={key,name:f.name||'',savedAt:f.savedAt||'',emv:f.emv||'$0',tot:f.tot||'$0',state};
+  });
+  return result;
 }
 
 async function cloudSave(key,obj){
-  const base=getCloudURL();if(!base)return;
-  const resp=await fetch(base+'/emv-shows/'+key+'.json',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(obj)});
-  if(!resp.ok)throw new Error('HTTP '+resp.status);
+  const stateJson=JSON.stringify(obj.state||obj);
+  const body={fields:_fsEncode({name:obj.name||'',savedAt:obj.savedAt||new Date().toISOString(),emv:obj.emv||'$0',tot:obj.tot||'$0',stateJson})};
+  const resp=await fetch(FS_BASE+'/shows/'+key+'?key='+FS_API_KEY,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'HTTP '+resp.status);}
 }
 
 async function cloudDelete(key){
-  const base=getCloudURL();if(!base)return;
-  await fetch(base+'/emv-shows/'+key+'.json',{method:'DELETE'});
+  await fetch(FS_BASE+'/shows/'+key+'?key='+FS_API_KEY,{method:'DELETE'});
 }
 
 async function cloudRefresh(){
-  if(!getCloudURL())return;
   try{_cloudShows=await cloudGetAll();svRenderList();}
   catch(e){console.warn('Cloud sync:',e);notif('\u26a0 Cloud sync failed: '+e.message);}
 }
@@ -2498,10 +2959,30 @@ function runCalc(){
     }else if(sec.type==='pmb'){
       const wrap=$('rows-'+sec.id);if(!wrap)return;
       wrap.querySelectorAll('.pmb-row').forEach(row=>{if(row._calcEMV)t+=row._calcEMV();});
-    }else if(sec.type==='influencers'){
+    }else if(sec.type==='influencers'||sec.type==='earned-soc'){
+      const earnedToggles=sec.type==='earned-soc'?(window._earnedSocToggles||{}):{}
+;      const earnedCounts={};const earnedTotals={};
       document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
-        if(card._getEMV){const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();}
+        if(!card._getEMV)return;
+        if(sec.type==='earned-soc'){
+          const pl=card._platSel?.value||'ig';
+          if(earnedToggles[pl]===false){if(card._updateDisp)card._updateDisp();return;}
+          const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();
+          earnedTotals[pl]=(earnedTotals[pl]||0)+v;
+          earnedCounts[pl]=(earnedCounts[pl]||0)+1;
+        }else{
+          const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();
+        }
       });
+      if(sec.type==='earned-soc'){
+        ['fb','ig','qu','rd','th','tt','xx','yt','yts'].forEach(pl=>{
+          const s=$('esoc-sum-'+pl);if(s)s.textContent=fmt(earnedTotals[pl]||0);
+          const c=$('esoc-cnt-'+pl);
+          if(c){const n=earnedCounts[pl]||0;c.textContent=n?(n+' mention'+(n===1?'':'s')):'—';}
+          const r=$('esoc-plat-row-'+pl);
+          if(r)r.style.opacity=earnedToggles[pl]===false?'0.38':'1';
+        });
+      }
     }else{
       const wrap=$('rows-'+sec.id);if(!wrap)return;
       wrap.querySelectorAll('.sc-row').forEach(row=>{
@@ -2513,10 +2994,12 @@ function runCalc(){
       });
       if(sec.id==='wom'){
         const typeTotals={};const typeCounts={};
+        const womToggles=window._womToggles||{};
         document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
           if(!card._getEMV||!card._data)return;
-          const emv=card._getEMV();t+=emv;
           const mtype=card._data().mtype||'on';
+          if(womToggles[mtype]===false)return;
+          const emv=card._getEMV();t+=emv;
           typeTotals[mtype]=(typeTotals[mtype]||0)+emv;
           typeCounts[mtype]=(typeCounts[mtype]||0)+1;
         });
@@ -2524,21 +3007,29 @@ function runCalc(){
           const sumEl=$('wom-sum-'+type);if(sumEl)sumEl.textContent=fmt(typeTotals[type]||0);
           const cntEl=$('wom-cnt-'+type);
           if(cntEl){const cnt=typeCounts[type]||0;cntEl.textContent=cnt?(cnt+' mention'+(cnt===1?'':'s')):'\u2014';}
+          const rw=$('wom-chan-row-'+type);
+          if(rw)rw.style.opacity=womToggles[type]===false?'0.38':'1';
         });
       }
       if(sec.id==='soc'){
         const platTotals={};const platCounts={};
+        const platToggles=window._socPlatToggles||{};
         document.querySelectorAll('#inf-list-soc .inf-card').forEach(card=>{
           if(!card._getEMV)return;
-          const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();
           const pl=card._platSel?.value||'ig';
+          // Respect per-platform toggle — skip if platform is off
+          if(platToggles[pl]===false){if(card._updateDisp)card._updateDisp();return;}
+          const v=card._getEMV();t+=v;if(card._updateDisp)card._updateDisp();
           platTotals[pl]=(platTotals[pl]||0)+v;
           platCounts[pl]=(platCounts[pl]||0)+1;
         });
         [['fb'],['ig'],['qu'],['rd'],['th'],['tt'],['xx'],['yt'],['yts']].forEach(([pl])=>{
           const sumEl=$('soc-sum-'+pl);if(sumEl)sumEl.textContent=fmt(platTotals[pl]||0);
           const cntEl=$('soc-cnt-'+pl);
-          if(cntEl){const cnt=platCounts[pl]||0;cntEl.textContent=cnt?(cnt+' post'+(cnt===1?'':'s')):'\u2014';}
+          if(cntEl){const cnt=platCounts[pl]||0;cntEl.textContent=cnt?(cnt+' post'+(cnt===1?'':'s')):'—';}
+          // Dim the platform row if toggled off
+          const prow=$('soc-plat-row-'+pl);
+          if(prow)prow.style.opacity=platToggles[pl]===false?'0.38':'1';
         });
       }
     }
@@ -3140,6 +3631,117 @@ function svDeserialize(data){
   runCalc();
 }
 
+function exportHTMLWithShows(){
+  const shows=svGetAll();
+  if(!shows.length){notif('\u26a0 No saved shows to export');return;}
+  // Get the live HTML source — outerHTML preserves script tag content faithfully
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  // Replace the EMBEDDED_SHOWS placeholder (handles null or prior export value)
+  const exported=html.replace(
+    /const EMBEDDED_SHOWS=(?:null|\[.*?\]); \/\/ EXPORT_PLACEHOLDER/s,
+    'const EMBEDDED_SHOWS='+JSON.stringify(shows)+'; // EXPORT_PLACEHOLDER'
+  );
+  if(exported===html){notif('\u26a0 Export placeholder not found — contact support');return;}
+  const blob=new Blob([exported],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const client=$('s-client')?.value||'Pixis';
+  const date=new Date().toISOString().slice(0,10);
+  a.download='Pixis_EMV_'+client.replace(/\s+/g,'_')+'_'+date+'.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  notif('\uD83D\uDCE4 Exported '+shows.length+' show'+(shows.length===1?'':'s')+' into HTML');
+}
+
+function svImportFromFile(fileInput){
+  const file=fileInput.files[0];
+  if(!file){return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const html=e.target.result;
+    // Extract the EMBEDDED_SHOWS JSON array from the exported file
+    const match=html.match(/const EMBEDDED_SHOWS=(\[.*?\]); \/\/ EXPORT_PLACEHOLDER/s);
+    if(!match){
+      notif('\u26a0 No shows found in this file. Make sure it was exported from this tool.');
+      return;
+    }
+    let imported;
+    try{imported=JSON.parse(match[1]);}
+    catch(err){notif('\u26a0 Could not read show data: '+err.message);return;}
+    if(!Array.isArray(imported)||!imported.length){
+      notif('\u26a0 No shows found in this file.');
+      return;
+    }
+    // Merge: add shows that don't already exist (matched by key)
+    const existing=svGetAll();
+    const existingKeys=new Set(existing.map(e=>e.key));
+    let added=0,skipped=0;
+    imported.forEach(show=>{
+      if(existingKeys.has(show.key)){
+        skipped++;
+      }else{
+        existing.push(show);
+        added++;
+      }
+    });
+    svSetAll(existing);
+    // Sync imported shows to cloud
+    if(added>0){
+      const newShows=imported.filter(s=>!existingKeys.has(s.key));
+      Promise.all(newShows.map(s=>cloudSave(s.key,s).catch(()=>{})))
+        .then(()=>{if(_cloudShows)newShows.forEach(s=>_cloudShows[s.key]=s);});
+    }
+    svRenderList();
+    const msg=added===0
+      ?'\u26a0 All '+imported.length+' show'+(imported.length===1?'':'s')+' already exist in your list'
+      :('\uD83D\uDCE5 '+added+' show'+(added===1?'':'s')+' imported'
+        +(skipped?' ('+skipped+' already existed, skipped)':''));
+    notif(msg);
+    // If exactly one show was imported and none existed before, offer to load it
+    if(added===1&&existing.length===1){
+      const s=imported[0];
+      if(confirm('\"'+s.name+'\" imported. Load it now?'))svLoadShow(s.key);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function svExportSingleShow(key){
+  const all=svGetAll();
+  const entry=all.find(e=>e.key===key);
+  if(!entry){notif('\u26a0 Show not found');return;}
+  const html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  const exported=html.replace(
+    /const EMBEDDED_SHOWS=(?:null|\[.*?\]); \/\/ EXPORT_PLACEHOLDER/s,
+    'const EMBEDDED_SHOWS='+JSON.stringify([entry])+'; // EXPORT_PLACEHOLDER'
+  );
+  if(exported===html){notif('\u26a0 Export placeholder not found');return;}
+  const blob=new Blob([exported],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Pixis_EMV_'+entry.name.replace(/[^a-zA-Z0-9]+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  notif('\uD83D\uDCE4 Exported "'+entry.name+'"');
+}
+
+function svUpdateShow(key){
+  const all=svGetAll();
+  const idx=all.findIndex(e=>e.key===key);
+  if(idx===-1){notif('Show not found');return;}
+  const oldName=all[idx].name;
+  const state=svSerialize();state.name=oldName;
+  all[idx]={key,name:oldName,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
+  svSetAll(all);
+  window._currentShowKey=key;
+  window._currentShowName=oldName;
+  const ce={name:oldName,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+  cloudSave(key,ce).then(()=>{
+    if(_cloudShows)_cloudShows[key]=ce;
+    svRenderList();notif('\u2601 "'+oldName+'" updated & synced');
+  }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" updated (cloud: '+e.message+')');});
+}
+
 function svOpenSaveModal(){
   const bg=document.createElement('div');bg.className='sv-modal-bg';bg.id='sv-modal-bg';
   const modal=document.createElement('div');modal.className='sv-modal';
@@ -3151,7 +3753,18 @@ function svOpenSaveModal(){
   const acts=document.createElement('div');acts.className='sv-modal-acts';
   const cancel=document.createElement('button');cancel.className='btn btn-g';cancel.textContent='Cancel';
   cancel.addEventListener('click',()=>bg.remove());
-  const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save';
+  // If a show is currently loaded, show an Update button
+  if(window._currentShowKey){
+    const updateBtn=document.createElement('button');updateBtn.className='btn btn-g';
+    updateBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07)';
+    updateBtn.textContent='\u21ba Update "'+(window._currentShowName||'Current Show')+'"';
+    updateBtn.addEventListener('click',()=>{
+      svUpdateShow(window._currentShowKey);
+      bg.remove();
+    });
+    acts.appendChild(updateBtn);
+  }
+  const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save as New';
   save.addEventListener('click',()=>{
     const name=inp.value.trim()||('Show '+new Date().toLocaleDateString());
     const state=svSerialize();state.name=name;
@@ -3160,20 +3773,14 @@ function svOpenSaveModal(){
     const all=svGetAll();
     all.unshift(entry);
     svSetAll(all);
-    // Also save to cloud if configured
-    if(getCloudURL()){
-      const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
-      cloudSave(key,cloudEntry).then(()=>{
-        if(_cloudShows)_cloudShows[key]=cloudEntry;
-        svRenderList();
-        notif('\u2601 "'+name+'" saved & synced to cloud');
-      }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+name+'" saved locally (cloud sync failed: '+e.message+')');});
-    }else{
+    const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+    cloudSave(key,cloudEntry).then(()=>{
+      if(_cloudShows)_cloudShows[key]=cloudEntry;
       svRenderList();
-    }
+      notif('\u2601 "'+name+'" saved & synced to cloud');
+    }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+name+'" saved locally (cloud: '+e.message+')');});
     $('sv-panel').classList.add('open');
     bg.remove();
-    if(!getCloudURL())notif('\uD83D\uDCBE "'+name+'" saved');
   });
   bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')save.click();if(e.key==='Escape')bg.remove();});
@@ -3196,11 +3803,14 @@ function svLoadShow(key){
   if(!entry)return;
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
   svDeserialize(entry.state);
+  window._currentShowKey=entry.key;
+  window._currentShowName=entry.name;
   notif('\uD83D\uDCE5 "'+entry.name+'" loaded');
 }
 
 function svDeleteShow(key){
-  if(getCloudURL()){cloudDelete(key).catch(e=>console.warn('Cloud delete:',e));if(_cloudShows)delete _cloudShows[key];}
+  cloudDelete(key).catch(e=>console.warn('Cloud delete:',e));
+  if(_cloudShows)delete _cloudShows[key];
   svSetAll(svGetAll().filter(e=>e.key!==key));
   svRenderList();
 }
@@ -3223,10 +3833,10 @@ function svRenderList(){
   wrap.innerHTML='';
   if(!merged.length){
     const em=document.createElement('div');em.className='sv-empty';
-    em.textContent=getCloudURL()&&_cloudShows===null?'Syncing from cloud\u2026':'No saved shows yet. Fill in show details and click \u201CSave Show\u201D.';
+    em.textContent=_cloudShows===null?'Syncing from cloud\u2026':'No saved shows yet. Fill in show details and click \u201CSave Show\u201D.';
     wrap.appendChild(em);
     // Trigger first load from cloud
-    if(getCloudURL()&&_cloudShows===null)cloudRefresh();
+    if(_cloudShows===null)cloudRefresh();
     return;
   }
   const list=document.createElement('div');list.className='sv-list';
@@ -3245,9 +3855,21 @@ function svRenderList(){
     const acts=document.createElement('div');acts.className='sv-acts';
     const loadBtn=document.createElement('button');loadBtn.className='sv-load';loadBtn.textContent='Load';
     loadBtn.addEventListener('click',()=>svLoadShow(entry.key));
+    const updBtn=document.createElement('button');updBtn.className='sv-load';
+    updBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07)';
+    updBtn.title='Overwrite this saved show with current data';
+    updBtn.textContent='\u21ba Update';
+    updBtn.addEventListener('click',()=>{
+      if(confirm('Overwrite "'+entry.name+'" with current show data?'))svUpdateShow(entry.key);
+    });
+    const expBtn=document.createElement('button');expBtn.className='sv-load';
+    expBtn.style.cssText='color:var(--gld);border-color:rgba(212,168,67,.35);background:rgba(212,168,67,.07)';
+    expBtn.title='Download HTML file containing only this show';
+    expBtn.textContent='\uD83D\uDCE4 Export';
+    expBtn.addEventListener('click',()=>svExportSingleShow(entry.key));
     const delBtn=document.createElement('button');delBtn.className='sv-del';delBtn.textContent='Delete';
     delBtn.addEventListener('click',()=>{if(confirm('Delete "'+entry.name+'"?')){svDeleteShow(entry.key);}});
-    acts.appendChild(loadBtn);acts.appendChild(delBtn);
+    acts.appendChild(loadBtn);acts.appendChild(updBtn);acts.appendChild(expBtn);acts.appendChild(delBtn);
     card.appendChild(cb);card.appendChild(info);card.appendChild(emvEl);card.appendChild(acts);
     list.appendChild(card);
   });
@@ -3259,20 +3881,35 @@ function svRenderList(){
   const selNone=document.createElement('button');selNone.className='sv-sel-btn';selNone.textContent='None';
   selNone.addEventListener('click',()=>{wrap.querySelectorAll('.sv-check').forEach(c=>c.checked=false);});
   selCtrl.appendChild(selAll);selCtrl.appendChild(selNone);
-  if(getCloudURL()){
-    const syncBtn=document.createElement('button');syncBtn.className='sv-sel-btn';
-    syncBtn.style.cssText='color:#5a6ef8;border-color:rgba(90,110,248,.35)';
-    syncBtn.textContent='\u21ba Sync';
-    syncBtn.addEventListener('click',()=>{_cloudShows=null;cloudRefresh();});
-    selCtrl.appendChild(syncBtn);
-  }
+  const syncBtn=document.createElement('button');syncBtn.className='sv-sel-btn';
+  syncBtn.style.cssText='color:#5a6ef8;border-color:rgba(90,110,248,.35)';
+  syncBtn.textContent='\u2601 Sync';
+  syncBtn.addEventListener('click',()=>{_cloudShows=null;cloudRefresh();notif('\u2601 Syncing from cloud\u2026');});
+  selCtrl.appendChild(syncBtn);
   const progBtn=document.createElement('button');progBtn.className='sv-prog-btn';progBtn.id='btn-prog-report';
   progBtn.textContent='\u22b3 Program Report';
   progBtn.addEventListener('click',genProgramReport);
+  const expBtn=document.createElement('button');expBtn.className='sv-sel-btn';
+  expBtn.style.cssText='color:var(--gld);border-color:rgba(212,168,67,.35);background:rgba(212,168,67,.07);font-weight:600';
+  expBtn.title='Download this HTML file with all saved shows embedded inside it';
+  expBtn.innerHTML='\uD83D\uDCE4 Export HTML with Shows';
+  expBtn.addEventListener('click',exportHTMLWithShows);
+  // Hidden file input for importing shows from an exported HTML file
+  const impFileInp=document.createElement('input');impFileInp.type='file';
+  impFileInp.accept='.html,text/html';impFileInp.style.display='none';
+  impFileInp.id='sv-import-file-inp';
+  impFileInp.addEventListener('change',()=>svImportFromFile(impFileInp));
+  const impBtn=document.createElement('button');impBtn.className='sv-sel-btn';
+  impBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07);font-weight:600';
+  impBtn.title='Import shows from a previously exported HTML file';
+  impBtn.innerHTML='\uD83D\uDCE5 Import from File';
+  impBtn.addEventListener('click',()=>{impFileInp.value='';impFileInp.click();});
+  selCtrl.appendChild(expBtn);selCtrl.appendChild(impBtn);
+  document.body.appendChild(impFileInp);
   footer.appendChild(selCtrl);footer.appendChild(progBtn);
   wrap.appendChild(footer);
   // Auto-fetch cloud on first render if not yet fetched
-  if(getCloudURL()&&_cloudShows===null)cloudRefresh();
+  if(_cloudShows===null)cloudRefresh();
 }
 
 async function genPredPdf(){
