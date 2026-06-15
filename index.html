@@ -2219,6 +2219,19 @@ function buildInfCard(opts){
     const match=opts.find(v=>v===val)||opts[0];
     if(match){postTypeSel.value=match;postTypeSel.dispatchEvent(new Event('change'));}
   };
+  card._adjFactor=adjFactor;
+  card._setValImp=(v)=>{valImpInp.value=v;recalc();};
+  card._setEngVals=(valsMap)=>{
+    engRows.forEach(er=>{if(valsMap[er.t.id]!==undefined)er.valInp.value=valsMap[er.t.id];});
+    recalc();
+  };
+  card._serialize=()=>{
+    const qtys={},vals={};
+    engRows.forEach(er=>{qtys[er.t.id]=parseFloat(er.qtyInp.value)||0;vals[er.t.id]=parseFloat(er.valInp.value)||0;});
+    return{pl:platSel.value,name:nameInp.value,url:urlInp?urlInp.value:'',
+      followers:card._followerCount||0,postType:postTypeSel?postTypeSel.value:null,
+      valImp:parseFloat(valImpInp.value)||0,adjFactor,engQtys:qtys,engVals:vals};
+  };
 
   card.appendChild(hd);
   card.appendChild(r1);
@@ -3581,7 +3594,14 @@ function svSerialize(){
   const pressCards=[];
   document.querySelectorAll('#press-list-wom .press-card').forEach(c=>{if(c._data)pressCards.push(c._data());});
 
-  return{details,rows,mentions,bizRows,pressCards,
+  const infCardsSoc=[];
+  document.querySelectorAll('#inf-list-soc .inf-card').forEach(c=>{if(c._serialize)infCardsSoc.push(c._serialize());});
+  const infCardsEarned=[];
+  document.querySelectorAll('#inf-list-earned-oinfs .inf-card').forEach(c=>{if(c._serialize)infCardsEarned.push(c._serialize());});
+  const infCardsPaid=[];
+  document.querySelectorAll('#inf-list-paid-infs .inf-card').forEach(c=>{if(c._serialize)infCardsPaid.push(c._serialize());});
+
+  return{details,rows,mentions,bizRows,pressCards,infCardsSoc,infCardsEarned,infCardsPaid,
     emv:$('r-emv').textContent,
     tot:$('s-tot').textContent,
     savedAt:new Date().toISOString()};
@@ -3672,6 +3692,31 @@ function svDeserialize(data){
       plist.appendChild(card);
     });
   }
+
+  // Influencer cards (soc / earned-oinfs / paid-infs)
+  ['paid-infs','earned-oinfs','soc'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
+  actualsInfCounts={};
+  const _secAdj={'soc':1.0,'earned-oinfs':2.5,'paid-infs':1.2};
+  const _restoreInfCards=(arr,secId)=>{
+    if(!arr||!arr.length)return;
+    // Reverse so that prepend order matches the original top-to-bottom order
+    [...arr].reverse().forEach(d=>{
+      const adj=d.adjFactor!==undefined?d.adjFactor:(_secAdj[secId]||1.0);
+      const card=addActualsInfluencer(secId,adj);
+      card._platSel.value=d.pl||'ig';
+      card._platSel.dispatchEvent(new Event('change'));
+      if(d.valImp&&card._setValImp)card._setValImp(d.valImp);
+      card._nameInp.value=d.name||'';
+      if(d.url&&card._urlInp)card._urlInp.value=d.url;
+      if(d.postType)card._setPostType(d.postType);
+      if(d.followers)card._setFollowers(d.followers);
+      if(d.engQtys)card._setEngQtys(d.engQtys);
+      if(d.engVals&&card._setEngVals)card._setEngVals(d.engVals);
+    });
+  };
+  _restoreInfCards(data.infCardsSoc,'soc');
+  _restoreInfCards(data.infCardsEarned,'earned-oinfs');
+  _restoreInfCards(data.infCardsPaid,'paid-infs');
 
   runCalc();
 }
