@@ -372,6 +372,19 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .tw-reach-sub{font-size:9px;color:var(--ft)}
 .tw-foot{padding:12px 20px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;background:var(--s3);border-radius:0 0 14px 14px}
 .tw-sel-count{font-size:11px;color:var(--dm)}
+
+/* ── Sticky Summary Footer ──────────────────────────────────────────────── */
+.sf{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--s2);border-top:1px solid var(--bd);padding:10px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;backdrop-filter:blur(8px)}
+.sf-item{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:60px}
+.sf-lbl{font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft)}
+.sf-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--gld);white-space:nowrap}
+.sf-val.teal{color:var(--tel)}
+.sf-val.ind{color:var(--ind2)}
+.sf-div{width:1px;height:32px;background:var(--bd);flex-shrink:0}
+.sf-save{margin-left:auto;flex-shrink:0}
+.sf-autosave{font-size:10px;color:var(--grn);opacity:0;transition:opacity .5s;white-space:nowrap}
+.sf-autosave.show{opacity:1}
+@media(max-width:700px){.sf{gap:10px;padding:8px 12px}.sf-item{min-width:45px}.sf-val{font-size:11px}}
 </style>
 </head>
 <body>
@@ -622,9 +635,11 @@ const BM_DEFAULTS={
   // Platform CPMs — EMV proxy ($ per 1,000 impressions). Source: Social Insider / Influencer Marketing Hub 2024-25
   cpm_ig:13,cpm_tt:9,cpm_yt:22,cpm_xx:7,cpm_fb:10,
   cpm_yts:7,cpm_rd:4,cpm_th:5,cpm_qu:2.5,
-  // Platform organic reach rates (% of followers who see each post). Source: Sprout Social / Hootsuite 2024
-  reach_ig:4,reach_tt:1,reach_yt:14,reach_xx:3,reach_fb:3,
-  reach_yts:1,reach_rd:10,reach_th:10,reach_qu:12,
+  // Platform organic reach rates (% of followers who see each post). Source: Social Insider / Hootsuite 2025-26
+  // Instagram raised to 8% to reflect Reels-weighted mix (Reels avg 15-30% for micro-accounts, static 3-6%)
+  // TikTok & Shorts raised to reflect algorithm-driven discovery beyond followers
+  reach_ig:8,reach_tt:8,reach_yt:20,reach_xx:3,reach_fb:3,
+  reach_yts:5,reach_rd:10,reach_th:10,reach_qu:12,
   // Value per engagement action ($) — legacy aggregate, kept for backward compat
   veng_ig:0.08,veng_tt:0.05,veng_yt:0.10,veng_xx:0.07,veng_fb:0.06,
   veng_yts:0.04,veng_rd:0.05,veng_th:0.04,veng_qu:0.06,
@@ -672,8 +687,8 @@ const BM_RANGES={
   cpm_yts:{lo:3,hi:12,fmt:'$'},  cpm_xx:{lo:4,hi:15,fmt:'$'},  cpm_fb:{lo:5,hi:20,fmt:'$'},
   cpm_rd:{lo:1.5,hi:8,fmt:'$'},  cpm_th:{lo:2,hi:8,fmt:'$'},   cpm_qu:{lo:1,hi:5,fmt:'$'},
   // Organic reach rates
-  reach_ig:{lo:2,hi:8,fmt:'%'},  reach_tt:{lo:0.5,hi:3,fmt:'%'}, reach_yt:{lo:8,hi:25,fmt:'%'},
-  reach_yts:{lo:0.5,hi:3,fmt:'%'},reach_xx:{lo:1,hi:8,fmt:'%'},  reach_fb:{lo:1,hi:6,fmt:'%'},
+  reach_ig:{lo:5,hi:25,fmt:'%'},  reach_tt:{lo:3,hi:20,fmt:'%'}, reach_yt:{lo:12,hi:35,fmt:'%'},
+  reach_yts:{lo:2,hi:15,fmt:'%'}, reach_xx:{lo:1,hi:8,fmt:'%'},  reach_fb:{lo:1,hi:6,fmt:'%'},
   reach_rd:{lo:5,hi:20,fmt:'%'}, reach_th:{lo:5,hi:20,fmt:'%'},  reach_qu:{lo:5,hi:20,fmt:'%'},
   // Influencer adj
   adj_paid:{lo:1.0,hi:1.5,fmt:'x'},adj_organic:{lo:1.5,hi:4.0,fmt:'x'},
@@ -1721,8 +1736,8 @@ function buildWomSection(pb,sec){
         onEMVChange:runCalc,
         onRemove:runCalc
       });
-      pressList.appendChild(card);
-      card.scrollIntoView({behavior:'smooth',block:'nearest'});
+      pressList.prepend(card);
+      card.scrollIntoView({behavior:'smooth',block:'start'});
       runCalc();
     });
   });
@@ -2067,11 +2082,26 @@ function buildInfCard(opts){
       if(cross){
         const srcRow=engRows.find(r=>r.t.id===cross.src);
         if(srcRow){
+          // Viral badge — shown when likes/reactions exceed follower count
+          let _viralBadge=card.querySelector('.viral-badge');
+          if(!_viralBadge){
+            _viralBadge=document.createElement('div');_viralBadge.className='viral-badge';
+            _viralBadge.style.cssText='display:none;background:linear-gradient(135deg,#ff6b35,#f7c948);color:#1a0a00;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:10px;margin-left:8px';
+            _viralBadge.textContent='🔥 Viral reach';
+            const hd=card.querySelector('.inf-hd,.inf-card-hd')||card.firstElementChild;
+            if(hd)hd.appendChild(_viralBadge);
+          }
           const recalcEst=()=>{
             if(estViewRow._manuallySet)return;
             const v=parseFloat(srcRow.qtyInp.value)||0;
-            if(v>0){estViewRow.qtyInp.value=Math.round(v/cross.div);
-              estViewRow.qtyInp.dispatchEvent(new Event('input'));}
+            if(v>0){
+              estViewRow.qtyInp.value=Math.round(v/cross.div);
+              estViewRow.qtyInp.dispatchEvent(new Event('input'));
+              // Show viral badge if engagement count exceeds follower count
+              const fo=card._followerCount||0;
+              if(fo>0&&v>fo){_viralBadge.style.display='inline-flex';}
+              else{_viralBadge.style.display='none';}
+            }
           };
           srcRow.qtyInp.addEventListener('input',recalcEst);
           estViewRow.qtyInp.addEventListener('input',()=>{estViewRow._manuallySet=true;},{once:true});
@@ -2327,7 +2357,8 @@ function addActualsInfluencer(secId,fixedAdj){
   actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
   const num=actualsInfCounts[secId];
   const card=buildInfCard({num,adjFactor:fixedAdj,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
-  $('inf-list-'+secId).appendChild(card);runCalc();
+  const list=$('inf-list-'+secId);
+  list.prepend(card);runCalc();
   return card;
 }
 
@@ -3044,8 +3075,22 @@ function runCalc(){
   $('s-shared').textContent=fmt(pesoTot.S||0);$('s-owned').textContent=fmt(pesoTot.O||0);
   $('s-biz').textContent=fmt(bizTotal);$('s-tot').textContent=fmt(combined);
   const cost=gn('s-cost');const re=$('r-roi');
-  if(cost>0){const roi=emvTotal/cost;re.textContent=roi.toFixed(1)+'x';re.className='rc-val '+(roi>=1?'pos':'neg');}
+  let roiTxt='--';
+  if(cost>0){const roi=emvTotal/cost;roiTxt=roi.toFixed(1)+'x';re.textContent=roiTxt;re.className='rc-val '+(roi>=1?'pos':'neg');}
   else{re.textContent='--';re.className='rc-val';}
+  // Sticky footer update
+  const _sf=id=>document.getElementById(id);
+  if(_sf('sf-paid')){
+    _sf('sf-paid').textContent=fmt(pesoTot.P||0);
+    _sf('sf-earned').textContent=fmt(pesoTot.E||0);
+    _sf('sf-shared').textContent=fmt(pesoTot.S||0);
+    _sf('sf-owned').textContent=fmt(pesoTot.O||0);
+    _sf('sf-emv').textContent=fmt(emvTotal);
+    _sf('sf-biz').textContent=fmt(bizTotal);
+    _sf('sf-roi').textContent=roiTxt;
+  }
+  // Trigger auto-save after data changes
+  if(window._currentShowKey)_scheduleAutoSave();
 }
 
 function resetAll(){
@@ -3099,7 +3144,7 @@ function addInfluencer(){
   infCount++;
   const num=infCount;
   const card=buildInfCard({num,adjFactor:BM.adj_organic,isPrediction:true,onEMVChange:runCalcP,onRemove:runCalcP});
-  $('inf-list').appendChild(card);runCalcP();
+  $('inf-list').prepend(card);runCalcP();
 }
 
 function runCalcP(){
@@ -3745,51 +3790,67 @@ function svUpdateShow(key){
 function svOpenSaveModal(){
   const bg=document.createElement('div');bg.className='sv-modal-bg';bg.id='sv-modal-bg';
   const modal=document.createElement('div');modal.className='sv-modal';
-  const title=document.createElement('div');title.className='sv-modal-ttl';title.textContent='Save Current Show';
-  const inp=document.createElement('input');inp.className='sv-modal-inp';inp.placeholder='Show name (e.g. LA Dodgers — Opening Night)';
-  // pre-fill from show details
-  const cl=$('s-client')?.value||'';const sn=$('s-name')?.value||'';
-  inp.value=[cl,sn].filter(Boolean).join(' \u2014 ')||'';
+  const hasLoaded=!!window._currentShowKey;
+  const title=document.createElement('div');title.className='sv-modal-ttl';
+  title.textContent=hasLoaded?'Save Show':'Save Current Show';
   const acts=document.createElement('div');acts.className='sv-modal-acts';
   const cancel=document.createElement('button');cancel.className='btn btn-g';cancel.textContent='Cancel';
   cancel.addEventListener('click',()=>bg.remove());
-  // If a show is currently loaded, show an Update button
-  if(window._currentShowKey){
-    const updateBtn=document.createElement('button');updateBtn.className='btn btn-g';
-    updateBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07)';
-    updateBtn.textContent='\u21ba Update "'+(window._currentShowName||'Current Show')+'"';
-    updateBtn.addEventListener('click',()=>{
-      svUpdateShow(window._currentShowKey);
-      bg.remove();
-    });
-    acts.appendChild(updateBtn);
+
+  if(hasLoaded){
+    // Primary: overwrite the currently loaded show
+    const updateBtn=document.createElement('button');updateBtn.className='btn btn-s';
+    updateBtn.style.cssText='background:linear-gradient(135deg,var(--tel),var(--telD));color:#fff';
+    updateBtn.textContent='\u21ba Save "'+(window._currentShowName||'Current Show')+'"';
+    updateBtn.addEventListener('click',()=>{svUpdateShow(window._currentShowKey);bg.remove();});
+    // Secondary: save as new
+    const orLabel=document.createElement('div');
+    orLabel.style.cssText='font-size:10px;color:var(--ft);margin:10px 0 6px;padding-top:10px;border-top:1px solid var(--bd2)';
+    orLabel.textContent='or save as a new show:';
+    const inp=document.createElement('input');inp.className='sv-modal-inp';inp.style.marginBottom='8px';
+    inp.placeholder='New show name\u2026';
+    const cl=$('s-client')?.value||'';const sn=$('s-name')?.value||'';
+    inp.value=[cl,sn].filter(Boolean).join(' \u2014 ')||''
+    const saveNewBtn=document.createElement('button');saveNewBtn.className='btn btn-g';saveNewBtn.textContent='Save as New';
+    saveNewBtn.addEventListener('click',()=>_doSaveNew(inp.value,bg));
+    inp.addEventListener('keydown',e=>{if(e.key==='Escape')bg.remove();});
+    acts.appendChild(cancel);acts.appendChild(updateBtn);
+    modal.appendChild(title);modal.appendChild(acts);
+    modal.appendChild(orLabel);modal.appendChild(inp);
+    const newRow=document.createElement('div');newRow.style.cssText='display:flex;justify-content:flex-end';
+    newRow.appendChild(saveNewBtn);modal.appendChild(newRow);
+    setTimeout(()=>updateBtn.focus(),50);
+  }else{
+    const inp=document.createElement('input');inp.className='sv-modal-inp';
+    inp.placeholder='Show name (e.g. LA Dodgers \u2014 Opening Night)';
+    const cl=$('s-client')?.value||'';const sn=$('s-name')?.value||'';
+    inp.value=[cl,sn].filter(Boolean).join(' \u2014 ')||''
+    const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save Show';
+    save.addEventListener('click',()=>_doSaveNew(inp.value,bg));
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')save.click();if(e.key==='Escape')bg.remove();});
+    acts.appendChild(cancel);acts.appendChild(save);
+    modal.appendChild(title);modal.appendChild(inp);modal.appendChild(acts);
+    setTimeout(()=>inp.focus(),50);
   }
-  const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save as New';
-  save.addEventListener('click',()=>{
-    const name=inp.value.trim()||('Show '+new Date().toLocaleDateString());
-    const state=svSerialize();state.name=name;
-    const key='sv_'+Date.now();
-    const entry={key,name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
-    const all=svGetAll();
-    all.unshift(entry);
-    svSetAll(all);
-    const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
-    cloudSave(key,cloudEntry).then(()=>{
-      if(_cloudShows)_cloudShows[key]=cloudEntry;
-      svRenderList();
-      notif('\u2601 "'+name+'" saved & synced to cloud');
-    }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+name+'" saved locally (cloud: '+e.message+')');});
-    $('sv-panel').classList.add('open');
-    bg.remove();
-  });
   bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')save.click();if(e.key==='Escape')bg.remove();});
-  acts.appendChild(cancel);acts.appendChild(save);
-  modal.appendChild(title);modal.appendChild(inp);modal.appendChild(acts);
   bg.appendChild(modal);document.body.appendChild(bg);
-  setTimeout(()=>inp.focus(),50);
 }
 
+function _doSaveNew(rawName,bg){
+  const name=rawName.trim()||('Show '+new Date().toLocaleDateString());
+  const state=svSerialize();state.name=name;
+  const key='sv_'+Date.now();
+  const entry={key,name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+  const all=svGetAll();all.unshift(entry);svSetAll(all);
+  window._currentShowKey=key;window._currentShowName=name;
+  const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+  cloudSave(key,cloudEntry).then(()=>{
+    if(_cloudShows)_cloudShows[key]=cloudEntry;
+    svRenderList();notif('\u2601 "'+name+'" saved & synced to cloud');
+  }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+name+'" saved locally (cloud: '+e.message+')');});
+  $('sv-panel').classList.add('open');
+  if(bg)bg.remove();
+}
 function svLoadShow(key){
   // Check local first
   let entry=svGetAll().find(e=>e.key===key);
@@ -4701,6 +4762,35 @@ async function genProgramReport(){
   }catch(err){console.error(err);notif('Error: '+err.message);}
   finally{const b=$('btn-prog-report');if(b){b.disabled=false;b.textContent='\u22b3 Program Report';}}
 }
+
+// ── Auto-save & sticky footer wiring ─────────────────────────────────────
+let _autoSaveTimer=null;
+function _scheduleAutoSave(){
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(()=>{
+    if(!window._currentShowKey)return;
+    const state=svSerialize();
+    const all=svGetAll();
+    const idx=all.findIndex(e=>e.key===window._currentShowKey);
+    if(idx===-1)return;
+    const name=all[idx].name;
+    state.name=name;
+    all[idx]={key:window._currentShowKey,name,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
+    svSetAll(all);
+    const ce={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
+    cloudSave(window._currentShowKey,ce).then(()=>{
+      if(_cloudShows)_cloudShows[window._currentShowKey]=ce;
+    }).catch(()=>{});
+    // Show brief auto-saved indicator in footer
+    const badge=document.getElementById('sf-autosave');
+    if(badge){badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),2500);}
+  },8000);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const sfBtn=document.getElementById('sf-save-btn');
+  if(sfBtn)sfBtn.addEventListener('click',svOpenSaveModal);
+});
 </script>
 <!-- ── Quick Metrics Entry Modal ─────────────────────────────────────────── -->
 <div id="qm-overlay">
@@ -4761,6 +4851,20 @@ async function genProgramReport(){
       </div>
     </div>
   </div>
+</div>
+
+<div class="sf" id="sticky-footer">
+  <div class="sf-item"><div class="sf-lbl">Paid</div><div class="sf-val" id="sf-paid">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Earned</div><div class="sf-val" id="sf-earned">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Shared</div><div class="sf-val" id="sf-shared">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Owned</div><div class="sf-val" id="sf-owned">$0</div></div>
+  <div class="sf-div"></div>
+  <div class="sf-item"><div class="sf-lbl">Total EMV</div><div class="sf-val" id="sf-emv">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Biz Impact</div><div class="sf-val teal" id="sf-biz">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">ROI</div><div class="sf-val ind" id="sf-roi">--</div></div>
+  <div class="sf-div"></div>
+  <span class="sf-autosave" id="sf-autosave">✓ Auto-saved</span>
+  <button class="btn btn-g sf-save" id="sf-save-btn" style="font-size:11px;padding:8px 16px">💾 Save Show</button>
 </div>
 </body>
 </html>
