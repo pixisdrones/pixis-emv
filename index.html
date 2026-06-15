@@ -3714,6 +3714,7 @@ function svDeserialize(data){
       if(d.engVals&&card._setEngVals)card._setEngVals(d.engVals);
     });
   };
+  console.log('[EMV Load] infCards — soc:'+(data.infCardsSoc||[]).length+' earned:'+(data.infCardsEarned||[]).length+' paid:'+(data.infCardsPaid||[]).length, data.infCardsSoc);
   _restoreInfCards(data.infCardsSoc,'soc');
   _restoreInfCards(data.infCardsEarned,'earned-oinfs');
   _restoreInfCards(data.infCardsPaid,'paid-infs');
@@ -3825,11 +3826,13 @@ function svUpdateShow(key){
   svSetAll(all);
   window._currentShowKey=key;
   window._currentShowName=oldName;
+  const _sc=(state.infCardsSoc||[]).length,_se=(state.infCardsEarned||[]).length,_sp=(state.infCardsPaid||[]).length;
+  console.log('[EMV Save] infCards \u2014 soc:'+_sc+' earned:'+_se+' paid:'+_sp,state.infCardsSoc);
   const ce={name:oldName,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
   cloudSave(key,ce).then(()=>{
     if(_cloudShows)_cloudShows[key]=ce;
-    svRenderList();notif('\u2601 "'+oldName+'" updated & synced');
-  }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" updated (cloud: '+e.message+')');});
+    svRenderList();notif('\u2601 "'+oldName+'" saved ('+_sc+' social, '+_se+' earned, '+_sp+' paid)');
+  }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" saved locally \u2014 '+_sc+' social, '+_se+' earned, '+_sp+' paid (cloud: '+e.message+')');});
 }
 
 function svOpenSaveModal(){
