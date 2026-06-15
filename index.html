@@ -378,6 +378,9 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .sf-item{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:60px}
 .sf-lbl{font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft)}
 .sf-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--gld);white-space:nowrap}
+.sf-val.paid{color:#e85d04}
+.sf-val.shared{color:var(--ind)}
+.sf-val.owned{color:var(--tel)}
 .sf-val.teal{color:var(--tel)}
 .sf-val.ind{color:var(--ind2)}
 .sf-div{width:1px;height:32px;background:var(--bd);flex-shrink:0}
@@ -3714,7 +3717,6 @@ function svDeserialize(data){
       if(d.engVals&&card._setEngVals)card._setEngVals(d.engVals);
     });
   };
-  console.log('[EMV Load] infCards — soc:'+(data.infCardsSoc||[]).length+' earned:'+(data.infCardsEarned||[]).length+' paid:'+(data.infCardsPaid||[]).length, data.infCardsSoc);
   _restoreInfCards(data.infCardsSoc,'soc');
   _restoreInfCards(data.infCardsEarned,'earned-oinfs');
   _restoreInfCards(data.infCardsPaid,'paid-infs');
@@ -3826,13 +3828,11 @@ function svUpdateShow(key){
   svSetAll(all);
   window._currentShowKey=key;
   window._currentShowName=oldName;
-  const _sc=(state.infCardsSoc||[]).length,_se=(state.infCardsEarned||[]).length,_sp=(state.infCardsPaid||[]).length;
-  console.log('[EMV Save] infCards \u2014 soc:'+_sc+' earned:'+_se+' paid:'+_sp,state.infCardsSoc);
   const ce={name:oldName,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
   cloudSave(key,ce).then(()=>{
     if(_cloudShows)_cloudShows[key]=ce;
-    svRenderList();notif('\u2601 "'+oldName+'" saved ('+_sc+' social, '+_se+' earned, '+_sp+' paid)');
-  }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" saved locally \u2014 '+_sc+' social, '+_se+' earned, '+_sp+' paid (cloud: '+e.message+')');});
+    svRenderList();notif('\u2601 "'+oldName+'" updated & synced');
+  }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+oldName+'" updated (cloud: '+e.message+')');});
 }
 
 function svOpenSaveModal(){
@@ -4902,10 +4902,10 @@ document.addEventListener('DOMContentLoaded',()=>{
 </div>
 
 <div class="sf" id="sticky-footer">
-  <div class="sf-item"><div class="sf-lbl">Paid</div><div class="sf-val" id="sf-paid">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Paid</div><div class="sf-val paid" id="sf-paid">$0</div></div>
   <div class="sf-item"><div class="sf-lbl">Earned</div><div class="sf-val" id="sf-earned">$0</div></div>
-  <div class="sf-item"><div class="sf-lbl">Shared</div><div class="sf-val" id="sf-shared">$0</div></div>
-  <div class="sf-item"><div class="sf-lbl">Owned</div><div class="sf-val" id="sf-owned">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Shared</div><div class="sf-val shared" id="sf-shared">$0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Owned</div><div class="sf-val owned" id="sf-owned">$0</div></div>
   <div class="sf-div"></div>
   <div class="sf-item"><div class="sf-lbl">Total EMV</div><div class="sf-val" id="sf-emv">$0</div></div>
   <div class="sf-item"><div class="sf-lbl">Biz Impact</div><div class="sf-val teal" id="sf-biz">$0</div></div>
