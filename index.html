@@ -3405,7 +3405,7 @@ async function genPdf(){
     const mg=40,uw=pw-mg*2;let cy=mg;
     const HC='#1a2a5e',AC='#c9a843';
     const stamp=async html=>{
-      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px';
+      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222';
       w.innerHTML=html;$('pdfContent').appendChild(w);
       const cv=await html2canvas(w,{scale:2,backgroundColor:'#fff',logging:false});
       const h=cv.height*uw/cv.width;
@@ -4184,7 +4184,7 @@ async function genPredPdf(){
     const mg=40,uw=pw-mg*2;let cy=mg;
     const HC='#1a2a5e',AC='#c9a843';
     const stamp=async html=>{
-      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px';
+      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222';
       w.innerHTML=html;$('pdfContent').appendChild(w);
       const cv=await html2canvas(w,{scale:2,backgroundColor:'#fff',logging:false});
       const h=cv.height*uw/cv.width;
@@ -4779,7 +4779,7 @@ async function genProgramReport(){
     const mg=40,uw=pw-mg*2;let cy=mg;
     const HC='#1a2a5e',AC='#c9a843';
     const stamp=async html=>{
-      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px';
+      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222';
       w.innerHTML=html;$('pdfContent').appendChild(w);
       const cv=await html2canvas(w,{scale:2,backgroundColor:'#fff',logging:false});
       const h=cv.height*uw/cv.width;
