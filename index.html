@@ -3473,13 +3473,13 @@ async function genPdf(){
           +'<tbody>'+biRows+'<tr style="background:#e8f8f5"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a">Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a;font-size:12px">'+fmt(biTot)+'</td></tr></tbody></table></div>');
         continue;
       }
-      if(sec.type==='influencers'){
+      if(sec.type==='influencers'||sec.type==='earned-soc'){
         let infRows='';let secTot=0;
         document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
           if(!card._getEMV)return;const emv=card._getEMV();if(!emv)return;secTot+=emv;
           const nm=card.querySelector('input[type="text"]')?.value||'Unknown';
           const url=card._urlInp?.value||'';
-          const urlCell=url?'<a data-href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#666;font-size:9px">—</span>';
+          const urlCell=url?'<a data-href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#444;font-size:9px">—</span>';
           infRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+nm+'</div><div>'+urlCell+'</div></td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
         });
         if(!infRows)continue;
@@ -3562,7 +3562,7 @@ async function genPdf(){
           if(!card._getEMV)return;const emv=card._getEMV();if(!emv)return;socInfTot+=emv;
           const nm=card._nameInp?.value||card.querySelector('input[type="text"]')?.value||'Unknown';
           const url=card._urlInp?.value||'';
-          const urlCell=url?'<a data-href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#666;font-size:9px">—</span>';
+          const urlCell=url?'<a data-href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#444;font-size:9px">—</span>';
           socInfRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+nm+'</div><div>'+urlCell+'</div></td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
         });
         if(socInfRows){
@@ -3605,10 +3605,10 @@ async function genPdf(){
     const paidD=$('peso-P').textContent,earnD=$('peso-E').textContent,sharD=$('peso-S').textContent,ownD=$('peso-O').textContent;
     await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Framework Summary</div>'
       +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">'
-      +'<div style="border-top:3px solid #e85d04;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:5px">Paid</div><div style="font-size:16px;font-weight:700;color:#e85d04">'+paidD+'</div></div>'
-      +'<div style="border-top:3px solid #c9a843;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:5px">Earned</div><div style="font-size:16px;font-weight:700;color:#c9a843">'+earnD+'</div></div>'
-      +'<div style="border-top:3px solid #5a6ef8;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:5px">Shared</div><div style="font-size:16px;font-weight:700;color:#5a6ef8">'+sharD+'</div></div>'
-      +'<div style="border-top:3px solid #2fd4b2;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:5px">Owned</div><div style="font-size:16px;font-weight:700;color:#2ab49a">'+ownD+'</div></div>'
+      +'<div style="border-top:3px solid #e85d04;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Paid</div><div style="font-size:16px;font-weight:700;color:#e85d04">'+paidD+'</div></div>'
+      +'<div style="border-top:3px solid #c9a843;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Earned</div><div style="font-size:16px;font-weight:700;color:#c9a843">'+earnD+'</div></div>'
+      +'<div style="border-top:3px solid #5a6ef8;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Shared</div><div style="font-size:16px;font-weight:700;color:#5a6ef8">'+sharD+'</div></div>'
+      +'<div style="border-top:3px solid #2fd4b2;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Owned</div><div style="font-size:16px;font-weight:700;color:#2ab49a">'+ownD+'</div></div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:14px">'
       +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">Total EMV</div><div style="font-size:24px;font-weight:700;color:'+HC+'">'+emvD+'</div></div>'
