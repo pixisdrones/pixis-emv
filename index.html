@@ -329,6 +329,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .press-emv-row{display:flex;justify-content:space-between;align-items:center;background:rgba(212,168,67,.08);border:1px solid rgba(212,168,67,.2);border-radius:6px;padding:8px 12px;margin-top:8px}
 .press-emv-lbl{font-size:10px;font-weight:600;color:var(--ft);text-transform:uppercase;letter-spacing:.06em}
 .press-emv-val{font-size:14px;font-weight:700;color:#d4a843}
+.press-adj-val{background:rgba(212,168,67,.08);border:1px dashed rgba(212,168,67,.4);border-radius:7px;padding:9px 11px;font-size:12px;font-weight:700;color:#d4a843;box-sizing:border-box;min-height:38px}
 .press-foot{padding:8px 18px 12px;border-top:1px solid var(--bd2)}
 /* ── WOM Overview auto-sum rows ─────────────────────────────────────── */
 .wom-auto-row{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr;gap:6px;padding:10px 18px;border-bottom:1px solid var(--bd2);align-items:center}
@@ -2256,6 +2257,8 @@ function buildInfCard(opts){
 }
 
 let pressMentionCount=0;
+// Default % of total audience assumed to have seen any single story, by media type
+const PRESS_DEFAULT_REACH_PCT={blog:4,tv:65,forum:5,award:8,nl:40,on:5,print:10,po:75};
 function buildPressCard(opts){
   // opts: {onEMVChange, onRemove, data}
   const {onEMVChange,onRemove}=opts;
@@ -2333,14 +2336,25 @@ function buildPressCard(opts){
   photoWrap.appendChild(photoBtn);photoWrap.appendChild(photoThumb);photoWrap.appendChild(photoRemoveBtn);
   photoWrap.appendChild(photoInp);
 
-  // Row 4: reach + cpm + adj
+  // Row 4: total audience + reach % + computed adj. reach
   const r4=document.createElement('div');r4.className='press-card-g';
   const reachInp=mkNum(d.reach||0,'1');
+  const reachPctInp=mkNum(d.reachPct||PRESS_DEFAULT_REACH_PCT[d.mtype||'blog']||5,'0.1');
+  reachPctInp.max=100;reachPctInp.min=0.1;reachPctInp.title='% of total audience assumed to have seen this story';
+  const adjReachDisp=document.createElement('div');adjReachDisp.className='press-adj-val';adjReachDisp.textContent='0';
+  const adjReachFld=document.createElement('div');adjReachFld.className='ff';
+  const adjReachLbl=document.createElement('label');adjReachLbl.className='fl';adjReachLbl.textContent='Adj. Reach';
+  adjReachFld.appendChild(adjReachLbl);adjReachFld.appendChild(adjReachDisp);
+  r4.appendChild(mkFld('Total Audience',reachInp));
+  r4.appendChild(mkFld('Reach % of Audience',reachPctInp));
+  r4.appendChild(adjReachFld);
+
+  // Row 5: CPM + adj factor
+  const r5=document.createElement('div');r5.className='press-card-g2';
   const cpmInp=mkNum(d.cpm||DEFAULT_CPM[typeSel.value]||10,'0.01');
   const adjInp=mkNum(d.adj||DEFAULT_ADJ[typeSel.value]||1.5,'0.1');
-  r4.appendChild(mkFld('Reach',reachInp));
-  r4.appendChild(mkFld('CPM Rate ($)',cpmInp));
-  r4.appendChild(mkFld('Adj. Factor',adjInp));
+  r5.appendChild(mkFld('CPM Rate ($)',cpmInp));
+  r5.appendChild(mkFld('Adj. Factor',adjInp));
 
   // EMV row
   const emvRow=document.createElement('div');emvRow.className='press-emv-row';
@@ -2350,9 +2364,12 @@ function buildPressCard(opts){
 
   function recalc(){
     const reach=parseFloat(reachInp.value)||0;
+    const reachPct=parseFloat(reachPctInp.value)||0;
+    const adjReach=Math.round(reach*reachPct/100);
     const cpm=parseFloat(cpmInp.value)||0;
     const adj=parseFloat(adjInp.value)||1;
-    const emv=(reach/1000)*cpm*adj;
+    const emv=(adjReach/1000)*cpm*adj;
+    adjReachDisp.textContent=adjReach.toLocaleString();
     emvVal.textContent=fmt(emv);
     typeBadge.textContent=PRESS_TYPES.find(([v])=>v===typeSel.value)?.[1]||'Blog / Digital';
     card.dataset.mtype=typeSel.value;
@@ -2371,16 +2388,19 @@ function buildPressCard(opts){
     const t=typeSel.value;
     if(!d.cpm)cpmInp.value=DEFAULT_CPM[t]||10;
     if(!d.adj)adjInp.value=DEFAULT_ADJ[t]||1.5;
+    if(!d.reachPct)reachPctInp.value=PRESS_DEFAULT_REACH_PCT[t]||5;
     updateURLState();
     recalc();
   });
-  [reachInp,cpmInp,adjInp].forEach(i=>i.addEventListener('input',recalc));
+  [reachInp,reachPctInp,cpmInp,adjInp].forEach(i=>i.addEventListener('input',recalc));
 
   card._getEMV=()=>{
     const reach=parseFloat(reachInp.value)||0;
+    const reachPct=parseFloat(reachPctInp.value)||0;
+    const adjReach=reach*reachPct/100;
     const cpm=parseFloat(cpmInp.value)||0;
     const adj=parseFloat(adjInp.value)||1;
-    return(reach/1000)*cpm*adj;
+    return(adjReach/1000)*cpm*adj;
   };
   card._data=()=>({
     cid,
@@ -2389,12 +2409,13 @@ function buildPressCard(opts){
     headline:headlineInp.value,
     mtype:typeSel.value,
     reach:reachInp.value,
+    reachPct:reachPctInp.value,
     cpm:cpmInp.value,
     adj:adjInp.value,
     photoUrl:_photoUrl||null
   });
 
-  card.appendChild(hd);card.appendChild(r1);card.appendChild(r2);card.appendChild(r3);card.appendChild(photoWrap);card.appendChild(r4);card.appendChild(emvRow);
+  card.appendChild(hd);card.appendChild(r1);card.appendChild(r2);card.appendChild(r3);card.appendChild(photoWrap);card.appendChild(r4);card.appendChild(r5);card.appendChild(emvRow);
   recalc();
   return card;
 }
@@ -3142,7 +3163,11 @@ function runCalc(){
     let totalReach=0;
     if($('tog-oP')?.checked)totalReach+=gn('m-oP');
     if($('tog-oS')?.checked)totalReach+=gn('m-oS');
-    document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{if(card._data)totalReach+=parseFloat(card._data().reach||0);});
+    document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
+      if(!card._data)return;const pd=card._data();
+      const rPct=parseFloat(pd.reachPct||PRESS_DEFAULT_REACH_PCT[pd.mtype]||5);
+      totalReach+=Math.round(parseFloat(pd.reach||0)*rPct/100);
+    });
     ['soc','earned-oinfs','paid-infs'].forEach(sid=>{
       document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
         if(!card._getEngQty)return;
@@ -3447,6 +3472,7 @@ async function genPdf(){
       cy+=h+7;
       $('pdfContent').removeChild(w);
     };
+    const fmtEmv=v=>fmt(Math.max(1,Math.round(v)));
     const gv=id=>$(id)?.value||'--';const cl=window._clientLogo||null;
     await stamp('<div style="background:'+HC+';color:#fff;padding:30px 36px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
       +'<div style="display:flex;align-items:center;gap:14px"><img src="'+PIXIS_LOGO_2C+'" style="height:38px;object-fit:contain">'
@@ -3458,7 +3484,7 @@ async function genPdf(){
       +'<div><strong>Client:</strong> '+gv('s-client')+'</div><div><strong>Program:</strong> '+gv('s-prog')+'</div>'
       +'<div><strong>Show:</strong> '+gv('s-name')+'</div><div><strong>City / State:</strong> '+[gv('s-city'),gv('s-state')].filter(Boolean).join(', ')+'</div>'
       +'<div><strong>Launch Site:</strong> '+(gv('s-launch')||'--')+'</div><div><strong>Audience Location:</strong> '+(gv('s-audience')||'--')+'</div>'
-      +'<div><strong>Date:</strong> '+(gv('s-date')||'--')+'</div><div><strong>Drones:</strong> '+(gv('s-drones')||'--')+'</div>'
+      +'<div><strong>Date:</strong> '+(gv('s-date')||'--')+'</div><div><strong>Drones:</strong> '+(gv('s-drones')!=='--'?(parseInt(gv('s-drones').replace(/,/g,''),10)||0).toLocaleString():'--')+'</div>'
       +'<div><strong>Duration:</strong> '+gv('s-len')+' min</div><div><strong>Cost:</strong> '+(gn('s-cost')>0?fmt(gn('s-cost')):'--')+'</div></div></div>');
     let _lastPesoPdf=null;
     let _pendingPesoHeader=null;
@@ -3497,19 +3523,49 @@ async function genPdf(){
         continue;
       }
       if(sec.type==='influencers'||sec.type==='earned-soc'){
-        let infRows='';let secTot=0;
+        const PLAT_LBL={'ig':'Instagram','tt':'TikTok','yt':'YouTube','yts':'YouTube Shorts','xx':'X / Twitter','fb':'Facebook','rd':'Reddit','th':'Threads','qu':'Quora'};
+        const byPlat={};let secTot=0;
         document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
-          if(!card._getEMV)return;const emv=card._getEMV();if(!emv)return;secTot+=emv;
-          const nm=card.querySelector('input[type="text"]')?.value||'Unknown';
+          if(!card._getEMV)return;
+          const rawEmv=card._getEMV();
+          const ser=card._serialize?card._serialize():{};
+          const pl=card._platSel?.value||'other';
+          const nm=card._nameInp?.value||card.querySelector('input[type="text"]')?.value||'Unknown';
           const url=card._urlInp?.value||'';
-          const urlCell=url?'<a data-href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#444;font-size:9px">—</span>';
-          infRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+nm+'</div><div>'+urlCell+'</div></td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
+          const views=(ser.engQtys?.view)||card._followerCount||0;
+          const totalEng=Object.entries(ser.engQtys||{}).filter(([k])=>k!=='view').reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+          secTot+=rawEmv;
+          if(!byPlat[pl])byPlat[pl]=[];
+          byPlat[pl].push({rawEmv,nm,url,views,totalEng});
         });
-        if(!infRows)continue;
+        if(!Object.keys(byPlat).length)continue;
         if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
-        await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Influencer / Post URL</th><th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>'
-          +'<tbody>'+infRows+'<tr style="background:#f0f2ff"><td style="padding:7px 9px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr></tbody></table></div>');
+        await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div></div>');
+        const colgrp='<colgroup><col style="width:36%"><col style="width:18%"><col style="width:18%"><col style="width:28%"></colgroup>';
+        const tblHdr='<table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed">'+colgrp
+          +'<thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle / Username</th>'
+          +'<th style="padding:7px 9px;text-align:right">Impressions</th>'
+          +'<th style="padding:7px 9px;text-align:right">Engagements</th>'
+          +'<th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>';
+        for(const [pl,group] of Object.entries(byPlat)){
+          const plLabel=PLAT_LBL[pl]||pl;
+          let rowsHTML='<tr style="background:#e8edff"><td colspan="4" style="padding:5px 9px;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:'+HC+'">'+plLabel+'</td></tr>';
+          group.forEach(c=>{
+            const nameCell=c.url
+              ?'<a data-href="'+c.url+'" style="font-weight:600;color:'+HC+';text-decoration:underline">'+c.nm+'</a>'
+              :'<span style="font-weight:600">'+c.nm+'</span>';
+            rowsHTML+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nameCell+'</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+c.views.toLocaleString()+'</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+c.totalEng.toLocaleString()+'</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmtEmv(c.rawEmv)+'</td></tr>';
+          });
+          await stamp(tblHdr+'<tbody>'+rowsHTML+'</tbody></table>');
+        }
+        await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
+          +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
+          +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td>'
+          +'<td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmtEmv(secTot)+'</td></tr>'
+          +'</table></div>');
         continue;
       }
       let rowsHTML='';let secTot=0;
@@ -3555,16 +3611,18 @@ async function genPdf(){
             const pd=card._data();const pemv=card._getEMV();if(!pemv&&!pd.outlet)return;
             tot+=pemv;
             const outletCell=pd.url?'<a data-href="'+pd.url+'" style="font-weight:700;color:#1a2a5e;text-decoration:underline">'+(pd.outlet||'Unknown')+'</a>':'<span style="font-weight:700">'+(pd.outlet||'Unknown')+'</span>';
+            const _rPct=parseFloat(pd.reachPct||PRESS_DEFAULT_REACH_PCT[pd.mtype]||5);
+            const _adjReach=Math.round(parseFloat(pd.reach||0)*_rPct/100);
             rows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+outletCell+(pd.headline?'<div style="font-size:9px;color:#333;margin-top:2px">'+pd.headline+'</div>':'')+'</td>'
               +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.reach||0).toLocaleString()+'</td>'
-              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">$'+parseFloat(pd.cpm||0).toFixed(2)+'</td>'
-              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+parseFloat(pd.adj||1).toFixed(1)+'x</td>'
-              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pemv)+'</td></tr>';
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+_rPct.toFixed(1)+'%</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:600">'+_adjReach.toLocaleString()+'</td>'
+              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmtEmv(pemv)+'</td></tr>';
           });
           return{rows,tot};
         };
         const{rows:pressRows,tot:pressTot}=buildMentionRows('#press-list-wom');
-        const mentionTableHdr='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">CPM</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj.</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>';
+        const mentionTableHdr='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Total Audience</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach %</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj. Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Est. EMV</th></tr></thead>';
         if(pressRows){
           await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Press Mentions</div>'
             +mentionTableHdr+'<tbody>'+pressRows+'</tbody></table></div>');
@@ -3573,9 +3631,7 @@ async function genPdf(){
         const combinedTot=secTot+pressTot;
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
           +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
-          +(secTot?'<tr style="background:#f0f2ff"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Manual Entries Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(secTot)+'</td></tr>':'')
-          +(pressTot?'<tr style="background:#fffbf0"><td style="padding:8px 14px;border:1px solid #e5e7eb;font-weight:700;color:'+HC+'">Press Mentions Total</td><td style="padding:8px 14px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(pressTot)+'</td></tr>':'')
-          +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">'+sec.num+'. '+sec.title+' Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmt(combinedTot)+'</td></tr>'
+          +'<tr style="background:#e8edff"><td style="padding:9px 14px;border:2px solid '+HC+';font-weight:700;color:'+HC+';font-size:11px">Press &amp; Media Coverage Total</td><td style="padding:9px 14px;border:2px solid '+HC+';text-align:right;font-weight:700;color:'+AC+';font-size:13px">'+fmtEmv(combinedTot)+'</td></tr>'
           +'</table></div>');
       }
       // Individual post tracking cards for Official Brand Social
@@ -3624,20 +3680,31 @@ async function genPdf(){
         await stamp('<div style="display:flex;gap:10px;margin-top:8px">'+cols+'</div>');
       }
     }
-    const emvD=$('r-emv').textContent,bizD=$('r-biz').textContent,roiD=$('r-roi').textContent,totD=$('s-tot').textContent;
+    const emvD=$('r-emv').textContent,bizD=$('r-biz').textContent,roiD=$('r-roi').textContent;
     const paidD=$('peso-P').textContent,earnD=$('peso-E').textContent,sharD=$('peso-S').textContent,ownD=$('peso-O').textContent;
-    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Framework Summary</div>'
-      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">'
-      +'<div style="border-top:3px solid #e85d04;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Paid</div><div style="font-size:16px;font-weight:700;color:#e85d04">'+paidD+'</div></div>'
-      +'<div style="border-top:3px solid #c9a843;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Earned</div><div style="font-size:16px;font-weight:700;color:#c9a843">'+earnD+'</div></div>'
-      +'<div style="border-top:3px solid #5a6ef8;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Shared</div><div style="font-size:16px;font-weight:700;color:#5a6ef8">'+sharD+'</div></div>'
-      +'<div style="border-top:3px solid #2fd4b2;border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Owned</div><div style="font-size:16px;font-weight:700;color:#2ab49a">'+ownD+'</div></div>'
-      +'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:14px">'
-      +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">Total EMV</div><div style="font-size:24px;font-weight:700;color:'+HC+'">'+emvD+'</div></div>'
-      +'<div style="background:#e8f8f5;border:2px solid #2fd4b2;border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">Business Impact</div><div style="font-size:24px;font-weight:700;color:#1a7a6a">'+bizD+'</div></div>'
-      +'<div style="background:#fffbf0;border:2px solid '+AC+';border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">ROI</div><div style="font-size:24px;font-weight:700;color:'+AC+'">'+roiD+'</div></div></div>'
-      +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:14px 20px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">Combined Program Value</div><div style="font-size:30px;font-weight:700;color:'+HC+'">'+totD+'</div></div></div>');
+    const cpmD=$('r-cpm')?.textContent||'--';
+    const _parseDollar=t=>parseFloat((t||'').replace(/[$,]/g,''))||0;
+    const _pesoItems=[
+      {label:'Paid',disp:paidD,val:_parseDollar(paidD),col:'#e85d04'},
+      {label:'Earned',disp:earnD,val:_parseDollar(earnD),col:'#c9a843'},
+      {label:'Shared',disp:sharD,val:_parseDollar(sharD),col:'#5a6ef8'},
+      {label:'Owned',disp:ownD,val:_parseDollar(ownD),col:'#2ab49a'}
+    ].filter(x=>x.val>0);
+    const _pesoGrid=_pesoItems.length
+      ?'<div style="display:grid;grid-template-columns:repeat('+_pesoItems.length+',1fr);gap:8px;margin-bottom:12px">'
+        +_pesoItems.map(x=>'<div style="border-top:3px solid '+x.col+';border:1px solid #ddd;border-radius:6px;padding:12px;text-align:center"><div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:5px">'+x.label+'</div><div style="font-size:16px;font-weight:700;color:'+x.col+'">'+x.disp+'</div></div>').join('')
+        +'</div>'
+      :'';
+    const _metCards=[];
+    _metCards.push('<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">Total EMV</div><div style="font-size:24px;font-weight:700;color:'+HC+'">'+emvD+'</div></div>');
+    if(_parseDollar(bizD)>0)_metCards.push('<div style="background:#e8f8f5;border:2px solid #2fd4b2;border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">Business Impact</div><div style="font-size:24px;font-weight:700;color:#1a7a6a">'+bizD+'</div></div>');
+    _metCards.push('<div style="background:#fffbf0;border:2px solid '+AC+';border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">ROI</div><div style="font-size:24px;font-weight:700;color:'+AC+'">'+roiD+'</div></div>');
+    if(cpmD&&cpmD!=='--'&&cpmD!=='$0')_metCards.push('<div style="background:#fff5eb;border:2px solid #e85d04;border-radius:7px;padding:18px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#333;margin-bottom:7px">Program CPM</div><div style="font-size:24px;font-weight:700;color:#e85d04">'+cpmD+'</div></div>');
+    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">Program Return</div>'
+      +_pesoGrid
+      +'<div style="display:grid;grid-template-columns:repeat('+_metCards.length+',1fr);gap:11px">'
+      +_metCards.join('')
+      +'</div></div>');
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
       pdf.text('Confidential \u2014 Pixis Drones \u2014 EMV figures are estimates based on industry benchmarks.',pw/2,ph-16,{align:'center'});
@@ -3837,7 +3904,7 @@ function exportCSVMentions(){
   const esc=v=>{if(v===null||v===undefined)return '';const s=String(v);if(/[,"\n]/.test(s))return '"'+s.replace(/"/g,'""')+'"';return s;};
   const PLAT={ig:'Instagram',tt:'TikTok',yt:'YouTube',yts:'YouTube Shorts',xx:'X / Twitter',fb:'Facebook',rd:'Reddit',th:'Threads',qu:'Quora'};
   const MTYPE={blog:'Blog / Online',tv:'TV / Broadcast',forum:'Forum / Community',award:'Award / Recognition',nl:'Newsletter',on:'Online News',print:'Print',po:'Podcast'};
-  const rows=[['Show Name','Client','Program','Show Date','City','State','Section','Entry Type','Name / Outlet / Description','Platform','URL','Reach / Metric','Rate / CPM ($)','Adj Factor','Est. EMV ($)'].join(',')];
+  const rows=[['Show Name','Client','Program','Show Date','City','State','Section','Entry Type','Name / Outlet / Description','Platform','URL','Total Audience','Reach %','Adj. Reach','Rate / CPM ($)','Adj Factor','Est. EMV ($)'].join(',')];
   let totalRows=0;
   shows.forEach(entry=>{
     const s=entry.state||{};const d=s.details||{};
@@ -3845,8 +3912,10 @@ function exportCSVMentions(){
     // Press cards
     (s.pressCards||[]).forEach(c=>{
       const reach=parseFloat(c.reach||0),cpm=parseFloat(c.cpm||0),adj=parseFloat(c.adj||1);
-      const emv=(reach/1000)*cpm*adj;
-      rows.push([...base,esc('Press & Media Coverage'),esc(MTYPE[c.mtype]||'Press Mention'),esc(c.outlet||''),'',esc(c.url||''),reach,cpm,adj,emv.toFixed(2)].join(','));totalRows++;
+      const reachPct=parseFloat(c.reachPct||PRESS_DEFAULT_REACH_PCT[c.mtype]||5);
+      const adjReach=Math.round(reach*reachPct/100);
+      const emv=(adjReach/1000)*cpm*adj;
+      rows.push([...base,esc('Press & Media Coverage'),esc(MTYPE[c.mtype]||'Press Mention'),esc(c.outlet||''),'',esc(c.url||''),reach,reachPct,adjReach,cpm,adj,emv.toFixed(2)].join(','));totalRows++;
     });
     // Inf-cards
     [{arr:s.infCardsSoc,sec:'Official Brand Social',cat:'Social Post'},{arr:s.infCardsEarned,sec:'Social Media Mentions',cat:'Social Post'},{arr:s.infCardsPaid,sec:'Contracted Influencers',cat:'Influencer Post'}].forEach(({arr,sec,cat})=>{
