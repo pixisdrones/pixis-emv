@@ -102,6 +102,8 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .rc.blue::before{background:radial-gradient(circle,rgba(90,110,248,.12) 0,transparent 70%)}
 .rc.teal::before{background:radial-gradient(circle,rgba(47,212,178,.1) 0,transparent 70%)}
 .rc.gold::before{background:radial-gradient(circle,rgba(212,168,67,.12) 0,transparent 70%)}
+.rc.org::before{background:radial-gradient(circle,rgba(232,93,4,.12) 0,transparent 70%)}
+.rc.org .rc-val{color:#e85d04}
 .rc-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ft);margin-bottom:7px}
 .rc-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1}
 .rc.blue .rc-val{color:var(--ind2)}
@@ -489,6 +491,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         <div class="rc blue"><div class="rc-lbl">Total Earned Media Value</div><div class="rc-val" id="r-emv">$0</div></div>
         <div class="rc teal"><div class="rc-lbl">Business Impact</div><div class="rc-val" id="r-biz">$0</div></div>
         <div class="rc gold"><div class="rc-lbl">Return on Investment</div><div class="rc-val" id="r-roi">&#8212;</div></div>
+        <div class="rc org" title="Program CPM = Show Cost &#xF7; Total Impressions &#xD7; 1,000. Includes live audience, press reach, and social est. views."><div class="rc-lbl">Program CPM</div><div class="rc-val" id="r-cpm">&#8212;</div></div>
       </div>
       <!-- Channel breakdown -->
       <div class="sum-tbl" style="margin-top:14px">
@@ -3133,6 +3136,25 @@ function runCalc(){
   let roiTxt='--';
   if(cost>0){const roi=emvTotal/cost;roiTxt=roi.toFixed(1)+'x';re.textContent=roiTxt;re.className='rc-val '+(roi>=1?'pos':'neg');}
   else{re.textContent='--';re.className='rc-val';}
+  // Program CPM = cost × 1000 / total impressions reached
+  const cpmEl=$('r-cpm');
+  if(cpmEl){
+    let totalReach=0;
+    if($('tog-oP')?.checked)totalReach+=gn('m-oP');
+    if($('tog-oS')?.checked)totalReach+=gn('m-oS');
+    document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{if(card._data)totalReach+=parseFloat(card._data().reach||0);});
+    ['soc','earned-oinfs','paid-infs'].forEach(sid=>{
+      document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
+        if(!card._getEngQty)return;
+        const views=card._getEngQty('view');
+        totalReach+=views>0?views:(card._followerCount||0);
+      });
+    });
+    if(cost>0&&totalReach>0){
+      const pCPM=(cost*1000)/totalReach;
+      cpmEl.textContent='$'+(pCPM>=10?pCPM.toFixed(1):pCPM.toFixed(2));
+    }else{cpmEl.textContent='--';}
+  }
   // Sticky footer update
   const _sf=id=>document.getElementById(id);
   if(_sf('sf-paid')){
@@ -3143,6 +3165,7 @@ function runCalc(){
     _sf('sf-emv').textContent=fmt(emvTotal);
     _sf('sf-biz').textContent=fmt(bizTotal);
     _sf('sf-roi').textContent=roiTxt;
+    if(_sf('sf-cpm'))_sf('sf-cpm').textContent=cpmEl?cpmEl.textContent:'--';
   }
   // Trigger auto-save after data changes
   if(window._currentShowKey)_scheduleAutoSave();
@@ -3806,6 +3829,66 @@ function svDeserialize(data){
   runCalc();
 }
 
+function exportCSVMentions(){
+  const shows=svGetAll();
+  if(!shows.length){notif('⚠ No saved shows to export');return;}
+  const esc=v=>{if(v===null||v===undefined)return '';const s=String(v);if(/[,"\n]/.test(s))return '"'+s.replace(/"/g,'""')+'"';return s;};
+  const PLAT={ig:'Instagram',tt:'TikTok',yt:'YouTube',yts:'YouTube Shorts',xx:'X / Twitter',fb:'Facebook',rd:'Reddit',th:'Threads',qu:'Quora'};
+  const MTYPE={blog:'Blog / Online',tv:'TV / Broadcast',forum:'Forum / Community',award:'Award / Recognition',nl:'Newsletter',on:'Online News',print:'Print',po:'Podcast'};
+  const rows=[['Show Name','Client','Program','Show Date','City','State','Section','Entry Type','Name / Outlet / Description','Platform','URL','Reach / Metric','Rate / CPM ($)','Adj Factor','Est. EMV ($)'].join(',')];
+  let totalRows=0;
+  shows.forEach(entry=>{
+    const s=entry.state||{};const d=s.details||{};
+    const base=[esc(entry.name),esc(d['s-client']||''),esc(d['s-prog']||''),esc(d['s-date']||''),esc(d['s-city']||''),esc(d['s-state']||'')];
+    // Press cards
+    (s.pressCards||[]).forEach(c=>{
+      const reach=parseFloat(c.reach||0),cpm=parseFloat(c.cpm||0),adj=parseFloat(c.adj||1);
+      const emv=(reach/1000)*cpm*adj;
+      rows.push([...base,esc('Press & Media Coverage'),esc(MTYPE[c.mtype]||'Press Mention'),esc(c.outlet||''),'',esc(c.url||''),reach,cpm,adj,emv.toFixed(2)].join(','));totalRows++;
+    });
+    // Inf-cards
+    [{arr:s.infCardsSoc,sec:'Official Brand Social',cat:'Social Post'},{arr:s.infCardsEarned,sec:'Social Media Mentions',cat:'Social Post'},{arr:s.infCardsPaid,sec:'Contracted Influencers',cat:'Influencer Post'}].forEach(({arr,sec,cat})=>{
+      (arr||[]).forEach(c=>{
+        const adj=parseFloat(c.adjFactor||1);const qtys=c.engQtys||{};const vals=c.engVals||{};
+        let emv=0;Object.keys(qtys).forEach(k=>{emv+=(parseFloat(qtys[k])||0)*(parseFloat(vals[k])||0);});emv*=adj;
+        rows.push([...base,esc(sec),esc(cat),esc(c.name||''),esc(PLAT[c.pl]||c.pl||''),esc(c.url||''),parseFloat(c.followers||0),parseFloat(c.valImp||0),adj,emv.toFixed(2)].join(','));totalRows++;
+      });
+    });
+    // Standard section rows & manual mentions
+    SECS.forEach(sec=>{
+      if(sec.type==='biz'||sec.type==='influencers'||sec.type==='earned-soc')return;
+      const secRows=s.rows||{};
+      (sec.rows||[]).forEach(r=>{
+        const rd=secRows[r.id];if(!rd||!rd.on)return;
+        const m=parseFloat(rd.m||0);if(!m)return;
+        const rate=parseFloat(rd.r||0),adj=parseFloat(rd.a||1);
+        const emv=r.c==='cpm'?(m/1000)*rate*adj:(r.c==='dur'?0:m*rate*adj);
+        rows.push([...base,esc(sec.title),'Channel Metric',esc(r.n||r.id),'','',m,rate,adj,emv.toFixed(2)].join(','));totalRows++;
+      });
+      const mentions=s.mentions||{};
+      (mentions[sec.id]||[]).forEach(md=>{
+        const m=parseFloat(md.m||0);if(!m)return;
+        const rate=parseFloat(md.r||0),adj=parseFloat(md.a||1);
+        const emv=md.calc==='cpm'?(m/1000)*rate*adj:m*rate*adj;
+        rows.push([...base,esc(sec.title),'Manual Mention',esc(md.desc||''),'','',m,rate,adj,emv.toFixed(2)].join(','));totalRows++;
+      });
+    });
+    // Business impact rows
+    (s.bizRows||[]).forEach(br=>{
+      const u=parseFloat(br.u||0),uv=parseFloat(br.uv||0),ru=parseFloat(br.ru||0);
+      const impact=u*uv*ru;if(!impact)return;
+      rows.push([...base,'Business Impact','Revenue Item',esc(br.desc||''),'','',u,uv,ru,impact.toFixed(2)].join(','));totalRows++;
+    });
+  });
+  const csv=rows.join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  const client=(shows[0]?.state?.details?.['s-client']||'Pixis').replace(/[^a-zA-Z0-9]+/g,'_');
+  a.download='Pixis_EMV_'+client+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+  notif('📤 Exported '+shows.length+' show'+(shows.length===1?'':'s')+', '+totalRows+' mentions to CSV');
+}
+
 function exportHTMLWithShows(){
   const shows=svGetAll();
   if(!shows.length){notif('\u26a0 No saved shows to export');return;}
@@ -3974,6 +4057,7 @@ async function svUpdateShow(key){
   const oldName=all[idx].name;
   let state=svSerialize();state.name=oldName;
   state=await _mergeRemoteCards(state);
+  window._loadedShowSavedAt=state.savedAt; // update before async cloud write so poll/merge don't see our own save as "newer"
   all[idx]={key,name:oldName,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
   svSetAll(all);
   window._currentShowKey=key;
@@ -4063,10 +4147,10 @@ function svLoadShow(key){
   }
   if(!entry)return;
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
-  svDeserialize(entry.state);
   window._currentShowKey=entry.key;
   window._currentShowName=entry.name;
   window._loadedShowSavedAt=entry.state?.savedAt||entry.savedAt||'';
+  svDeserialize(entry.state);
   _startCollabPoll();
   notif('\uD83D\uDCE5 "'+entry.name+'" loaded');
 }
@@ -4154,9 +4238,14 @@ function svRenderList(){
   progBtn.addEventListener('click',genProgramReport);
   const expBtn=document.createElement('button');expBtn.className='sv-sel-btn';
   expBtn.style.cssText='color:var(--gld);border-color:rgba(212,168,67,.35);background:rgba(212,168,67,.07);font-weight:600';
-  expBtn.title='Download this HTML file with all saved shows embedded inside it';
-  expBtn.innerHTML='\uD83D\uDCE4 Export HTML with Shows';
-  expBtn.addEventListener('click',exportHTMLWithShows);
+  expBtn.title='Export all mentions from all saved shows as a .csv file';
+  expBtn.innerHTML='\uD83D\uDCCA Export CSV';
+  expBtn.addEventListener('click',exportCSVMentions);
+  const expHtmlBtn=document.createElement('button');expHtmlBtn.className='sv-sel-btn';
+  expHtmlBtn.style.cssText='color:var(--ft);border-color:var(--bd2);background:var(--s3);font-size:10px';
+  expHtmlBtn.title='Download this HTML file with all saved shows embedded (for backup / transfer)';
+  expHtmlBtn.innerHTML='\uD83D\uDCE4 HTML Backup';
+  expHtmlBtn.addEventListener('click',exportHTMLWithShows);
   // Hidden file input for importing shows from an exported HTML file
   const impFileInp=document.createElement('input');impFileInp.type='file';
   impFileInp.accept='.html,text/html';impFileInp.style.display='none';
@@ -4167,7 +4256,7 @@ function svRenderList(){
   impBtn.title='Import shows from a previously exported HTML file';
   impBtn.innerHTML='\uD83D\uDCE5 Import from File';
   impBtn.addEventListener('click',()=>{impFileInp.value='';impFileInp.click();});
-  selCtrl.appendChild(expBtn);selCtrl.appendChild(impBtn);
+  selCtrl.appendChild(expBtn);selCtrl.appendChild(expHtmlBtn);selCtrl.appendChild(impBtn);
   document.body.appendChild(impFileInp);
   footer.appendChild(selCtrl);footer.appendChild(progBtn);
   wrap.appendChild(footer);
@@ -4979,6 +5068,7 @@ function _scheduleAutoSave(){
     state.name=name;
     all[idx]={key:window._currentShowKey,name,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
     svSetAll(all);
+    window._loadedShowSavedAt=state.savedAt; // update before async cloud write
     const ce={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
     cloudSave(window._currentShowKey,ce).then(()=>{
       if(_cloudShows)_cloudShows[window._currentShowKey]=ce;
@@ -5064,6 +5154,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="sf-item"><div class="sf-lbl">Total EMV</div><div class="sf-val" id="sf-emv">$0</div></div>
   <div class="sf-item"><div class="sf-lbl">Biz Impact</div><div class="sf-val teal" id="sf-biz">$0</div></div>
   <div class="sf-item"><div class="sf-lbl">ROI</div><div class="sf-val ind" id="sf-roi">--</div></div>
+  <div class="sf-item"><div class="sf-lbl">Prog. CPM</div><div class="sf-val" style="color:#e85d04" id="sf-cpm">--</div></div>
   <div class="sf-div"></div>
   <span class="sf-autosave" id="sf-autosave">✓ Auto-saved</span>
   <button class="btn btn-g sf-save" id="sf-save-btn" style="font-size:11px;padding:8px 16px">💾 Save Show</button>
