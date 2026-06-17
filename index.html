@@ -3791,12 +3791,12 @@ function svDeserialize(data){
   if(plist){
     pressMentionCount=0;
     plist.innerHTML='';
-    (data.pressCards||[]).forEach(d=>{
-      const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
+    (data.pressCards||[]).forEach((d,i)=>{
+      const card=buildPressCard({data:d.cid?d:{...d,cid:'pc_v0_'+i},onEMVChange:runCalc,onRemove:runCalc});
       plist.appendChild(card);
     });
-    (data.forumCards||[]).forEach(d=>{
-      const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});
+    (data.forumCards||[]).forEach((d,i)=>{
+      const card=buildPressCard({data:d.cid?d:{...d,cid:'fc_v0_'+i},onEMVChange:runCalc,onRemove:runCalc});
       plist.appendChild(card);
     });
   }
@@ -3808,9 +3808,11 @@ function svDeserialize(data){
   const _restoreInfCards=(arr,secId)=>{
     if(!arr||!arr.length)return;
     // Reverse so that prepend order matches the original top-to-bottom order
-    [...arr].reverse().forEach(d=>{
+    [...arr].reverse().forEach((d,revIdx)=>{
       const adj=d.adjFactor!==undefined?d.adjFactor:(_secAdj[secId]||1.0);
-      const card=addActualsInfluencer(secId,adj,d.cid);
+      // Positional fallback cid for cards saved before the cid feature — deterministic across loads
+      const cid=d.cid||(secId+'_v0_'+(arr.length-1-revIdx));
+      const card=addActualsInfluencer(secId,adj,cid);
       card._platSel.value=d.pl||'ig';
       card._platSel.dispatchEvent(new Event('change'));
       if(d.valImp&&card._setValImp)card._setValImp(d.valImp);
@@ -3986,7 +3988,7 @@ function svExportSingleShow(key){
 // Merge remote cards into local state (prevents overwrite data loss)
 async function _mergeRemoteCards(state){
   try{
-    const resp=await fetch(FS_BASE+'/shows/'+window._currentShowKey+'?key='+FS_API_KEY);
+    const resp=await fetch(FS_BASE+'/shows/'+window._currentShowKey+'?key='+FS_API_KEY,{cache:'no-cache'});
     if(!resp.ok)return state;
     const doc=await resp.json();
     const f=_fsDecode(doc.fields||{});
@@ -4020,14 +4022,17 @@ let _collabPollTimer=null;
 function _startCollabPoll(){
   _stopCollabPoll();
   _collabPollTimer=setInterval(async()=>{
-    if(!window._currentShowKey)return;
+    const _keySnap=window._currentShowKey;
+    const _tsSnap=window._loadedShowSavedAt;
+    if(!_keySnap)return;
     try{
-      const resp=await fetch(FS_BASE+'/shows/'+window._currentShowKey+'?key='+FS_API_KEY);
+      const resp=await fetch(FS_BASE+'/shows/'+_keySnap+'?key='+FS_API_KEY,{cache:'no-cache'});
       if(!resp.ok)return;
+      if(window._currentShowKey!==_keySnap)return; // show switched while fetch was in-flight
       const doc=await resp.json();
       const f=_fsDecode(doc.fields||{});
       let remote={};try{remote=JSON.parse(f.stateJson||'{}');}catch{}
-      if(!remote.savedAt||remote.savedAt<=window._loadedShowSavedAt)return;
+      if(!remote.savedAt||remote.savedAt<=_tsSnap)return;
       // Auto-merge new cards into live DOM
       const merge=(existing,cloud)=>{
         const ids=new Set((existing||[]).map(c=>c.cid).filter(Boolean));
