@@ -2234,12 +2234,45 @@ function buildInfCard(opts){
     engRows.forEach(er=>{if(valsMap[er.t.id]!==undefined)er.valInp.value=valsMap[er.t.id];});
     recalc();
   };
+  // Photo upload
+  let _photoUrl=null;
+  const infPhotoWrap=document.createElement('div');infPhotoWrap.style.cssText='margin-top:8px;display:flex;gap:8px;align-items:flex-start';
+  const infPhotoInp=document.createElement('input');infPhotoInp.type='file';infPhotoInp.accept='image/*';infPhotoInp.style.display='none';
+  const infPhotoBtn=document.createElement('button');infPhotoBtn.type='button';
+  infPhotoBtn.style.cssText='flex-shrink:0;padding:5px 10px;font-size:11px;background:rgba(90,110,248,.1);border:1px solid rgba(90,110,248,.3);color:#7b8ff5;border-radius:6px;cursor:pointer';
+  infPhotoBtn.textContent='📸 Add Photo';
+  const infPhotoThumb=document.createElement('img');infPhotoThumb.style.cssText='max-height:60px;max-width:100px;object-fit:cover;border-radius:4px;border:1px solid var(--bd);display:none';
+  const infPhotoRemoveBtn=document.createElement('button');infPhotoRemoveBtn.type='button';
+  infPhotoRemoveBtn.style.cssText='padding:3px 7px;font-size:10px;background:rgba(220,50,50,.1);border:1px solid rgba(220,50,50,.3);color:#e05;border-radius:4px;cursor:pointer;display:none';
+  infPhotoRemoveBtn.textContent='✕';
+  infPhotoInp.addEventListener('change',()=>{
+    const file=infPhotoInp.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();img.onload=()=>{
+        const MAX=800,q=0.72;
+        const scale=Math.min(1,MAX/Math.max(img.width,img.height));
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        _photoUrl=canvas.toDataURL('image/jpeg',q);
+        infPhotoThumb.src=_photoUrl;infPhotoThumb.style.display='block';
+        infPhotoBtn.textContent='📸 Change';infPhotoRemoveBtn.style.display='block';
+      };img.src=e.target.result;
+    };reader.readAsDataURL(file);
+  });
+  infPhotoRemoveBtn.addEventListener('click',()=>{_photoUrl=null;infPhotoThumb.style.display='none';infPhotoBtn.textContent='📸 Add Photo';infPhotoRemoveBtn.style.display='none';});
+  infPhotoBtn.addEventListener('click',()=>infPhotoInp.click());
+  infPhotoWrap.appendChild(infPhotoBtn);infPhotoWrap.appendChild(infPhotoThumb);infPhotoWrap.appendChild(infPhotoRemoveBtn);
+  infPhotoWrap.appendChild(infPhotoInp);
+  card._setPhotoUrl=(url)=>{_photoUrl=url;infPhotoThumb.src=url;infPhotoThumb.style.display='block';infPhotoBtn.textContent='📸 Change';infPhotoRemoveBtn.style.display='block';};
+
   card._serialize=()=>{
     const qtys={},vals={};
     engRows.forEach(er=>{qtys[er.t.id]=parseFloat(er.qtyInp.value)||0;vals[er.t.id]=parseFloat(er.valInp.value)||0;});
     return{cid:card._cid,pl:platSel.value,name:nameInp.value,url:urlInp?urlInp.value:'',
       followers:card._followerCount||0,postType:postTypeSel?postTypeSel.value:null,
-      valImp:parseFloat(valImpInp.value)||0,adjFactor,engQtys:qtys,engVals:vals};
+      valImp:parseFloat(valImpInp.value)||0,adjFactor,engQtys:qtys,engVals:vals,photoUrl:_photoUrl||null};
   };
 
   card.appendChild(hd);
@@ -2248,6 +2281,7 @@ function buildInfCard(opts){
   card.appendChild(rUrl);
   if(isPred){card.appendChild(r2);card.appendChild(statsWrap);card.appendChild(r4);}
   card.appendChild(engWrap);
+  card.appendChild(infPhotoWrap);
   card.appendChild(emvRow);
 
   // Build initial eng type rows then populate stats
@@ -3540,13 +3574,14 @@ async function genPdf(){
         });
         if(!Object.keys(byPlat).length)continue;
         if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
-        await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div></div>');
+        const _secHdrHtml='<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div></div>';
         const colgrp='<colgroup><col style="width:36%"><col style="width:18%"><col style="width:18%"><col style="width:28%"></colgroup>';
         const tblHdr='<table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed">'+colgrp
           +'<thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle / Username</th>'
           +'<th style="padding:7px 9px;text-align:right">Impressions</th>'
           +'<th style="padding:7px 9px;text-align:right">Engagements</th>'
           +'<th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>';
+        let _firstPlatGroup=true;
         for(const [pl,group] of Object.entries(byPlat)){
           const plLabel=PLAT_LBL[pl]||pl;
           let rowsHTML='<tr style="background:#e8edff"><td colspan="4" style="padding:5px 9px;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:'+HC+'">'+plLabel+'</td></tr>';
@@ -3559,7 +3594,11 @@ async function genPdf(){
               +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+c.totalEng.toLocaleString()+'</td>'
               +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmtEmv(c.rawEmv)+'</td></tr>';
           });
-          await stamp(tblHdr+'<tbody>'+rowsHTML+'</tbody></table>');
+          const platTot=group.reduce((s,c)=>s+c.rawEmv,0);
+          rowsHTML+='<tr style="background:#e8edff"><td colspan="3" style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:600;font-size:10px;color:'+HC+'">'+plLabel+' Total</td>'
+            +'<td style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:700;color:'+AC+'">'+fmtEmv(platTot)+'</td></tr>';
+          await stamp((_firstPlatGroup?_secHdrHtml:'')+tblHdr+'<tbody>'+rowsHTML+'</tbody></table>');
+          _firstPlatGroup=false;
         }
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
           +'<table style="border-collapse:collapse;font-size:10px;min-width:320px">'
@@ -3584,6 +3623,7 @@ async function genPdf(){
       // For wom/soc: render sub-channel table WITHOUT section total (individual cards come after)
       const isWom=sec.id==='wom';
       const isSoc=sec.id==='soc';
+      let _womSecHdr=null;
       if(!rowsHTML&&!isWom&&!isSoc)continue;
       // For wom/soc, also check if there's any press/inf data before stamping header
       let womHasData=false,socHasData=false;
@@ -3599,8 +3639,9 @@ async function genPdf(){
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
           +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
       } else {
-        await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:10px;color:#444;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div></div>');
+        const _noRowsHdr='<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
+          +'<div style="font-size:10px;color:#444;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div></div>';
+        if(isWom){_womSecHdr=_noRowsHdr;}else{await stamp(_noRowsHdr);}
       }
       // Press & Forum mention cards sub-tables for wom section — rendered AFTER sub-channel rows
       if(isWom){
@@ -3624,9 +3665,11 @@ async function genPdf(){
         const{rows:pressRows,tot:pressTot}=buildMentionRows('#press-list-wom');
         const mentionTableHdr='<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Outlet / Source</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Total Audience</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Reach %</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Adj. Reach</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">Est. EMV</th></tr></thead>';
         if(pressRows){
-          await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Press Mentions</div>'
+          await stamp((_womSecHdr||'')+'<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Press Mentions</div>'
             +mentionTableHdr+'<tbody>'+pressRows+'</tbody></table></div>');
+          _womSecHdr=null;
         }
+        if(_womSecHdr){await stamp(_womSecHdr);_womSecHdr=null;}
         // Combined section total AFTER all mention cards
         const combinedTot=secTot+pressTot;
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
@@ -3657,12 +3700,19 @@ async function genPdf(){
           +'</table></div>');
       }
     }
-    // Media gallery — photos attached to press cards
+    // Media gallery — photos attached to press cards and influencer cards
     const photoCards=[];
     document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
       if(!card._data||!card._cid)return;
       const pd=card._data();
       if(pd.photoUrl){photoCards.push({outlet:pd.outlet||'',headline:pd.headline||'',url:pd.url||'',photo:pd.photoUrl});}
+    });
+    ['paid-infs','earned-oinfs','soc'].forEach(sid=>{
+      document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
+        if(!card._serialize)return;
+        const s=card._serialize();
+        if(s.photoUrl){photoCards.push({outlet:s.name||'',headline:(card._platSel?.value||'').toUpperCase(),url:s.url||'',photo:s.photoUrl});}
+      });
     });
     if(photoCards.length){
       if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
@@ -3889,6 +3939,7 @@ function svDeserialize(data){
       if(d.followers)card._setFollowers(d.followers);
       if(d.engQtys)card._setEngQtys(d.engQtys);
       if(d.engVals&&card._setEngVals)card._setEngVals(d.engVals);
+      if(d.photoUrl&&card._setPhotoUrl)card._setPhotoUrl(d.photoUrl);
     });
   };
   _restoreInfCards(data.infCardsSoc,'soc');
