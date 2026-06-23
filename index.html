@@ -861,10 +861,10 @@ const SECS=[
   // ── PAID ──────────────────────────────────────────────────────────────────
   {id:'paid-infs',peso:'P',num:'P1',title:'Contracted Influencers',sub:'Paid partnerships & brand ambassadors',col:'#e85d04',
    type:'influencers',adj:1.2,
-   ov:'Influencers under paid contracts. 1.2x premium reflects authentic brand integration over pure advertising.'},
+   ov:'Paid brand ambassadors and influencer partnerships. Values reach with a 1.2× premium for the added credibility of contracted, brand-integrated content over direct advertising.'},
   {id:'paid-pmb',peso:'P',num:'P2',title:'Paid Media Budget',sub:'Advertising spend & media buy performance',col:'#e85d04',
    type:'pmb',
-   ov:'Paid media channels. Formula: Budget ($) × Return Multiplier × Quality Adj.',
+   ov:'Performance across paid media and advertising channels. Calculated as Budget × Channel Return Rate × Quality Adjustment for each active channel.',
    rows:[
     {id:'pmSC',n:'Paid Social Advertising',  m:0,r:1.3,a:1,on:true, c:'pmb',tip:'Budget × 1.3 return. Social ad efficiency.'},
     {id:'pmDS',n:'Display / Programmatic',   m:0,r:0.8,a:1,on:false,c:'pmb',tip:'Budget × 0.8. Display typically lower return.'},
@@ -875,7 +875,7 @@ const SECS=[
   // ── EARNED ────────────────────────────────────────────────────────────────
   {id:'ooh',peso:'E',num:'E1',title:'Live Audience / Experiential',sub:'In-person audience & live event impact',col:'#d4a843',
    type:'std',
-   ov:'Quantifies the direct in-person viewing experience against premium spectacular event advertising rates. A drone show commands significantly more attention and emotional recall than a static billboard.',
+   ov:'In-person audience viewing value benchmarked against premium event advertising rates. Drone shows capture greater sustained attention and emotional recall than static or broadcast formats.',
    rows:[
     {id:'oP',n:'Primary Audience (Impression Model)',m:10000,r:25,a:3,on:true,c:'cpm',tip:'Premium OOH CPM $20-50+. 3x drone attention premium.'},
     {id:'oS',n:'Secondary Incidental Audience',m:5000,r:5,a:1,on:false,c:'cpm',tip:'Viewers from a distance.'},
@@ -883,7 +883,7 @@ const SECS=[
   ]},
   {id:'wom',peso:'E',num:'E2',title:'Press & Media Coverage',sub:'Press, broadcast & organic earned mentions',col:'#d4a843',
    type:'std',
-   ov:'Measures organic buzz, third-party coverage and online conversations. Earned mentions carry higher credibility than paid ads.',
+   ov:'Organic third-party press, broadcast, and digital coverage. Each earned placement is valued at advertising equivalency, reflecting the higher credibility and audience trust of non-paid coverage.',
    rows:[
     {id:'wSE',n:'Branded Search Uplift',   m:500,r:1.5,a:1,  on:true, c:'cpc',tip:'Additional branded searches. CPC $0.50-2.'},
     {id:'wRF',n:'Referral Website Traffic',m:300,r:2,  a:1,  on:false,c:'val', tip:'Earned site visits.'},
@@ -891,11 +891,11 @@ const SECS=[
   ]},
   {id:'earned-oinfs',peso:'E',num:'E3',title:'Social Media Mentions',sub:'Unpaid authentic brand mentions from creators',col:'#d4a843',
    type:'earned-soc',adj:2.5,
-   ov:'Organic influencer posts earn a 2.5x authenticity premium. These are unpaid posts where creators organically feature the show.'},
+   ov:'Unpaid, organic creator posts featuring the show. Values each mention with a 2.5× authenticity premium reflecting the higher credibility and engagement of non-sponsored content.'},
   // ── SHARED ────────────────────────────────────────────────────────────────
   {id:'shared-cc',peso:'S',num:'S1',title:'Co-Creations & Partnerships',sub:'Brand collaborations & partnership activations',col:'#5a6ef8',
    type:'std',
-   ov:'Co-created content and brand partnerships amplify reach through mutual audiences.',
+   ov:'Co-created content and brand collaborations that extend reach through shared audiences and cross-promotional distribution.',
    rows:[
     {id:'ccBR',n:'Brand Collaboration Content',    m:0,r:15,a:2.0,on:true, c:'cpm',dyn:true,tip:'Reach from co-created partner content.'},
     {id:'ccSP',n:'Sponsorship / Integration Reach',m:0,r:12,a:1.5,on:false,c:'cpm',dyn:true,tip:'Sponsor content integrations.'},
@@ -904,11 +904,11 @@ const SECS=[
   // ── OWNED ─────────────────────────────────────────────────────────────────
   {id:'soc',peso:'O',num:'O1',title:'Official Brand Social',sub:'Brand-owned channels & planned posts',col:'#2fd4b2',
    type:'soc',
-   ov:'Official brand social posts generate measurable reach through existing audiences. Organic posts earn a 1.0\xd7 owned media factor.',
+   ov:'Brand-owned social channels amplifying event content to an existing audience. Valued at a 1.0× owned-media factor reflecting direct, controlled distribution.',
    rows:[]},
   {id:'cont',peso:'O',num:'O2',title:'Content Assets Produced',sub:'Professional media assets created',col:'#2fd4b2',
    type:'std',
-   ov:'Quantifies the tangible value of professional photos, video and aerial footage — representing hard-cost savings vs. commissioning independently.',
+   ov:'Professional photography, video, and aerial footage produced at the event. Valued as equivalent cost savings versus commissioning each asset type independently.',
    rows:[
     {id:'cPH',n:'Professional Photography',       m:1,r:2000,a:1,on:true,c:'direct',tip:'Market replacement $1,400-$3,000+.'},
     {id:'cVI',n:'Professional Videography (Main)',m:1,r:3500,a:1,on:true,c:'direct',tip:'Market replacement $1,500-$5,000+.'},
@@ -918,7 +918,7 @@ const SECS=[
   // ── BUSINESS IMPACT ───────────────────────────────────────────────────────
   {id:'biz',peso:'B',num:'5',title:'Business Impact',sub:'Direct revenue from show promotion',col:'#2fd4b2',
    type:'biz',
-   ov:'Quantifies immediate revenue attributable to the drone show — ticket sales, merchandise, on-site activations.',rows:[]}
+   ov:'Direct, quantifiable revenue attributable to the show — ticket sales, merchandise, on-site activations, and other measurable commercial outcomes.',rows:[]}
 ];
 const VIR={corp:{l:'Corporate / Private',sh:.05,cpm:8,adj:2},pub:{l:'Public / Generic Art',sh:.10,cpm:15,adj:3},brand:{l:'Brand Launch / IP',sh:.20,cpm:30,adj:4},cult:{l:'Cultural Moment',sh:.35,cpm:55,adj:7}};
 // PCPM is now a live proxy into BM — always read via getPlCPM(platform)
@@ -3551,7 +3551,7 @@ async function genPdf(){
         if(!biRows)continue;
         if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid #2fd4b2;padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">Business Impact</div>'
-          +'<div style="font-size:10px;color:#444;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Description</th><th style="padding:7px 9px;text-align:right">Units</th><th style="padding:7px 9px;text-align:right">Unit Value</th><th style="padding:7px 9px;text-align:right">Rev/Unit</th><th style="padding:7px 9px;text-align:right">Impact</th></tr></thead>'
           +'<tbody>'+biRows+'<tr style="background:#e8f8f5"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a">Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a;font-size:12px">'+fmt(biTot)+'</td></tr></tbody></table></div>');
         continue;
@@ -3635,12 +3635,12 @@ async function genPdf(){
         :'<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr>';
       if(rowsHTML){
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:10px;color:#444;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
           +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
       } else {
         const _noRowsHdr='<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:10px;color:#444;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div></div>';
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div></div>';
         if(isWom){_womSecHdr=_noRowsHdr;}else{await stamp(_noRowsHdr);}
       }
       // Press & Forum mention cards sub-tables for wom section — rendered AFTER sub-channel rows
@@ -4467,7 +4467,7 @@ async function genPredPdf(){
       +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(programShows.length>0?progT*1.7:opt)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roi(programShows.length>0?progT*1.7:opt)+'</div></div></div>'
       +(progNs>1&&programShows.length===0?'<div style="background:#f0f2ff;border:1px solid #c8d0f0;border-radius:6px;padding:11px 14px;font-size:10px"><strong style="color:'+HC+'">Program Total ('+progNs+' shows):</strong> Conservative '+fmt(cons*progNs)+' \u2014 Target '+fmt(progT)+' \u2014 Optimistic '+fmt(opt*progNs)+'</div>':'')+'</div>');
     // PESO breakdown (per-show target values)
-    const pesoP=oohTot,pesoS=offSoc+ugc+infTot,pesoE=womTot,pesoO=contTot;
+    const pesoP=infTot,pesoE=oohTot+womTot,pesoS=ugc,pesoO=offSoc+contTot;
     const pesoTotal=pesoP+pesoE+pesoS+pesoO;
     const pBar=(val,total,color)=>{const pct=total>0?Math.round(val/total*100):0;return '<div style="height:7px;border-radius:4px;background:#e8e8e8;margin-top:5px"><div style="height:100%;width:'+pct+'%;border-radius:4px;background:'+color+'"></div></div>';};
     await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Value Breakdown \u2014 Per Show (Target)</div>'
@@ -4476,33 +4476,33 @@ async function genPredPdf(){
       +'<div style="border:1px solid #fdd;border-top:4px solid #e85d04;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#e85d04;letter-spacing:.1em;margin-bottom:5px">P \u2014 Paid</div>'
       +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoP)+'</div>'
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Live Experiential / OOH</div>'
+      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Contracted Influencers</div>'
       +pBar(pesoP,pesoTotal,'#e85d04')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Spectacle OOH: '+fmt(oohSpec)+'<br>Duration Value: '+fmt(oohDur)+'</div>'
+      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Influencer integration:<br>'+fmt(infTot)+'</div>'
       +'</div>'
       // E — Earned / WOM
       +'<div style="border:1px solid #ffd;border-top:4px solid '+AC+';border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:'+AC+';letter-spacing:.1em;margin-bottom:5px">E \u2014 Earned</div>'
       +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoE)+'</div>'
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Word of Mouth / Media</div>'
+      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Live Audience + Press / Media</div>'
       +pBar(pesoE,pesoTotal,AC)
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">'+womHits+' hits &times; '+womReach.toLocaleString()+'<br>@ $'+womCPM+' CPM</div>'
+      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Live Audience: '+fmt(oohTot)+'<br>Press &amp; Media: '+fmt(womTot)+'</div>'
       +'</div>'
       // S — Shared / Social
       +'<div style="border:1px solid #eef;border-top:4px solid #5a6ef8;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#5a6ef8;letter-spacing:.1em;margin-bottom:5px">S \u2014 Shared</div>'
       +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoS)+'</div>'
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Influencer + Social + UGC</div>'
+      +'<div style="font-size:9px;color:#888;margin-bottom:6px">UGC / Earned Social</div>'
       +pBar(pesoS,pesoTotal,'#5a6ef8')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Organic Social: '+fmt(offSoc)+'<br>UGC: '+fmt(ugc)+'<br>Influencers: '+fmt(infTot)+'</div>'
+      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Est. '+(Math.round(at*(vir.sh||0))).toLocaleString()+' UGC creators<br>\xd7 500 avg followers</div>'
       +'</div>'
       // O — Owned / Content
       +'<div style="border:1px solid #dff;border-top:4px solid #2fd4b2;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#2a9a7a;letter-spacing:.1em;margin-bottom:5px">O \u2014 Owned</div>'
       +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoO)+'</div>'
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Content Replacement Value</div>'
+      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Official Social + Content</div>'
       +pBar(pesoO,pesoTotal,'#2fd4b2')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Photo, video &amp; aerial<br>asset replacement cost</div>'
+      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Social posts: '+fmt(offSoc)+'<br>Content assets: '+fmt(contTot)+'</div>'
       +'</div>'
       +'</div>'
       +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:13px 20px;display:flex;justify-content:space-between;align-items:center">'
@@ -5110,7 +5110,7 @@ async function genProgramReport(){
           });
           if(!biH)continue;
           await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid #2fd4b2;padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">5. Business Impact</div>'
-            +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
+            +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
             +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff">'
             +'<th style="padding:7px 9px;text-align:left">Description</th><th style="padding:7px 9px;text-align:right">Units</th>'
             +'<th style="padding:7px 9px;text-align:right">Unit Value</th><th style="padding:7px 9px;text-align:right">Rev/Unit</th>'
@@ -5152,7 +5152,7 @@ async function genProgramReport(){
         });
         if(!rH)continue;
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:10px;color:#666;margin-bottom:10px;line-height:1.6">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff">'
           +'<th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">Metric</th>'
           +'<th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th>'
