@@ -514,6 +514,19 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 </div>
 <!-- PREDICTION -->
 <div id="mode-p" style="display:none">
+  <div class="sv-panel" id="pred-sv-panel">
+    <div class="sv-ph" id="pred-sv-ph">
+      <div class="sv-ph-l">
+        <div class="sv-ico">&#128196;</div>
+        <span class="sv-ttl">Saved Predictions</span>
+        <span class="sv-cnt" id="pred-sv-cnt">0</span>
+      </div>
+      <span class="sv-arr">&#9660;</span>
+    </div>
+    <div class="sv-body">
+      <div id="pred-sv-list-wrap"></div>
+    </div>
+  </div>
   <div class="panel open" id="pan-pred-in">
     <div class="ph" data-panel="pan-pred-in">
       <div class="ph-l">
@@ -610,6 +623,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
       </div>
       <div class="acts">
         <button class="btn btn-s" id="btn-pred-pdf">&#11015; Export Prediction Report</button>
+        <button class="btn" id="btn-pred-save" style="background:linear-gradient(135deg,var(--gld),var(--gldD));color:#fff">&#128196; Save Prediction</button>
         <button class="btn btn-g" id="btn-pred-reset">&#8634; Reset</button>
       </div>
     </div>
@@ -1291,6 +1305,9 @@ function wireEvents(){
   $('btn-add-inf').addEventListener('click',addInfluencer);
   $('btn-pred-pdf').addEventListener('click',genPredPdf);
   $('btn-pred-reset').addEventListener('click',resetPred);
+  $('btn-pred-save').addEventListener('click',predOpenSaveModal);
+  $('pred-sv-ph').addEventListener('click',()=>{$('pred-sv-panel').classList.toggle('open');});
+  predRenderList();
   $('btn-save').addEventListener('click',svOpenSaveModal);
   $('btn-csv-template').addEventListener('click',downloadCSVTemplate);
   $('csv-file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)parseAndImportCSV(f);e.target.value='';});
@@ -3407,6 +3424,8 @@ function resetPred(){
    ['p-wh','20'],['p-wr','100000'],['p-wc','10']].forEach(([id,val])=>{const e=$(id);if(e)e.value=val;});
   plannedPosts=[];ppCount=0;renderPlannedPosts();
   $('p-st').value='cult';buildVirTable();buildMults();runCalcP();
+  window._currentPredKey=null;window._currentPredName=null;
+  predRenderList();
 }
 
 function notif(msg){
@@ -3766,6 +3785,7 @@ async function genPdf(){
 
 // ── SHOW PERSISTENCE ─────────────────────────────────────────────────────────
 const SV_KEY='pixis_shows_v2';
+const PRED_SV_KEY='pixis_preds_v1';
 
 function svGetAll(){try{return JSON.parse(localStorage.getItem(SV_KEY)||'[]');}catch{return[];}}
 function svSetAll(arr){localStorage.setItem(SV_KEY,JSON.stringify(arr));}
@@ -4387,6 +4407,176 @@ function svRenderList(){
   wrap.appendChild(footer);
   // Auto-fetch cloud on first render if not yet fetched
   if(_cloudShows===null)cloudRefresh();
+}
+
+// ── PREDICTION SAVE / LOAD ───────────────────────────────────────────────────
+function predGetAll(){try{return JSON.parse(localStorage.getItem(PRED_SV_KEY)||'[]');}catch{return[];}}
+function predSetAll(arr){localStorage.setItem(PRED_SV_KEY,JSON.stringify(arr));}
+
+function predSerialize(){
+  const fields={};
+  ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
+    const e=$(id);if(e)fields[id]=e.value;
+  });
+  fields['p-st']=$('p-st')?.value||'cult';
+  const infCards=[];
+  document.querySelectorAll('#inf-list .inf-card').forEach(c=>{if(c._serialize)infCards.push(c._serialize());});
+  const targetEmv=$('pe-t')?.textContent||'';
+  return{fields,plannedPosts:JSON.parse(JSON.stringify(plannedPosts)),programShows:JSON.parse(JSON.stringify(programShows)),infCards,targetEmv,savedAt:new Date().toISOString()};
+}
+
+function predDeserialize(state){
+  $('inf-list').innerHTML='';infCount=0;
+  const f=state.fields||{};
+  ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
+    const e=$(id);if(e&&f[id]!==undefined)e.value=f[id];
+  });
+  if(f['p-st']){$('p-st').value=f['p-st'];}
+  buildVirTable();buildMults();
+  plannedPosts=JSON.parse(JSON.stringify(state.plannedPosts||[]));
+  ppCount=plannedPosts.length?Math.max(...plannedPosts.map(p=>p.id||0)):0;
+  renderPlannedPosts();
+  programShows=JSON.parse(JSON.stringify(state.programShows||[]));
+  renderProgramShows();
+  // Restore influencer cards — iterate reverse so prepend order matches original
+  const cards=state.infCards||[];
+  [...cards].reverse().forEach(d=>{
+    addInfluencer();
+    const card=$('inf-list').firstElementChild;
+    if(card._platSel){card._platSel.value=d.pl||'ig';card._platSel.dispatchEvent(new Event('change'));}
+    if(card._nameInp)card._nameInp.value=d.name||'';
+    if(card._urlInp)card._urlInp.value=d.url||'';
+    if(card._setFollowers)card._setFollowers(d.followers||0);
+    if(card._setPostType&&d.postType)card._setPostType(d.postType);
+    if(card._setValImp&&d.valImp)card._setValImp(d.valImp);
+    if(card._setEngQtys&&d.engQtys)card._setEngQtys(d.engQtys);
+    if(card._setEngVals&&d.engVals)card._setEngVals(d.engVals);
+    if(card._setPhotoUrl&&d.photoUrl)card._setPhotoUrl(d.photoUrl);
+  });
+  runCalcP();
+}
+
+function predRenderList(){
+  const preds=predGetAll();
+  const cnt=$('pred-sv-cnt');if(cnt)cnt.textContent=preds.length;
+  const wrap=$('pred-sv-list-wrap');if(!wrap)return;
+  wrap.innerHTML='';
+  if(!preds.length){
+    const em=document.createElement('div');em.className='sv-empty';
+    em.textContent='No saved predictions yet. Configure a prediction and click “Save Prediction”.';
+    wrap.appendChild(em);return;
+  }
+  const list=document.createElement('div');list.className='sv-list';
+  preds.forEach(entry=>{
+    const card=document.createElement('div');card.className='sv-card';
+    const info=document.createElement('div');info.className='sv-info';
+    const nm=document.createElement('div');nm.className='sv-show-name';
+    nm.textContent=entry.name;
+    if(entry.key===window._currentPredKey){nm.style.cssText='color:var(--gld);font-weight:700';}
+    const dt=new Date(entry.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const meta=document.createElement('div');meta.className='sv-meta';meta.textContent='Saved '+dt;
+    info.appendChild(nm);info.appendChild(meta);
+    const emvEl=document.createElement('div');emvEl.className='sv-emv';emvEl.textContent=entry.targetEmv||'';
+    const acts=document.createElement('div');acts.className='sv-acts';
+    const loadBtn=document.createElement('button');loadBtn.className='sv-load';loadBtn.textContent='Load';
+    loadBtn.addEventListener('click',()=>predLoadPred(entry.key));
+    const updBtn=document.createElement('button');updBtn.className='sv-load';
+    updBtn.style.cssText='color:var(--tel);border-color:rgba(47,212,178,.35);background:rgba(47,212,178,.07)';
+    updBtn.title='Overwrite with current prediction data';
+    updBtn.textContent='↺ Update';
+    updBtn.addEventListener('click',()=>{if(confirm('Overwrite “'+entry.name+'” with current prediction?'))predUpdatePred(entry.key);});
+    const delBtn=document.createElement('button');delBtn.className='sv-del';delBtn.textContent='Delete';
+    delBtn.addEventListener('click',()=>{if(confirm('Delete “'+entry.name+'”?')){predDeletePred(entry.key);}});
+    acts.appendChild(loadBtn);acts.appendChild(updBtn);acts.appendChild(delBtn);
+    card.appendChild(info);card.appendChild(emvEl);card.appendChild(acts);
+    list.appendChild(card);
+  });
+  wrap.appendChild(list);
+}
+
+function predSaveNew(rawName,bg){
+  const name=rawName.trim()||('Prediction '+new Date().toLocaleDateString());
+  const state=predSerialize();
+  const key='pred_'+Date.now();
+  const entry={key,name,targetEmv:state.targetEmv,savedAt:state.savedAt,state};
+  const all=predGetAll();all.unshift(entry);predSetAll(all);
+  window._currentPredKey=key;window._currentPredName=name;
+  predRenderList();
+  $('pred-sv-panel').classList.add('open');
+  notif('💾 “'+name+'” prediction saved');
+  if(bg)bg.remove();
+}
+
+function predUpdatePred(key){
+  const all=predGetAll();
+  const idx=all.findIndex(e=>e.key===key);
+  if(idx===-1){notif('Prediction not found');return;}
+  const oldName=all[idx].name;
+  const state=predSerialize();
+  all[idx]={key,name:oldName,targetEmv:state.targetEmv,savedAt:new Date().toISOString(),state};
+  predSetAll(all);
+  window._currentPredKey=key;window._currentPredName=oldName;
+  predRenderList();notif('💾 “'+oldName+'” updated');
+}
+
+function predLoadPred(key){
+  const entry=predGetAll().find(e=>e.key===key);
+  if(!entry)return;
+  window._currentPredKey=entry.key;window._currentPredName=entry.name;
+  predDeserialize(entry.state);
+  predRenderList();notif('📥 “'+entry.name+'” loaded');
+}
+
+function predDeletePred(key){
+  predSetAll(predGetAll().filter(e=>e.key!==key));
+  if(window._currentPredKey===key){window._currentPredKey=null;window._currentPredName=null;}
+  predRenderList();
+}
+
+function predOpenSaveModal(){
+  const bg=document.createElement('div');bg.className='sv-modal-bg';
+  const modal=document.createElement('div');modal.className='sv-modal';
+  const hasLoaded=!!window._currentPredKey;
+  const title=document.createElement('div');title.className='sv-modal-ttl';
+  title.textContent='Save Prediction';
+  const acts=document.createElement('div');acts.className='sv-modal-acts';
+  const cancel=document.createElement('button');cancel.className='btn btn-g';cancel.textContent='Cancel';
+  cancel.addEventListener('click',()=>bg.remove());
+  if(hasLoaded){
+    const updateBtn=document.createElement('button');updateBtn.className='btn btn-s';
+    updateBtn.style.cssText='background:linear-gradient(135deg,var(--tel),var(--telD));color:#fff';
+    updateBtn.textContent='↺ Save “'+(window._currentPredName||'Current Prediction')+'”';
+    updateBtn.addEventListener('click',()=>{predUpdatePred(window._currentPredKey);bg.remove();});
+    const orLabel=document.createElement('div');
+    orLabel.style.cssText='font-size:10px;color:var(--ft);margin:10px 0 6px;padding-top:10px;border-top:1px solid var(--bd2)';
+    orLabel.textContent='or save as a new prediction:';
+    const inp=document.createElement('input');inp.className='sv-modal-inp';inp.style.marginBottom='8px';
+    inp.placeholder='New prediction name…';
+    const cl=$('p-cl')?.value||'';const sn=$('p-sn')?.value||'';
+    inp.value=[cl,sn].filter(Boolean).join(' — ')||'';
+    const saveNewBtn=document.createElement('button');saveNewBtn.className='btn btn-g';saveNewBtn.textContent='Save as New';
+    saveNewBtn.addEventListener('click',()=>predSaveNew(inp.value,bg));
+    inp.addEventListener('keydown',e=>{if(e.key==='Escape')bg.remove();});
+    acts.appendChild(cancel);acts.appendChild(updateBtn);
+    modal.appendChild(title);modal.appendChild(acts);
+    modal.appendChild(orLabel);modal.appendChild(inp);
+    const newRow=document.createElement('div');newRow.style.cssText='display:flex;justify-content:flex-end';
+    newRow.appendChild(saveNewBtn);modal.appendChild(newRow);
+    setTimeout(()=>updateBtn.focus(),50);
+  }else{
+    const inp=document.createElement('input');inp.className='sv-modal-inp';
+    inp.placeholder='e.g. Nike — World Cup Launch';
+    const cl=$('p-cl')?.value||'';const sn=$('p-sn')?.value||'';
+    inp.value=[cl,sn].filter(Boolean).join(' — ')||'';
+    const save=document.createElement('button');save.className='btn btn-s';save.textContent='Save Prediction';
+    save.addEventListener('click',()=>predSaveNew(inp.value,bg));
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')save.click();if(e.key==='Escape')bg.remove();});
+    acts.appendChild(cancel);acts.appendChild(save);
+    modal.appendChild(title);modal.appendChild(inp);modal.appendChild(acts);
+    setTimeout(()=>inp.focus(),50);
+  }
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
+  bg.appendChild(modal);document.body.appendChild(bg);
 }
 
 async function genPredPdf(){
