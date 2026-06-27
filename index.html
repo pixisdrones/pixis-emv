@@ -1506,6 +1506,7 @@ function appendPMBRow(sid,r){
 }
 
 let actualsInfCounts={};
+let _loadingCards=false; // suppresses runCalc during bulk card restore
 function buildEarnedSocSection(pb,sec){
   // Earned Social Media Mentions — per-platform toggles + "Add [Platform] Mention" buttons
   // Same structure as Official Brand Social (buildSocSection) but with 2.5x adj factor
@@ -2299,6 +2300,31 @@ function buildInfCard(opts){
   infPhotoWrap.appendChild(infPhotoBtn);infPhotoWrap.appendChild(infPhotoThumb);infPhotoWrap.appendChild(infPhotoRemoveBtn);
   infPhotoWrap.appendChild(infPhotoInp);
   card._setPhotoUrl=(url)=>{_photoUrl=url;infPhotoThumb.src=url;infPhotoThumb.style.display='block';infPhotoBtn.textContent='📸 Change';infPhotoRemoveBtn.style.display='block';};
+
+  // Fast bulk-restore path: sets platform+postType, calls buildEngTypeRows ONCE, then populates
+  // all values directly without dispatching events — avoids O(n²) recalc during load.
+  card._restoreFromData=(d)=>{
+    if(!d)return;
+    if(d.pl&&platSel.querySelector('option[value="'+d.pl+'"]'))platSel.value=d.pl;
+    valImpInp.value=d.valImp||getPlCPM(platSel.value)||0;
+    if(d.postType&&postTypeSel){
+      const opts=Array.from(postTypeSel.options).map(o=>o.value);
+      const match=opts.find(v=>v===d.postType)||opts[0];
+      if(match)postTypeSel.value=match;
+    }
+    buildEngTypeRows(platSel.value); // single call instead of 2-3 event-driven rebuilds
+    if(d.name&&nameInp)nameInp.value=d.name;
+    if(d.url&&urlInp)urlInp.value=d.url;
+    if(d.followers){
+      card._followerCount=d.followers;
+      if(follInpActuals)follInpActuals.value=d.followers;
+      if(estViewRow)estViewRow.qtyInp.value=Math.round(d.followers*getPlReach(platSel.value));
+    }
+    if(d.engQtys)engRows.forEach(er=>{if(d.engQtys[er.t.id]!==undefined)er.qtyInp.value=d.engQtys[er.t.id];});
+    if(d.engVals)engRows.forEach(er=>{if(d.engVals[er.t.id]!==undefined)er.valInp.value=d.engVals[er.t.id];});
+    if(d.photoUrl)card._setPhotoUrl(d.photoUrl);
+    recalc();
+  };
 
   card._serialize=()=>{
     const qtys={},vals={};
@@ -3172,6 +3198,7 @@ function calcRowEMV(row){
 }
 
 function runCalc(){
+  if(_loadingCards)return;
   const pesoTot={P:0,E:0,S:0,O:0};let bizTotal=0;
   SECS.forEach(sec=>{
     let t=0;
@@ -4015,22 +4042,31 @@ function svDeserialize(data){
       // Positional fallback cid for cards saved before the cid feature — deterministic across loads
       const cid=d.cid||(secId+'_v0_'+(arr.length-1-revIdx));
       const card=addActualsInfluencer(secId,adj,cid);
-      card._platSel.value=d.pl||'ig';
-      card._platSel.dispatchEvent(new Event('change'));
-      if(d.valImp&&card._setValImp)card._setValImp(d.valImp);
-      card._nameInp.value=d.name||'';
-      if(d.url&&card._urlInp)card._urlInp.value=d.url;
-      if(d.postType)card._setPostType(d.postType);
-      if(d.followers)card._setFollowers(d.followers);
-      if(d.engQtys)card._setEngQtys(d.engQtys);
-      if(d.engVals&&card._setEngVals)card._setEngVals(d.engVals);
-      if(d.photoUrl&&card._setPhotoUrl)card._setPhotoUrl(d.photoUrl);
+      // Use fast path if available (avoids 2-3 buildEngTypeRows calls + event cascade per card)
+      if(card._restoreFromData){card._restoreFromData(d);}
+      else{
+        card._platSel.value=d.pl||'ig';
+        card._platSel.dispatchEvent(new Event('change'));
+        if(d.valImp&&card._setValImp)card._setValImp(d.valImp);
+        card._nameInp.value=d.name||'';
+        if(d.url&&card._urlInp)card._urlInp.value=d.url;
+        if(d.postType)card._setPostType(d.postType);
+        if(d.followers)card._setFollowers(d.followers);
+        if(d.engQtys)card._setEngQtys(d.engQtys);
+        if(d.engVals&&card._setEngVals)card._setEngVals(d.engVals);
+        if(d.photoUrl&&card._setPhotoUrl)card._setPhotoUrl(d.photoUrl);
+      }
     });
   };
-  _restoreInfCards(data.infCardsSoc,'soc');
-  _restoreInfCards(data.infCardsEarned,'earned-oinfs');
-  _restoreInfCards(data.infCardsPaid,'paid-infs');
-
+  // Suppress runCalc during bulk restore — eliminates O(n²) recalculation for large shows
+  _loadingCards=true;
+  try{
+    _restoreInfCards(data.infCardsSoc,'soc');
+    _restoreInfCards(data.infCardsEarned,'earned-oinfs');
+    _restoreInfCards(data.infCardsPaid,'paid-infs');
+  }finally{
+    _loadingCards=false;
+  }
   runCalc();
 }
 
