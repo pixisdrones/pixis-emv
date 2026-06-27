@@ -1638,6 +1638,11 @@ function buildEarnedSocSection(pb,sec){
   });
 
   // All mention cards container
+  const bdRowE=document.createElement('div');bdRowE.style.cssText='display:flex;justify-content:flex-end;padding:6px 18px 2px';
+  const bdBtnE=document.createElement('button');bdBtnE.className='btn btn-g';
+  bdBtnE.style.cssText='font-size:10px;padding:4px 10px;color:var(--red);border-color:rgba(220,50,50,.25)';
+  bdBtnE.textContent='✕ Bulk Delete';bdBtnE.addEventListener('click',()=>bulkDeleteInfCards('earned-oinfs'));
+  bdRowE.appendChild(bdBtnE);pb.appendChild(bdRowE);
   const listDiv=document.createElement('div');listDiv.id='inf-list-earned-oinfs';
   listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
@@ -1666,6 +1671,10 @@ function buildInfluencerSection(pb,sec){
   impInp.addEventListener('keydown',e=>{if(e.key==='Enter')importFromURL(sec.id,sec.adj);});
   impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
   btnRow.appendChild(impWrap);
+  const bdBtn=document.createElement('button');bdBtn.type='button';bdBtn.className='btn btn-g';
+  bdBtn.style.cssText='font-size:10px;padding:5px 10px;white-space:nowrap;flex-shrink:0;color:var(--red);border-color:rgba(220,50,50,.25)';
+  bdBtn.textContent='✕ Bulk Delete';bdBtn.addEventListener('click',()=>bulkDeleteInfCards(sec.id));
+  btnRow.appendChild(bdBtn);
   pb.appendChild(btnRow);
   const listDiv=document.createElement('div');listDiv.id='inf-list-'+sec.id;
   listDiv.className='ainf-wrap';pb.appendChild(listDiv);
@@ -1913,6 +1922,11 @@ function buildSocSection(pb,sec){
   });
 
   // All cards container
+  const bdRowS=document.createElement('div');bdRowS.style.cssText='display:flex;justify-content:flex-end;padding:6px 18px 2px';
+  const bdBtnS=document.createElement('button');bdBtnS.className='btn btn-g';
+  bdBtnS.style.cssText='font-size:10px;padding:4px 10px;color:var(--red);border-color:rgba(220,50,50,.25)';
+  bdBtnS.textContent='✕ Bulk Delete';bdBtnS.addEventListener('click',()=>bulkDeleteInfCards('soc'));
+  bdRowS.appendChild(bdBtnS);pb.appendChild(bdRowS);
   const listDiv=document.createElement('div');listDiv.id='inf-list-soc';listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
 
@@ -2481,6 +2495,68 @@ function addForumMentionCard(){
   const list=$('forum-list-wom');if(!list)return;
   const card=buildPressCard({data:{mtype:'forum'},onEMVChange:runCalc,onRemove:runCalc});
   list.appendChild(card);runCalc();
+}
+
+function bulkDeleteInfCards(secId){
+  const list=$('inf-list-'+secId);if(!list)return;
+  const cards=[...list.querySelectorAll('.inf-card')];
+  if(!cards.length){notif('No entries to delete');return;}
+  const PLAT_LABELS={ig:'IG',tt:'TT',yt:'YT',yts:'YTS',xx:'X',fb:'FB',rd:'RD',th:'TH',qu:'QU'};
+  const bg=document.createElement('div');bg.className='sv-modal-bg';
+  const modal=document.createElement('div');modal.className='sv-modal';
+  modal.style.cssText='width:520px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column';
+  const ttl=document.createElement('div');ttl.className='sv-modal-ttl';
+  ttl.textContent='Bulk Delete — '+cards.length+' Entr'+(cards.length===1?'y':'ies');
+  modal.appendChild(ttl);
+  // Controls
+  const ctrl=document.createElement('div');ctrl.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap';
+  const selAll=document.createElement('button');selAll.className='sv-sel-btn';selAll.textContent='Select All';
+  const selNone=document.createElement('button');selNone.className='sv-sel-btn';selNone.textContent='None';
+  const countLbl=document.createElement('span');countLbl.style.cssText='font-size:10px;color:var(--ft);margin-left:4px';
+  const updateCount=()=>{const n=modal.querySelectorAll('.bd-chk:checked').length;countLbl.textContent=n+' selected';};
+  selAll.addEventListener('click',()=>{modal.querySelectorAll('.bd-chk').forEach(c=>c.checked=true);updateCount();});
+  selNone.addEventListener('click',()=>{modal.querySelectorAll('.bd-chk').forEach(c=>c.checked=false);updateCount();});
+  ctrl.appendChild(selAll);ctrl.appendChild(selNone);ctrl.appendChild(countLbl);
+  modal.appendChild(ctrl);
+  // Scrollable list
+  const scroll=document.createElement('div');scroll.style.cssText='flex:1;overflow-y:auto;border:1px solid var(--bd);border-radius:8px;min-height:0;max-height:50vh';
+  cards.forEach((card,i)=>{
+    const s=card._serialize?card._serialize():{};
+    const name=s.name||card.querySelector('.fi[placeholder="@handle or name"]')?.value||'Entry #'+(i+1);
+    const pl=s.pl||'';
+    const emv=card._getEMV?card._getEMV():0;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 12px;'+(i<cards.length-1?'border-bottom:1px solid var(--bd2)':'');
+    const chk=document.createElement('input');chk.type='checkbox';chk.className='bd-chk';chk.dataset.idx=i;
+    chk.style.cssText='accent-color:var(--red);width:14px;height:14px;cursor:pointer;flex-shrink:0';
+    chk.checked=true;chk.addEventListener('change',updateCount);
+    const badge=document.createElement('span');
+    badge.style.cssText='font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(90,110,248,.15);color:#7b8ff5;flex-shrink:0';
+    badge.textContent=PLAT_LABELS[pl]||pl.toUpperCase()||'—';
+    const nm=document.createElement('span');nm.style.cssText='flex:1;font-size:12px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';nm.textContent=name;
+    const ev=document.createElement('span');ev.style.cssText='font-size:11px;font-family:"DM Mono",monospace;color:var(--gld);flex-shrink:0';
+    ev.textContent=emv>0?'$'+Math.round(emv).toLocaleString():'—';
+    row.appendChild(chk);row.appendChild(badge);row.appendChild(nm);row.appendChild(ev);
+    scroll.appendChild(row);
+  });
+  modal.appendChild(scroll);updateCount();
+  // Action buttons
+  const acts=document.createElement('div');acts.className='sv-modal-acts';acts.style.marginTop='14px';
+  const cancel=document.createElement('button');cancel.className='btn btn-g';cancel.textContent='Cancel';
+  cancel.addEventListener('click',()=>bg.remove());
+  const delBtn=document.createElement('button');delBtn.className='btn';
+  delBtn.style.cssText='background:rgba(220,50,50,.15);border:1px solid rgba(220,50,50,.35);color:#e05;font-weight:600';
+  delBtn.textContent='Delete Selected';
+  delBtn.addEventListener('click',()=>{
+    const checked=[...modal.querySelectorAll('.bd-chk:checked')].map(c=>parseInt(c.dataset.idx));
+    if(!checked.length){notif('Nothing selected');return;}
+    checked.sort((a,b)=>b-a).forEach(idx=>cards[idx].remove());
+    runCalc();bg.remove();
+    notif('🗑 Deleted '+checked.length+' entr'+(checked.length===1?'y':'ies'));
+  });
+  acts.appendChild(cancel);acts.appendChild(delBtn);modal.appendChild(acts);
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
+  bg.appendChild(modal);document.body.appendChild(bg);
 }
 
 function addActualsInfluencer(secId,fixedAdj,cid){
@@ -4941,9 +5017,10 @@ function _twImportSelected(){
   social.forEach(r=>{
     const pl=r.pl||'xx';
     const name=r['extra_author_attributes.name']||r['extra_author_attributes.short_name']||'Unknown';
-    const fkMap={xx:'twitter',ig:'instagram',fb:'facebook',yt:'youtube',tt:'instagram',rd:'reddit',th:'twitter'};
+    const fkMap={xx:'twitter',ig:'instagram',fb:'facebook',yt:'youtube',tt:'tiktok',rd:'reddit',th:'twitter'};
     const fk=fkMap[pl];
-    const followers=fk?parseFloat(r['source_extended_attributes.'+fk+'_followers']||0):parseFloat(r.reach||0);
+    const srcFollowers=fk?parseFloat(r['source_extended_attributes.'+fk+'_followers']||0):0;
+    const followers=srcFollowers||parseFloat(r.reach||0);
     const reach=parseFloat(r.reach||0);
     const eng=parseFloat(r.engagement||0);
     const engPct=followers>0?parseFloat((eng/followers*100).toFixed(2)):0;
@@ -4974,6 +5051,12 @@ function _twImportSelected(){
       Object.entries(engMap).forEach(([typeId,col])=>{
         qtys[typeId]=parseFloat(r[col]||0);
       });
+      // Twitter: video posts store views in twitter_video_views, not twitter_impressions.
+      // Merge video_views into 'view' when impressions = 0 (avoids double-count in standard mode).
+      if(pl==='xx'&&!qtys.view){
+        const vv=parseFloat(r['article_extended_attributes.twitter_video_views']||0);
+        if(vv){qtys.view=vv;qtys.vview=0;}
+      }
       if(card._setEngQtys)card._setEngQtys(qtys);
       runCalc();
     },120);
