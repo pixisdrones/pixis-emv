@@ -1334,7 +1334,15 @@ function wireEvents(){
     _twUpdateStats();
   });
   document.querySelectorAll('.tw-fb').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tw-fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');_twRenderTable(btn.dataset.twf);}));
-  $('sv-ph').addEventListener('click',()=>{$('sv-panel').classList.toggle('open');});
+  $('sv-ph').addEventListener('click',()=>{
+    const panel=$('sv-panel');
+    const opening=!panel.classList.contains('open');
+    panel.classList.toggle('open');
+    if(opening){_cloudShows=null;cloudRefresh();} // always pull latest shows (incl. collaborators') on open
+  });
+  // While the saved-shows list is open, keep it fresh — catches shows a collaborator saves while you're browsing
+  setInterval(()=>{if($('sv-panel')?.classList.contains('open')){_cloudShows=null;cloudRefresh();}},45000);
+  window.addEventListener('focus',()=>{if($('sv-panel')?.classList.contains('open')){_cloudShows=null;cloudRefresh();}});
 }
 
 function switchMode(m){
@@ -4296,11 +4304,29 @@ function _startCollabPoll(){
 }
 function _stopCollabPoll(){clearInterval(_collabPollTimer);_collabPollTimer=null;}
 
+// Fetch just the remote doc's savedAt, to detect if a collaborator saved after we loaded
+async function _checkRemoteConflict(key){
+  try{
+    const resp=await fetch(FS_BASE+'/shows/'+key+'?key='+FS_API_KEY,{cache:'no-cache'});
+    if(!resp.ok)return null;
+    const doc=await resp.json();
+    return _fsDecode(doc.fields||{}).savedAt||null;
+  }catch{return null;}
+}
+
 async function svUpdateShow(key){
   const all=svGetAll();
   const idx=all.findIndex(e=>e.key===key);
   if(idx===-1){notif('Show not found');return;}
   const oldName=all[idx].name;
+  const remoteSavedAt=await _checkRemoteConflict(key);
+  if(remoteSavedAt&&window._loadedShowSavedAt&&remoteSavedAt>window._loadedShowSavedAt){
+    const when=new Date(remoteSavedAt).toLocaleString();
+    if(!confirm('A collaborator updated "'+oldName+'" at '+when+', after you loaded it.\n\nSaving now will merge in any new entries they added, but changes they made to existing fields (rates, metrics, names) may be overwritten.\n\nSave anyway?')){
+      notif('Save cancelled — reload the show to see their latest changes first');
+      return;
+    }
+  }
   let state=svSerialize();state.name=oldName;
   state=await _mergeRemoteCards(state);
   window._loadedShowSavedAt=state.savedAt; // update before async cloud write so poll/merge don't see our own save as "newer"
@@ -5481,14 +5507,15 @@ async function genProgramReport(){
 let _autoSaveTimer=null;
 function _scheduleAutoSave(){
   clearTimeout(_autoSaveTimer);
-  _autoSaveTimer=setTimeout(()=>{
+  _autoSaveTimer=setTimeout(async()=>{
     if(!window._currentShowKey)return;
-    const state=svSerialize();
+    let state=svSerialize();
     const all=svGetAll();
     const idx=all.findIndex(e=>e.key===window._currentShowKey);
     if(idx===-1)return;
     const name=all[idx].name;
     state.name=name;
+    state=await _mergeRemoteCards(state); // pull in any collaborator cards before we overwrite the doc
     all[idx]={key:window._currentShowKey,name,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
     svSetAll(all);
     window._loadedShowSavedAt=state.savedAt; // update before async cloud write
