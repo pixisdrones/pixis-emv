@@ -3837,10 +3837,13 @@ async function genPdf(){
       if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
       for(let i=0;i<photoCards.length;i+=3){
         const row=photoCards.slice(i,i+3);
-        const cols=row.map(p=>'<div style="flex:1;min-width:0;text-align:center">'
-          +'<img src="'+p.photo+'" style="width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb">'
-          +(p.outlet||p.headline?'<div style="font-size:9px;font-weight:600;color:#333;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.outlet||p.headline)+'</div>':'')
-          +'</div>').join('');
+        const cols=row.map(p=>{
+          const img='<img src="'+p.photo+'" style="width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;display:block">';
+          return '<div style="flex:1;min-width:0;text-align:center">'
+            +(p.url?'<a data-href="'+p.url+'" style="display:block">'+img+'</a>':img)
+            +(p.outlet||p.headline?'<div style="font-size:9px;font-weight:600;color:#333;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.outlet||p.headline)+'</div>':'')
+            +'</div>';
+        }).join('');
         if(i===0){
           await stamp('<div style="margin-top:18px;margin-bottom:4px;background:#d4a843;color:#fff;padding:16px 22px;border-radius:8px;display:flex;align-items:center;gap:16px">'
             +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Media Gallery</div>'
