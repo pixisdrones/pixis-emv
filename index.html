@@ -2830,6 +2830,16 @@ const FS_BASE='https://firestore.googleapis.com/v1/projects/'+FS_PROJECT+'/datab
 
 let _cloudShows=null;// null=not yet fetched, {}=fetched
 
+// Firestore caps a single string field at ~1,048,487 bytes. Shows with a lot of embedded
+// photos can exceed that, so a large stateJson is split into chunk documents instead \u2014
+// stored as siblings in the same /shows collection (shows/{key}__chunk{i}), since the
+// project's security rules only grant access to that collection, not subcollections \u2014
+// each safely under the cap, and reassembled on read. Chunk docs are filtered out of the
+// show list by their key suffix.
+const FS_CHUNK_SIZE=900000;
+const FS_MAX_CHUNKS=15;// ~13.5MB ceiling \u2014 past this we refuse to try and say so clearly
+const _fsChunkKey=(key,i)=>key+'__chunk'+i;
+
 // Encode a plain JS object into Firestore typed fields
 function _fsEncode(obj){
   const fields={};
@@ -2851,28 +2861,77 @@ function _fsDecode(fields){
   return out;
 }
 
+async function _fsAssembleChunks(key,count){
+  const parts=await Promise.all(Array.from({length:count},(_,i)=>
+    fetch(FS_BASE+'/shows/'+_fsChunkKey(key,i)+'?key='+FS_API_KEY,{cache:'no-cache'})
+      .then(r=>r.ok?r.json():null).catch(()=>null)
+  ));
+  return parts.map(p=>p?(_fsDecode(p.fields).data||''):'').join('');
+}
+// Fetch a show's full stateJson string, transparently reassembling chunks if needed.
+// Returns null if the show doc doesn't exist.
+async function _fsFetchStateJson(key){
+  const resp=await fetch(FS_BASE+'/shows/'+key+'?key='+FS_API_KEY,{cache:'no-cache'});
+  if(!resp.ok)return null;
+  const doc=await resp.json();
+  const f=_fsDecode(doc.fields||{});
+  if(f.chunked)return await _fsAssembleChunks(key,parseInt(f.chunkCount)||0);
+  return f.stateJson||'';
+}
+
 async function cloudGetAll(){
-  const resp=await fetch(FS_BASE+'/shows?key='+FS_API_KEY+'&pageSize=200');
-  if(!resp.ok)throw new Error('HTTP '+resp.status);
-  const data=await resp.json();
   const result={};
-  (data.documents||[]).forEach(doc=>{
-    const key=doc.name.split('/').pop();
-    const f=_fsDecode(doc.fields);
-    let state={};try{state=JSON.parse(f.stateJson||'{}');}catch{}
-    result[key]={key,name:f.name||'',savedAt:f.savedAt||'',emv:f.emv||'$0',tot:f.tot||'$0',state};
-  });
+  // Firestore caps each list response by response size, not just pageSize — with chunk
+  // documents in the mix a single page can silently omit later shows, so page through
+  // nextPageToken until the collection is fully read.
+  let pageToken='';
+  do{
+    const url=FS_BASE+'/shows?key='+FS_API_KEY+'&pageSize=200'+(pageToken?'&pageToken='+encodeURIComponent(pageToken):'');
+    const resp=await fetch(url);
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const realDocs=(data.documents||[]).filter(doc=>!/__chunk\d+$/.test(doc.name));
+    await Promise.all(realDocs.map(async doc=>{
+      const key=doc.name.split('/').pop();
+      const f=_fsDecode(doc.fields);
+      const stateJson=f.chunked?await _fsAssembleChunks(key,parseInt(f.chunkCount)||0):(f.stateJson||'');
+      let state={};try{state=JSON.parse(stateJson||'{}');}catch{}
+      result[key]={key,name:f.name||'',savedAt:f.savedAt||'',emv:f.emv||'$0',tot:f.tot||'$0',state};
+    }));
+    pageToken=data.nextPageToken||'';
+  }while(pageToken);
   return result;
 }
 
 async function cloudSave(key,obj){
   const stateJson=JSON.stringify(obj.state||obj);
-  const body={fields:_fsEncode({name:obj.name||'',savedAt:obj.savedAt||new Date().toISOString(),emv:obj.emv||'$0',tot:obj.tot||'$0',stateJson})};
+  const baseFields={name:obj.name||'',savedAt:obj.savedAt||new Date().toISOString(),emv:obj.emv||'$0',tot:obj.tot||'$0'};
+  const chunkCount=Math.ceil(stateJson.length/FS_CHUNK_SIZE);
+  if(chunkCount>FS_MAX_CHUNKS){
+    throw new Error('Show data is too large to sync to the cloud ('+(stateJson.length/1e6).toFixed(1)+'MB, cloud limit is ~'+(FS_CHUNK_SIZE*FS_MAX_CHUNKS/1e6).toFixed(0)+'MB) \u2014 try removing some photos. It will still save locally.');
+  }
+  const chunked=chunkCount>1;
+  const body={fields:_fsEncode({...baseFields,chunked,chunkCount:chunked?chunkCount:0,stateJson:chunked?'':stateJson})};
   const resp=await fetch(FS_BASE+'/shows/'+key+'?key='+FS_API_KEY,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
   if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'HTTP '+resp.status);}
+  if(chunked){
+    for(let i=0;i<chunkCount;i++){
+      const cBody={fields:{data:{stringValue:stateJson.slice(i*FS_CHUNK_SIZE,(i+1)*FS_CHUNK_SIZE)}}};
+      const cResp=await fetch(FS_BASE+'/shows/'+_fsChunkKey(key,i)+'?key='+FS_API_KEY,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify(cBody)});
+      if(!cResp.ok){const e=await cResp.json().catch(()=>({}));throw new Error('chunk '+i+': '+(e.error?.message||'HTTP '+cResp.status));}
+    }
+  }
+  // Clean up any stale chunk docs left over from a previous, larger version of this show.
+  // DELETE on a doc that doesn't exist is a harmless no-op, so we don't need to know the old count.
+  await Promise.all(Array.from({length:FS_MAX_CHUNKS-chunkCount},(_,j)=>
+    fetch(FS_BASE+'/shows/'+_fsChunkKey(key,chunkCount+j)+'?key='+FS_API_KEY,{method:'DELETE'}).catch(()=>{})
+  ));
 }
 
 async function cloudDelete(key){
+  await Promise.all(Array.from({length:FS_MAX_CHUNKS},(_,i)=>
+    fetch(FS_BASE+'/shows/'+_fsChunkKey(key,i)+'?key='+FS_API_KEY,{method:'DELETE'}).catch(()=>{})
+  ));
   await fetch(FS_BASE+'/shows/'+key+'?key='+FS_API_KEY,{method:'DELETE'});
 }
 
@@ -4240,11 +4299,9 @@ function svExportSingleShow(key){
 // Merge remote cards into local state (prevents overwrite data loss)
 async function _mergeRemoteCards(state){
   try{
-    const resp=await fetch(FS_BASE+'/shows/'+window._currentShowKey+'?key='+FS_API_KEY,{cache:'no-cache'});
-    if(!resp.ok)return state;
-    const doc=await resp.json();
-    const f=_fsDecode(doc.fields||{});
-    let remote={};try{remote=JSON.parse(f.stateJson||'{}');}catch{}
+    const stateJson=await _fsFetchStateJson(window._currentShowKey);
+    if(stateJson===null)return state;
+    let remote={};try{remote=JSON.parse(stateJson||'{}');}catch{}
     if(!remote||!remote.savedAt)return state;
     // Only merge if remote is newer than when we loaded
     if(remote.savedAt<=window._loadedShowSavedAt)return state;
@@ -4278,12 +4335,10 @@ function _startCollabPoll(){
     const _tsSnap=window._loadedShowSavedAt;
     if(!_keySnap)return;
     try{
-      const resp=await fetch(FS_BASE+'/shows/'+_keySnap+'?key='+FS_API_KEY,{cache:'no-cache'});
-      if(!resp.ok)return;
+      const stateJson=await _fsFetchStateJson(_keySnap);
+      if(stateJson===null)return;
       if(window._currentShowKey!==_keySnap)return; // show switched while fetch was in-flight
-      const doc=await resp.json();
-      const f=_fsDecode(doc.fields||{});
-      let remote={};try{remote=JSON.parse(f.stateJson||'{}');}catch{}
+      let remote={};try{remote=JSON.parse(stateJson||'{}');}catch{}
       if(!remote.savedAt||remote.savedAt<=_tsSnap)return;
       // Auto-merge new cards into live DOM
       const merge=(existing,cloud)=>{
