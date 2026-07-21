@@ -3729,7 +3729,7 @@ async function genPdf(){
         if(!biRows)continue;
         if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid #2fd4b2;padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">Business Impact</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Description</th><th style="padding:7px 9px;text-align:right">Units</th><th style="padding:7px 9px;text-align:right">Unit Value</th><th style="padding:7px 9px;text-align:right">Rev/Unit</th><th style="padding:7px 9px;text-align:right">Impact</th></tr></thead>'
           +'<tbody>'+biRows+'<tr style="background:#e8f8f5"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a">Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a;font-size:12px">'+fmt(biTot)+'</td></tr></tbody></table></div>');
         continue;
@@ -3813,12 +3813,12 @@ async function genPdf(){
         :'<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr>';
       if(rowsHTML){
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
           +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
       } else {
         const _noRowsHdr='<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div></div>';
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div></div>';
         if(isWom){_womSecHdr=_noRowsHdr;}else{await stamp(_noRowsHdr);}
       }
       // Press & Forum mention cards sub-tables for wom section — rendered AFTER sub-channel rows
@@ -5496,7 +5496,7 @@ async function genProgramReport(){
           });
           if(!biH)continue;
           await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid #2fd4b2;padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">5. Business Impact</div>'
-            +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
+            +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
             +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff">'
             +'<th style="padding:7px 9px;text-align:left">Description</th><th style="padding:7px 9px;text-align:right">Units</th>'
             +'<th style="padding:7px 9px;text-align:right">Unit Value</th><th style="padding:7px 9px;text-align:right">Rev/Unit</th>'
@@ -5538,7 +5538,7 @@ async function genProgramReport(){
         });
         if(!rH)continue;
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff">'
           +'<th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">Metric</th>'
           +'<th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th>'
