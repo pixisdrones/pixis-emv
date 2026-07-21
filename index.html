@@ -2520,16 +2520,24 @@ function addForumMentionCard(){
   list.appendChild(card);runCalc();
 }
 
+// Sections whose cards can be reclassified between Earned and Owned media —
+// same card shape under the hood, just a different default adj. factor.
+const INF_MOVE_TARGETS={
+  'earned-oinfs':{dest:'soc',destLabel:'Owned Media',destAdj:1.0},
+  'soc':{dest:'earned-oinfs',destLabel:'Earned Media',destAdj:2.5}
+};
+
 function bulkDeleteInfCards(secId){
   const list=$('inf-list-'+secId);if(!list)return;
   const cards=[...list.querySelectorAll('.inf-card')];
   if(!cards.length){notif('No entries to delete');return;}
   const PLAT_LABELS={ig:'IG',tt:'TT',yt:'YT',yts:'YTS',xx:'X',fb:'FB',rd:'RD',th:'TH',qu:'QU'};
+  const moveInfo=INF_MOVE_TARGETS[secId];
   const bg=document.createElement('div');bg.className='sv-modal-bg';
   const modal=document.createElement('div');modal.className='sv-modal';
   modal.style.cssText='width:520px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column';
   const ttl=document.createElement('div');ttl.className='sv-modal-ttl';
-  ttl.textContent='Bulk Delete — '+cards.length+' Entr'+(cards.length===1?'y':'ies');
+  ttl.textContent=(moveInfo?'Manage Entries':'Bulk Delete')+' — '+cards.length+' Entr'+(cards.length===1?'y':'ies');
   modal.appendChild(ttl);
   // Controls
   const ctrl=document.createElement('div');ctrl.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap';
@@ -2577,7 +2585,29 @@ function bulkDeleteInfCards(secId){
     runCalc();bg.remove();
     notif('🗑 Deleted '+checked.length+' entr'+(checked.length===1?'y':'ies'));
   });
-  acts.appendChild(cancel);acts.appendChild(delBtn);modal.appendChild(acts);
+  acts.appendChild(cancel);
+  if(moveInfo){
+    const moveBtn=document.createElement('button');moveBtn.className='btn btn-g';
+    moveBtn.style.cssText='background:rgba(90,110,248,.15);border:1px solid rgba(90,110,248,.35);color:#7b8ff5;font-weight:600';
+    moveBtn.textContent='⇄ Move to '+moveInfo.destLabel;
+    moveBtn.addEventListener('click',()=>{
+      const checked=[...modal.querySelectorAll('.bd-chk:checked')].map(c=>parseInt(c.dataset.idx));
+      if(!checked.length){notif('Nothing selected');return;}
+      // Descending order so each prepend into the destination list preserves the original top-to-bottom order
+      checked.sort((a,b)=>b-a).forEach(idx=>{
+        const card=cards[idx];
+        const data=card._serialize?card._serialize():null;
+        if(!data)return;
+        card.remove();
+        const newCard=addActualsInfluencer(moveInfo.dest,moveInfo.destAdj,data.cid);
+        if(newCard&&newCard._restoreFromData)newCard._restoreFromData(data);
+      });
+      runCalc();bg.remove();
+      notif('⇄ Moved '+checked.length+' entr'+(checked.length===1?'y':'ies')+' to '+moveInfo.destLabel);
+    });
+    acts.appendChild(moveBtn);
+  }
+  acts.appendChild(delBtn);modal.appendChild(acts);
   bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
   bg.appendChild(modal);document.body.appendChild(bg);
 }
