@@ -3689,13 +3689,17 @@ function renderProgramShows(){
 async function genPdf(){
   const btn=$('btn-pdf');btn.disabled=true;btn.textContent='Building...';
   try{
+    // Wait for webfonts to fully finish loading before any capture — html2canvas can cache
+    // stale (fallback) glyph metrics if a capture starts mid-load, then paint with the real
+    // font once it arrives, causing words to visually overlap/merge in later captures.
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready.catch(()=>{});
     const{jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'p',unit:'pt',format:'a4'});
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
     const mg=40,uw=pw-mg*2;let cy=mg;
     const HC='#1a2a5e',AC='#c9a843';
     const stamp=async html=>{
-      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222';
+      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222;word-spacing:0.14em';
       w.innerHTML=html;$('pdfContent').appendChild(w);
       const cv=await html2canvas(w,{scale:2,backgroundColor:'#fff',logging:false});
       const h=cv.height*uw/cv.width;
@@ -3759,7 +3763,7 @@ async function genPdf(){
         if(!biRows)continue;
         if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid #2fd4b2;padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">Business Impact</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Description</th><th style="padding:7px 9px;text-align:right">Units</th><th style="padding:7px 9px;text-align:right">Unit Value</th><th style="padding:7px 9px;text-align:right">Rev/Unit</th><th style="padding:7px 9px;text-align:right">Impact</th></tr></thead>'
           +'<tbody>'+biRows+'<tr style="background:#e8f8f5"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a">Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:#1a7a6a;font-size:12px">'+fmt(biTot)+'</td></tr></tbody></table></div>');
         continue;
@@ -3843,12 +3847,12 @@ async function genPdf(){
         :'<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">Section Total</td><td style="padding:7px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+AC+';font-size:12px">'+fmt(secTot)+'</td></tr>';
       if(rowsHTML){
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">'+metricHdr+'</th><th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th><th style="padding:7px 9px;text-align:right">EMV</th></tr></thead>'
           +'<tbody>'+rowsHTML+stdTotalRow+'</tbody></table></div>');
       } else {
         const _noRowsHdr='<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div></div>';
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div></div>';
         if(isWom){_womSecHdr=_noRowsHdr;}else{await stamp(_noRowsHdr);}
       }
       // Press & Forum mention cards sub-tables for wom section — rendered AFTER sub-channel rows
@@ -3976,7 +3980,7 @@ async function genPdf(){
     const _methLoc=[gv('s-city'),gv('s-state')].filter(v=>v!=='--').join(', ');
     const _methShowDesc=[gv('s-client'),gv('s-name')].filter(v=>v!=='--').join(' — ')||'this program';
     const _methSec=(num,title)=>'<div style="margin-top:16px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+(num?num+'. ':'')+title+'</div>';
-    const _methP=text=>'<div style="font-size:11px;color:#333;line-height:1.6;word-spacing:0.14em;margin-bottom:6px">'+text+'</div>';
+    const _methP=text=>'<div style="font-size:11px;color:#333;line-height:1.6;margin-bottom:6px">'+text+'</div>';
     await stamp('<div style="margin-bottom:4px;background:#d4a843;color:#fff;padding:16px 22px;border-radius:8px;display:flex;align-items:center;gap:16px">'
       +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Appendix B — Methodology</div>'
       +'<div style="font-size:10px;opacity:.75;margin-top:4px">How Estimated Media Value (EMV) is calculated in this report</div></div></div>'
@@ -4853,13 +4857,17 @@ function predOpenSaveModal(){
 async function genPredPdf(){
   const btn=$('btn-pred-pdf');btn.disabled=true;btn.textContent='Building...';
   try{
+    // Wait for webfonts to fully finish loading before any capture — html2canvas can cache
+    // stale (fallback) glyph metrics if a capture starts mid-load, then paint with the real
+    // font once it arrives, causing words to visually overlap/merge in later captures.
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready.catch(()=>{});
     const{jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'p',unit:'pt',format:'a4'});
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
     const mg=40,uw=pw-mg*2;let cy=mg;
     const HC='#1a2a5e',AC='#c9a843';
     const stamp=async html=>{
-      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222';
+      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222;word-spacing:0.14em';
       w.innerHTML=html;$('pdfContent').appendChild(w);
       const cv=await html2canvas(w,{scale:2,backgroundColor:'#fff',logging:false});
       const h=cv.height*uw/cv.width;
@@ -5455,13 +5463,17 @@ async function genProgramReport(){
   if(!selected.length){notif('Select at least one show');return;}
   const btn=$('btn-prog-report');btn.disabled=true;btn.textContent='Building\u2026';
   try{
+    // Wait for webfonts to fully finish loading before any capture \u2014 html2canvas can cache
+    // stale (fallback) glyph metrics if a capture starts mid-load, then paint with the real
+    // font once it arrives, causing words to visually overlap/merge in later captures.
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready.catch(()=>{});
     const{jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'p',unit:'pt',format:'a4'});
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
     const mg=40,uw=pw-mg*2;let cy=mg;
     const HC='#1a2a5e',AC='#c9a843';
     const stamp=async html=>{
-      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222';
+      const w=document.createElement('div');w.style.cssText='width:700px;background:#fff;font-family:Outfit,sans-serif;padding:2px;color:#222;word-spacing:0.14em';
       w.innerHTML=html;$('pdfContent').appendChild(w);
       const cv=await html2canvas(w,{scale:2,backgroundColor:'#fff',logging:false});
       const h=cv.height*uw/cv.width;
@@ -5582,7 +5594,7 @@ async function genProgramReport(){
           });
           if(!biH)continue;
           await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid #2fd4b2;padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">5. Business Impact</div>'
-            +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
+            +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
             +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff">'
             +'<th style="padding:7px 9px;text-align:left">Description</th><th style="padding:7px 9px;text-align:right">Units</th>'
             +'<th style="padding:7px 9px;text-align:right">Unit Value</th><th style="padding:7px 9px;text-align:right">Rev/Unit</th>'
@@ -5624,7 +5636,7 @@ async function genProgramReport(){
         });
         if(!rH)continue;
         await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div>'
-          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5;word-spacing:0.14em">'+sec.ov+'</div>'
+          +'<div style="font-size:11px;color:#333;margin-bottom:8px;line-height:1.5">'+sec.ov+'</div>'
           +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff">'
           +'<th style="padding:7px 9px;text-align:left">Sub-Channel</th><th style="padding:7px 9px;text-align:right">Metric</th>'
           +'<th style="padding:7px 9px;text-align:right">Rate</th><th style="padding:7px 9px;text-align:right">Adj.</th>'
