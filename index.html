@@ -3968,6 +3968,60 @@ async function genPdf(){
       }
     }
 
+    // ── APPENDIX B: Methodology ───────────────────────────────────────────────
+    // Describes the calculation approach in general terms rather than hardcoding
+    // specific rate figures, since those live in the Benchmarks tab and can be
+    // tuned per show — this stays accurate no matter what they're set to.
+    pdf.addPage();cy=mg;
+    const _methLoc=[gv('s-city'),gv('s-state')].filter(v=>v!=='--').join(', ');
+    const _methShowDesc=[gv('s-client'),gv('s-name')].filter(v=>v!=='--').join(' — ')||'this program';
+    const _methSec=(num,title)=>'<div style="margin-top:16px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+(num?num+'. ':'')+title+'</div>';
+    const _methP=text=>'<div style="font-size:11px;color:#333;line-height:1.6;word-spacing:0.14em;margin-bottom:6px">'+text+'</div>';
+    await stamp('<div style="margin-bottom:4px;background:#d4a843;color:#fff;padding:16px 22px;border-radius:8px;display:flex;align-items:center;gap:16px">'
+      +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Appendix B — Methodology</div>'
+      +'<div style="font-size:10px;opacity:.75;margin-top:4px">How Estimated Media Value (EMV) is calculated in this report</div></div></div>'
+      +_methSec(null,'Overview')
+      +_methP('This report quantifies the Estimated Media Value (EMV) of '+_methShowDesc+(_methLoc?' at '+_methLoc:'')+'. EMV translates audience reach, engagement, and content assets into equivalent advertising spend using industry benchmarks.')
+      +_methP('Values are estimates; actual market rates vary by outlet, platform, and campaign. All figures are for comparative and strategic planning purposes only.')
+      +'</div>');
+    await stamp(_methSec('E1','Live Audience / Experiential')
+      +_methP('Captures the direct attention and emotional engagement of in-person viewers during the show.')
+      +_methP('<strong>Primary Audience (Impression Model):</strong> each attendee is treated as a discrete impression, valued at a premium out-of-home CPM scaled by a spectacle adjustment factor reflecting the premium over standard OOH advertising.')
+      +_methP('<strong>Secondary Incidental Audience:</strong> passersby and peripheral viewers, valued at a lower CPM and adjustment factor.')
+      +_methP('<strong>Live Audience Engagement Duration:</strong> total audience × show duration (minutes) × a per-minute engagement rate × adjustment factor.')
+      +'</div>');
+    await stamp(_methSec('E2','Press &amp; Media Coverage')
+      +_methP('Each press mention is valued using the outlet’s total audience, an assumed reach percentage for that story, and an equivalent CPM. Adjusted Reach = Total Audience × Reach %. Est. EMV = (Adjusted Reach ÷ 1,000) × CPM.')
+      +_methP('Sources range from hyperlocal blogs to national outlets; higher-authority outlets and larger audiences yield higher EMV.')
+      +_methP('Only mentions with a verifiable link (or a documented headline/outlet, for print) to the show or a co-occurring event are included.')
+      +'</div>');
+    await stamp(_methSec('E3','Social Media Mentions')
+      +_methP('Organic, unpaid posts about the show are tracked across each platform where they appear (Instagram, TikTok, YouTube, Facebook, X/Twitter, Reddit, Threads, Quora).')
+      +_methP('<strong>Impressions:</strong> platform-reported or estimated views for the post. <strong>Engagements:</strong> likes, comments, shares, saves, and similar actions.')
+      +_methP('<strong>EMV Formula:</strong> (Impressions ÷ 1,000 × Platform CPM) + (Engagements × Engagement Value), then scaled by an adjustment factor for content quality and brand alignment. Platform CPMs and engagement values are maintained in the Benchmarks tab and cited to industry sources there.')
+      +'<div style="font-size:10px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Adjustment Factor — General Guidance</div>'
+      +'<div style="font-size:10px;color:#666;margin-bottom:6px">Illustrative reference points; the exact multiplier range differs slightly by channel (paid vs. organic vs. owned) — see the Benchmarks tab for this program’s exact values.</div>'
+      +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:6px 9px;text-align:left">Factor</th><th style="padding:6px 9px;text-align:left">Description</th><th style="padding:6px 9px;text-align:left">Brand Impact</th></tr></thead><tbody>'
+      +[['Lowest','Incidental mention / background appearance','Minimal'],['Low','Show clearly visible, minor caption reference','Low'],['Mid','Show as primary subject, positive framing','Medium'],['High','Strong branding, high engagement, broad reach','High'],['Highest','Viral potential, celebrity / media affiliation','Very High']]
+        .map(([f,d,b],i)=>'<tr style="background:'+(i%2?'#fafbff':'#fff')+'"><td style="padding:6px 9px;border:1px solid #e5e7eb;font-weight:600">'+f+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb">'+d+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb">'+b+'</td></tr>').join('')
+      +'</tbody></table></div>');
+    await stamp(_methSec('O1','Official Brand Social')
+      +_methP('Posts published by the brand’s own accounts are valued using the same organic reach model as earned social, but at the owned-media adjustment factor — a lower multiple reflecting direct, controlled distribution rather than third-party endorsement.')
+      +'</div>'
+      +_methSec('O2','Content Assets Produced')
+      +_methP('Professional photo, video, and aerial assets produced for the show are valued at their replacement cost — what the brand would pay to commission equivalent content independently. Rates reflect industry-standard production costs by asset type.')
+      +'</div>');
+    await stamp(_methSec(null,'Program ROI &amp; CPM')
+      +_methP('<strong>ROI</strong> = Total EMV ÷ Program Cost.'+(roiD&&roiD!=='--'?' For this program, a '+roiD+' ROI means every $1 invested generated $'+roiD.replace('x','')+' in media value.':''))
+      +_methP('<strong>Program CPM</strong> = (Program Cost ÷ Total Adjusted Reach) × 1,000 — a measure of cost-efficiency across all media generated by the show.'+(cpmD&&cpmD!=='--'&&cpmD!=='$0'?' This program’s CPM was '+cpmD+'.':''))
+      +'</div>');
+    await stamp(_methSec(null,'Data Sources &amp; Disclaimers')
+      +_methP('Platform analytics are provided by content creators or the brand team, supplemented by third-party audience-estimation tools where direct analytics aren’t available.')
+      +_methP('Press and press-adjacent audience figures are sourced from outlet-reported circulation/traffic or third-party domain-authority and web-traffic estimation services.')
+      +_methP('EMV calculations reflect the industry benchmarks configured in this tool at the time the report was generated. Figures are estimates and carry inherent uncertainty; they are not a guarantee of paid-media-equivalent value.')
+      +_methP('Confidential — Pixis Drones — not for external distribution without written consent.')
+      +'</div>');
+
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
       pdf.text('Confidential \u2014 Pixis Drones \u2014 EMV figures are estimates based on industry benchmarks.',pw/2,ph-16,{align:'center'});
