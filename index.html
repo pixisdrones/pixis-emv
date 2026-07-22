@@ -915,7 +915,7 @@ const SECS=[
   // ── SHARED ────────────────────────────────────────────────────────────────
   {id:'collab-oinfs',peso:'S',num:'S1',title:'Collab Social Media',sub:'Co-authored posts with linked collaborator accounts',col:'#5a6ef8',
    type:'earned-soc',adj:5,pfx:'csoc',
-   plats:['ig','fb','tt','yt'],
+   plats:['ig','fb','tt','yt'],partnerField:true,
    premiumLabel:'mutual-endorsement',
    ov:'Official collab/co-authored posts — restricted to Instagram, Facebook, TikTok, and YouTube, the platforms with real, launched collab-post support. Valued with a 5× premium reflecting a formally agreed partnership endorsed by both parties across their combined audiences. Note: on YouTube, only the uploading channel sees full post metrics — linked collaborator channels do not get shared analytics.'},
   // ── OWNED ─────────────────────────────────────────────────────────────────
@@ -1962,9 +1962,10 @@ function _attachPhotoDrop(wrap,onFile){
   wrap.addEventListener('drop',e=>{e.preventDefault();wrap.style.outline='';wrap.style.outlineOffset='';_processImgFile(e.dataTransfer.files[0],onFile);});
 }
 function buildInfCard(opts){
-  // opts: {num, adjFactor, onEMVChange, onRemove, isPrediction, cid}
-  const {num,adjFactor,onEMVChange,onRemove,cid:_cid}=opts;
+  // opts: {num, adjFactor, onEMVChange, onRemove, isPrediction, cid, secId}
+  const {num,adjFactor,onEMVChange,onRemove,cid:_cid,secId}=opts;
   const isPred=!!opts.isPrediction;
+  const sec=secId?SECS.find(s=>s.id===secId):null;
   const card=document.createElement('div');card.className='inf-card';
 
   // Header row
@@ -1991,8 +1992,17 @@ function buildInfCard(opts){
   // Row 1: handle + platform
   const r1=document.createElement('div');r1.className='inf-g';
   const nameInp=mkTxt('@handle or name');
-  const platSel=mkSel(PLATS.map(([v,t])=>[v,t]));
+  const platOpts=sec&&sec.plats?PLATS.filter(([v])=>sec.plats.includes(v)):PLATS;
+  const platSel=mkSel(platOpts.map(([v,t])=>[v,t]));
   r1.appendChild(mkFld('Handle / Name',nameInp));r1.appendChild(mkFld('Platform',platSel));
+  // Partner Handle row — collab sections only (the brand/owned channel is implicit and
+  // constant across every card in a show, so we only need to capture who we collab'd with)
+  let partnerInp=null,rPartner=null;
+  if(sec&&sec.partnerField){
+    partnerInp=mkTxt('@partner_handle');
+    rPartner=document.createElement('div');rPartner.style.cssText='margin-top:6px';
+    rPartner.appendChild(mkFld('Collab Partner Handle',partnerInp,'The other account tagged as a collaborator on this post'));
+  }
   // Followers + Post Type row (actuals only)
   let follInpActuals=null,postTypeSel=null,rFollowers=null;
   const rebuildPostTypeOpts=(pl)=>{
@@ -2037,6 +2047,7 @@ function buildInfCard(opts){
   urlFld.appendChild(urlLbl);urlFld.appendChild(urlWrap);
   rUrl.appendChild(urlFld);
   card._urlInp=urlInp;
+  card._partnerInp=partnerInp;
 
   // Row 2: followers + eng% + (prediction only) status
   const r2=document.createElement('div');r2.className='inf-g3';
@@ -2329,6 +2340,7 @@ function buildInfCard(opts){
     }
     buildEngTypeRows(platSel.value); // single call instead of 2-3 event-driven rebuilds
     if(d.name&&nameInp)nameInp.value=d.name;
+    if(d.partnerHandle&&partnerInp)partnerInp.value=d.partnerHandle;
     if(d.url&&urlInp)urlInp.value=d.url;
     if(d.followers){
       card._followerCount=d.followers;
@@ -2346,11 +2358,13 @@ function buildInfCard(opts){
     engRows.forEach(er=>{qtys[er.t.id]=parseFloat(er.qtyInp.value)||0;vals[er.t.id]=parseFloat(er.valInp.value)||0;});
     return{cid:card._cid,pl:platSel.value,name:nameInp.value,url:urlInp?urlInp.value:'',
       followers:card._followerCount||0,postType:postTypeSel?postTypeSel.value:null,
-      valImp:parseFloat(valImpInp.value)||0,adjFactor,engQtys:qtys,engVals:vals,photoUrl:_photoUrl||null};
+      valImp:parseFloat(valImpInp.value)||0,adjFactor,engQtys:qtys,engVals:vals,photoUrl:_photoUrl||null,
+      partnerHandle:partnerInp?partnerInp.value:''};
   };
 
   card.appendChild(hd);
   card.appendChild(r1);
+  if(rPartner)card.appendChild(rPartner);
   if(rFollowers)card.appendChild(rFollowers);
   card.appendChild(rUrl);
   if(isPred){card.appendChild(r2);card.appendChild(statsWrap);card.appendChild(r4);}
@@ -2638,7 +2652,7 @@ function bulkDeleteInfCards(secId){
 function addActualsInfluencer(secId,fixedAdj,cid){
   actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
   const num=actualsInfCounts[secId];
-  const card=buildInfCard({num,adjFactor:fixedAdj,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc,cid});
+  const card=buildInfCard({num,adjFactor:fixedAdj,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc,cid,secId});
   const list=$('inf-list-'+secId);
   list.prepend(card);runCalc();
   return card;
@@ -4472,7 +4486,7 @@ function _startCollabPoll(){
       newSoc.forEach(d=>{const c=addActualsInfluencer('soc',d.adjFactor??_secAdj['soc'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
       newEarned.forEach(d=>{const c=addActualsInfluencer('earned-oinfs',d.adjFactor??_secAdj['earned-oinfs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
       newPaid.forEach(d=>{const c=addActualsInfluencer('paid-infs',d.adjFactor??_secAdj['paid-infs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
-      newCollab.forEach(d=>{const c=addActualsInfluencer('collab-oinfs',d.adjFactor??_secAdj['collab-oinfs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
+      newCollab.forEach(d=>{const c=addActualsInfluencer('collab-oinfs',d.adjFactor??_secAdj['collab-oinfs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.partnerHandle&&c._partnerInp)c._partnerInp.value=d.partnerHandle;if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
       newPress.forEach(d=>{const plist=$('press-list-wom');if(!plist)return;const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});plist.prepend(card);runCalc();added++;});
       if(added>0)notif('🔄 '+added+' new entry'+(added===1?'':'s')+' synced from collaborator');
       window._loadedShowSavedAt=remote.savedAt;
