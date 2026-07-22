@@ -908,17 +908,16 @@ const SECS=[
     {id:'wQR',n:'QR Code Scans',           m:0,  r:3,  a:1,  on:false,c:'cpc', tip:'Direct audience action. CPA $1-5.',qrOnly:true}
   ]},
   {id:'earned-oinfs',peso:'E',num:'E3',title:'Social Media Mentions',sub:'Unpaid authentic brand mentions from creators',col:'#d4a843',
-   type:'earned-soc',adj:2.5,
+   type:'earned-soc',adj:2.5,pfx:'esoc',
+   plats:['fb','ig','qu','rd','th','tt','xx','yt','yts'],
+   premiumLabel:'authenticity',
    ov:'Unpaid, organic creator posts featuring the show. Values each mention with a 2.5× authenticity premium reflecting the higher credibility and engagement of non-sponsored content.'},
   // ── SHARED ────────────────────────────────────────────────────────────────
-  {id:'shared-cc',peso:'S',num:'S1',title:'Co-Creations & Partnerships',sub:'Brand collaborations & partnership activations',col:'#5a6ef8',
-   type:'std',
-   ov:'Co-created content and brand collaborations that extend reach through shared audiences and cross-promotional distribution.',
-   rows:[
-    {id:'ccBR',n:'Brand Collaboration Content',    m:0,r:15,a:2.0,on:true, c:'cpm',dyn:true,tip:'Reach from co-created partner content.'},
-    {id:'ccSP',n:'Sponsorship / Integration Reach',m:0,r:12,a:1.5,on:false,c:'cpm',dyn:true,tip:'Sponsor content integrations.'},
-    {id:'ccIP',n:'IP / Licensing Activations',     m:0,r:20,a:1.8,on:false,c:'cpm',dyn:true,tip:'Licensed brand/IP features.'}
-  ]},
+  {id:'collab-oinfs',peso:'S',num:'S1',title:'Collab Social Media',sub:'Co-authored posts with linked collaborator accounts',col:'#5a6ef8',
+   type:'earned-soc',adj:5,pfx:'csoc',
+   plats:['ig','fb','tt','yt'],
+   premiumLabel:'mutual-endorsement',
+   ov:'Official collab/co-authored posts — restricted to Instagram, Facebook, TikTok, and YouTube, the platforms with real, launched collab-post support. Valued with a 5× premium reflecting a formally agreed partnership endorsed by both parties across their combined audiences. Note: on YouTube, only the uploading channel sees full post metrics — linked collaborator channels do not get shared analytics.'},
   // ── OWNED ─────────────────────────────────────────────────────────────────
   {id:'soc',peso:'O',num:'O1',title:'Official Brand Social',sub:'Brand-owned channels & planned posts',col:'#2fd4b2',
    type:'soc',
@@ -1520,12 +1519,14 @@ function appendPMBRow(sid,r){
 let actualsInfCounts={};
 let _loadingCards=false; // suppresses runCalc during bulk card restore
 function buildEarnedSocSection(pb,sec){
-  // Earned Social Media Mentions — per-platform toggles + "Add [Platform] Mention" buttons
-  // Same structure as Official Brand Social (buildSocSection) but with 2.5x adj factor
-  // and "Mention" language instead of "Post"
-  window._earnedSocToggles = window._earnedSocToggles || {};
+  // Config-driven "earned-soc" style section: per-platform toggles + "Add [Platform] Mention" buttons.
+  // Reused by Social Media Mentions (earned-oinfs) and Collab Social Media (collab-oinfs) —
+  // section id, adj factor, DOM id prefix and platform list all come from the sec config.
+  window._socToggles = window._socToggles || {};
+  const toggles = window._socToggles[sec.id] = window._socToggles[sec.id] || {};
+  const pfx = sec.pfx;
 
-  const SOC_PLATS=[
+  const ALL_SOC_PLATS=[
     ['fb','Facebook',      '#1877f2','f'],
     ['ig','Instagram',     '#e1306c','IG'],
     ['qu','Quora',         '#a82400','Q'],
@@ -1536,24 +1537,26 @@ function buildEarnedSocSection(pb,sec){
     ['yt','YouTube',       '#ff0000','\u25b6'],
     ['yts','YouTube Shorts','#ff4444','\u26a1'],
   ];
+  const SOC_PLATS = sec.plats ? ALL_SOC_PLATS.filter(([pl])=>sec.plats.includes(pl)) : ALL_SOC_PLATS;
 
+  const premiumWord = sec.premiumLabel==='mutual-endorsement'?'mutual-endorsement':'authenticity';
   const note=document.createElement('div');note.className='cnote';note.style.margin='10px 18px 6px';
-  note.innerHTML='<strong>2.5\xd7 authenticity premium</strong> \u2022 Toggle channels on/off \u2022 <strong>+ Add Mention</strong> logs a post with full engagement metrics \u2022 <strong>Import from URL</strong> auto-detects platform. Formula: (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 2.5\xd7.';
+  note.innerHTML=sec.noteHtml||('<strong>'+sec.adj+'\xd7 '+premiumWord+' premium</strong> \u2022 Toggle channels on/off \u2022 <strong>+ Add Mention</strong> logs a post with full engagement metrics \u2022 <strong>Import from URL</strong> auto-detects platform. Formula: (Est. Impressions \xf7 1,000 \xd7 Val/Imp) + (Est. Engagements \xd7 Val/Eng) \xd7 '+sec.adj+'\xd7.');
   pb.appendChild(note);
 
   // Per-platform rows
   SOC_PLATS.forEach(([pl,name,col,icon])=>{
-    window._earnedSocToggles[pl]=true;
+    toggles[pl]=true;
 
     const platRow=document.createElement('div');
     platRow.className='soc-sum-row';
-    platRow.id='esoc-plat-row-'+pl;
+    platRow.id=pfx+'-plat-row-'+pl;
     platRow.style.cssText='display:grid;grid-template-columns:24px 22px minmax(0,1fr) auto auto auto;gap:8px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--bd2);transition:background .12s';
 
     // Toggle
     const togW=document.createElement('label');togW.className='tg';
     const togI=document.createElement('input');togI.type='checkbox';togI.checked=true;
-    togI.id='esoc-tog-'+pl;
+    togI.id=pfx+'-tog-'+pl;
     const togS=document.createElement('span');togS.className='tgt';
     togW.appendChild(togI);togW.appendChild(togS);
 
@@ -1570,24 +1573,24 @@ function buildEarnedSocSection(pb,sec){
     // Name + count badge
     const nameWrap=document.createElement('div');nameWrap.style.cssText='display:flex;align-items:center;gap:7px;min-width:0';
     const nameEl=document.createElement('span');nameEl.className='row-lbl';nameEl.textContent=name;
-    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id='esoc-cnt-'+pl;cntDiv.textContent='\u2014';
+    const cntDiv=document.createElement('div');cntDiv.className='soc-sum-cnt';cntDiv.id=pfx+'-cnt-'+pl;cntDiv.textContent='\u2014';
     nameWrap.appendChild(nameEl);nameWrap.appendChild(cntDiv);
 
     // EMV display
-    const emvDiv=document.createElement('div');emvDiv.id='esoc-sum-'+pl;emvDiv.textContent='$0';
+    const emvDiv=document.createElement('div');emvDiv.id=pfx+'-sum-'+pl;emvDiv.textContent='$0';
     emvDiv.style.cssText='font-family:"DM Mono",monospace;font-size:12px;font-weight:500;color:var(--gld);text-align:right;white-space:nowrap';
 
     // Import URL toggle button
     const urlTogBtn=document.createElement('button');urlTogBtn.type='button';
     urlTogBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.12);border:1px solid rgba(90,110,248,.28);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
     urlTogBtn.innerHTML='\uD83D\uDD17 Import URL';
-    urlTogBtn.id='esoc-url-btn-'+pl;
+    urlTogBtn.id=pfx+'-url-btn-'+pl;
 
     // Add Mention button — uniform style matching urlTogBtn
     const addBtn=document.createElement('button');addBtn.type='button';
     addBtn.style.cssText='font-size:10px;padding:4px 9px;background:rgba(90,110,248,.1);border:1px solid rgba(90,110,248,.25);color:var(--ind2);border-radius:5px;cursor:pointer;white-space:nowrap;font-family:"Outfit",sans-serif;font-weight:600;flex-shrink:0';
     addBtn.textContent='+ Add '+name+' Mention';
-    addBtn.id='esoc-add-'+pl;
+    addBtn.id=pfx+'-add-'+pl;
 
     platRow.appendChild(togW);
     platRow.appendChild(iconEl);
@@ -1599,9 +1602,9 @@ function buildEarnedSocSection(pb,sec){
 
     // URL import row (hidden by default)
     const urlRow=document.createElement('div');
-    urlRow.id='esoc-url-row-'+pl;
+    urlRow.id=pfx+'-url-row-'+pl;
     urlRow.style.cssText='display:none;padding:8px 18px 10px;background:rgba(90,110,248,.04);border-bottom:1px solid var(--bd2);gap:6px;align-items:center';
-    const urlInp=document.createElement('input');urlInp.type='url';urlInp.id='esoc-url-inp-'+pl;
+    const urlInp=document.createElement('input');urlInp.type='url';urlInp.id=pfx+'-url-inp-'+pl;
     urlInp.className='fi';urlInp.placeholder='Paste '+name+' post URL\u2026';
     urlInp.style.cssText='font-size:11px;padding:5px 8px;flex:1;min-width:0';
     const goBtn=document.createElement('button');goBtn.type='button';goBtn.className='btn btn-g';
@@ -1613,7 +1616,7 @@ function buildEarnedSocSection(pb,sec){
     // Wire toggle
     togI.addEventListener('change',()=>{
       const on=togI.checked;
-      window._earnedSocToggles[pl]=on;
+      toggles[pl]=on;
       platRow.classList.toggle('off',!on);
       addBtn.disabled=!on;
       urlTogBtn.disabled=!on;
@@ -1630,22 +1633,22 @@ function buildEarnedSocSection(pb,sec){
 
     // Wire Add Mention button — add card pre-selected to this platform
     addBtn.addEventListener('click',()=>{
-      const card=addActualsInfluencer('earned-oinfs',2.5);
+      const card=addActualsInfluencer(sec.id,sec.adj);
       if(card&&card._platSel){
         card._platSel.value=pl;
         card._platSel.dispatchEvent(new Event('change'));
       }
-      const list=$('inf-list-earned-oinfs');
+      const list=$('inf-list-'+sec.id);
       if(list)list.scrollIntoView({behavior:'smooth',block:'nearest'});
     });
 
     // Wire Import URL go
     goBtn.addEventListener('click',()=>{
       const url=urlInp.value.trim();if(!url)return;
-      let tmpInp=$('import-url-earned-oinfs');
-      if(!tmpInp){tmpInp=document.createElement('input');tmpInp.id='import-url-earned-oinfs';tmpInp.style.display='none';document.body.appendChild(tmpInp);}
+      let tmpInp=$('import-url-'+sec.id);
+      if(!tmpInp){tmpInp=document.createElement('input');tmpInp.id='import-url-'+sec.id;tmpInp.style.display='none';document.body.appendChild(tmpInp);}
       tmpInp.value=url;
-      importFromURL('earned-oinfs',2.5).then(()=>{urlInp.value='';urlRow.style.display='none';});
+      importFromURL(sec.id,sec.adj).then(()=>{urlInp.value='';urlRow.style.display='none';});
     });
     urlInp.addEventListener('keydown',e=>{if(e.key==='Enter')goBtn.click();});
   });
@@ -1654,9 +1657,9 @@ function buildEarnedSocSection(pb,sec){
   const bdRowE=document.createElement('div');bdRowE.style.cssText='display:flex;justify-content:flex-end;padding:6px 18px 2px';
   const bdBtnE=document.createElement('button');bdBtnE.className='btn btn-g';
   bdBtnE.style.cssText='font-size:10px;padding:4px 10px';
-  bdBtnE.textContent='✎ Bulk Edit';bdBtnE.addEventListener('click',()=>bulkDeleteInfCards('earned-oinfs'));
+  bdBtnE.textContent='✎ Bulk Edit';bdBtnE.addEventListener('click',()=>bulkDeleteInfCards(sec.id));
   bdRowE.appendChild(bdBtnE);pb.appendChild(bdRowE);
-  const listDiv=document.createElement('div');listDiv.id='inf-list-earned-oinfs';
+  const listDiv=document.createElement('div');listDiv.id='inf-list-'+sec.id;
   listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
 
@@ -3330,8 +3333,8 @@ function runCalc(){
       const wrap=$('rows-'+sec.id);if(!wrap)return;
       wrap.querySelectorAll('.pmb-row').forEach(row=>{if(row._calcEMV)t+=row._calcEMV();});
     }else if(sec.type==='influencers'||sec.type==='earned-soc'){
-      const earnedToggles=sec.type==='earned-soc'?(window._earnedSocToggles||{}):{}
-;      const earnedCounts={};const earnedTotals={};
+      const earnedToggles=sec.type==='earned-soc'?((window._socToggles||{})[sec.id]||{}):{};
+      const earnedCounts={};const earnedTotals={};
       document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
         if(!card._getEMV)return;
         if(sec.type==='earned-soc'){
@@ -3345,11 +3348,11 @@ function runCalc(){
         }
       });
       if(sec.type==='earned-soc'){
-        ['fb','ig','qu','rd','th','tt','xx','yt','yts'].forEach(pl=>{
-          const s=$('esoc-sum-'+pl);if(s)s.textContent=fmt(earnedTotals[pl]||0);
-          const c=$('esoc-cnt-'+pl);
+        (sec.plats||['fb','ig','qu','rd','th','tt','xx','yt','yts']).forEach(pl=>{
+          const s=$(sec.pfx+'-sum-'+pl);if(s)s.textContent=fmt(earnedTotals[pl]||0);
+          const c=$(sec.pfx+'-cnt-'+pl);
           if(c){const n=earnedCounts[pl]||0;c.textContent=n?(n+' mention'+(n===1?'':'s')):'—';}
-          const r=$('esoc-plat-row-'+pl);
+          const r=$(sec.pfx+'-plat-row-'+pl);
           if(r)r.style.opacity=earnedToggles[pl]===false?'0.38':'1';
         });
       }
@@ -3428,7 +3431,7 @@ function runCalc(){
       const rPct=parseFloat(pd.reachPct||PRESS_DEFAULT_REACH_PCT[pd.mtype]||5);
       totalReach+=Math.round(parseFloat(pd.reach||0)*rPct/100);
     });
-    ['soc','earned-oinfs','paid-infs'].forEach(sid=>{
+    ['soc','earned-oinfs','paid-infs','collab-oinfs'].forEach(sid=>{
       document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
         if(!card._getEngQty)return;
         const views=card._getEngQty('view');
@@ -3461,7 +3464,7 @@ function resetAll(){
   const pl=$('press-list-wom');if(pl)pl.innerHTML='';
   pressMentionCount=0;
   // Clear actuals influencer sections
-  ['paid-infs','earned-oinfs','soc'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
+  ['paid-infs','earned-oinfs','soc','collab-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
   ['s-client','s-prog','s-name','s-city','s-state','s-launch','s-audience','s-date','s-drones','s-cost'].forEach(id=>{const e=$(id);if(e)e.value='';});
   $('s-len').value='12';$('cb-qr').checked=false;window._clientLogo=null;
@@ -3754,7 +3757,7 @@ async function genPdf(){
       +'<div><strong>Duration:</strong> '+gv('s-len')+' min</div><div><strong>Cost:</strong> '+(gn('s-cost')>0?fmt(gn('s-cost')):'--')+'</div></div></div>');
     let _lastPesoPdf=null;
     let _pendingPesoHeader=null;
-    const PESO_DESC={P:'Paid partnerships, contracted influencers & media buys',E:'Earned coverage, press, organic social & experiential reach',S:'Co-creations, brand collaborations & partnership activations',O:'Owned channels, content assets & brand media'};
+    const PESO_DESC={P:'Paid partnerships, contracted influencers & media buys',E:'Earned coverage, press, organic social & experiential reach',S:'Co-authored collab posts across linked creator & brand accounts',O:'Owned channels, content assets & brand media'};
     for(const sec of SECS){
       // ── PESO group heading (Heading 1) — lazy: only stamp when section has data ──
       if(sec.peso&&sec.peso!==_lastPesoPdf){
@@ -3965,7 +3968,7 @@ async function genPdf(){
       const pd=card._data();
       if(pd.photoUrl){photoCards.push({outlet:pd.outlet||'',headline:pd.headline||'',url:pd.url||'',photo:pd.photoUrl});}
     });
-    ['paid-infs','earned-oinfs','soc'].forEach(sid=>{
+    ['paid-infs','earned-oinfs','soc','collab-oinfs'].forEach(sid=>{
       document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
         if(!card._serialize)return;
         const s=card._serialize();
@@ -4117,8 +4120,10 @@ function svSerialize(){
   document.querySelectorAll('#inf-list-earned-oinfs .inf-card').forEach(c=>{if(c._serialize)infCardsEarned.push(c._serialize());});
   const infCardsPaid=[];
   document.querySelectorAll('#inf-list-paid-infs .inf-card').forEach(c=>{if(c._serialize)infCardsPaid.push(c._serialize());});
+  const infCardsCollab=[];
+  document.querySelectorAll('#inf-list-collab-oinfs .inf-card').forEach(c=>{if(c._serialize)infCardsCollab.push(c._serialize());});
 
-  return{details,rows,mentions,bizRows,pressCards,infCardsSoc,infCardsEarned,infCardsPaid,
+  return{details,rows,mentions,bizRows,pressCards,infCardsSoc,infCardsEarned,infCardsPaid,infCardsCollab,
     emv:$('r-emv').textContent,
     tot:$('s-tot').textContent,
     savedAt:new Date().toISOString()};
@@ -4210,10 +4215,10 @@ function svDeserialize(data){
     });
   }
 
-  // Influencer cards (soc / earned-oinfs / paid-infs)
-  ['paid-infs','earned-oinfs','soc'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
+  // Influencer cards (soc / earned-oinfs / paid-infs / collab-oinfs)
+  ['paid-infs','earned-oinfs','soc','collab-oinfs'].forEach(sid=>{const el=$('inf-list-'+sid);if(el)el.innerHTML='';});
   actualsInfCounts={};
-  const _secAdj={'soc':1.0,'earned-oinfs':2.5,'paid-infs':1.2};
+  const _secAdj={'soc':1.0,'earned-oinfs':2.5,'paid-infs':1.2,'collab-oinfs':5};
   const _restoreInfCards=(arr,secId)=>{
     if(!arr||!arr.length)return;
     // Reverse so that prepend order matches the original top-to-bottom order
@@ -4244,6 +4249,7 @@ function svDeserialize(data){
     _restoreInfCards(data.infCardsSoc,'soc');
     _restoreInfCards(data.infCardsEarned,'earned-oinfs');
     _restoreInfCards(data.infCardsPaid,'paid-infs');
+    _restoreInfCards(data.infCardsCollab,'collab-oinfs');
   }finally{
     _loadingCards=false;
   }
@@ -4270,7 +4276,7 @@ function exportCSVMentions(){
       rows.push([...base,esc('Press & Media Coverage'),esc(MTYPE[c.mtype]||'Press Mention'),esc(c.outlet||''),'',esc(c.url||''),reach,reachPct,adjReach,cpm,adj,emv.toFixed(2)].join(','));totalRows++;
     });
     // Inf-cards
-    [{arr:s.infCardsSoc,sec:'Official Brand Social',cat:'Social Post'},{arr:s.infCardsEarned,sec:'Social Media Mentions',cat:'Social Post'},{arr:s.infCardsPaid,sec:'Contracted Influencers',cat:'Influencer Post'}].forEach(({arr,sec,cat})=>{
+    [{arr:s.infCardsSoc,sec:'Official Brand Social',cat:'Social Post'},{arr:s.infCardsEarned,sec:'Social Media Mentions',cat:'Social Post'},{arr:s.infCardsPaid,sec:'Contracted Influencers',cat:'Influencer Post'},{arr:s.infCardsCollab,sec:'Collab Social Media',cat:'Collab Post'}].forEach(({arr,sec,cat})=>{
       (arr||[]).forEach(c=>{
         const adj=parseFloat(c.adjFactor||1);const qtys=c.engQtys||{};const vals=c.engVals||{};
         let emv=0;Object.keys(qtys).forEach(k=>{emv+=(parseFloat(qtys[k])||0)*(parseFloat(vals[k])||0);});emv*=adj;
@@ -4426,10 +4432,11 @@ async function _mergeRemoteCards(state){
       infCardsSoc:merge(state.infCardsSoc,remote.infCardsSoc),
       infCardsEarned:merge(state.infCardsEarned,remote.infCardsEarned),
       infCardsPaid:merge(state.infCardsPaid,remote.infCardsPaid),
+      infCardsCollab:merge(state.infCardsCollab,remote.infCardsCollab),
       pressCards:merge(state.pressCards,remote.pressCards)
     };
-    const added=[merged.infCardsSoc,merged.infCardsEarned,merged.infCardsPaid,merged.pressCards]
-      .reduce((t,a,i)=>t+((a?.length||0)-([state.infCardsSoc,state.infCardsEarned,state.infCardsPaid,state.pressCards][i]?.length||0)),0);
+    const added=[merged.infCardsSoc,merged.infCardsEarned,merged.infCardsPaid,merged.infCardsCollab,merged.pressCards]
+      .reduce((t,a,i)=>t+((a?.length||0)-([state.infCardsSoc,state.infCardsEarned,state.infCardsPaid,state.infCardsCollab,state.pressCards][i]?.length||0)),0);
     if(added>0)notif('🔄 Merged '+added+' new entry'+(added===1?'':'s')+' from collaborator');
     window._loadedShowSavedAt=remote.savedAt;
     return merged;
@@ -4458,12 +4465,14 @@ function _startCollabPoll(){
       const newSoc=merge(svSerialize().infCardsSoc,remote.infCardsSoc);
       const newEarned=merge(svSerialize().infCardsEarned,remote.infCardsEarned);
       const newPaid=merge(svSerialize().infCardsPaid,remote.infCardsPaid);
+      const newCollab=merge(svSerialize().infCardsCollab,remote.infCardsCollab);
       const newPress=merge(svSerialize().pressCards,remote.pressCards);
       let added=0;
-      const _secAdj={'soc':1.0,'earned-oinfs':2.5,'paid-infs':1.2};
+      const _secAdj={'soc':1.0,'earned-oinfs':2.5,'paid-infs':1.2,'collab-oinfs':5};
       newSoc.forEach(d=>{const c=addActualsInfluencer('soc',d.adjFactor??_secAdj['soc'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
       newEarned.forEach(d=>{const c=addActualsInfluencer('earned-oinfs',d.adjFactor??_secAdj['earned-oinfs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
       newPaid.forEach(d=>{const c=addActualsInfluencer('paid-infs',d.adjFactor??_secAdj['paid-infs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
+      newCollab.forEach(d=>{const c=addActualsInfluencer('collab-oinfs',d.adjFactor??_secAdj['collab-oinfs'],d.cid);c._platSel.value=d.pl||'ig';c._platSel.dispatchEvent(new Event('change'));if(d.valImp&&c._setValImp)c._setValImp(d.valImp);c._nameInp.value=d.name||'';if(d.url&&c._urlInp)c._urlInp.value=d.url;if(d.postType)c._setPostType(d.postType);if(d.followers)c._setFollowers(d.followers);if(d.engQtys)c._setEngQtys(d.engQtys);if(d.engVals&&c._setEngVals)c._setEngVals(d.engVals);added++;});
       newPress.forEach(d=>{const plist=$('press-list-wom');if(!plist)return;const card=buildPressCard({data:d,onEMVChange:runCalc,onRemove:runCalc});plist.prepend(card);runCalc();added++;});
       if(added>0)notif('🔄 '+added+' new entry'+(added===1?'':'s')+' synced from collaborator');
       window._loadedShowSavedAt=remote.savedAt;
