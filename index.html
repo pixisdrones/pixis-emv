@@ -441,7 +441,11 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
       <div class="ph-l">
         <div class="ph-num" style="background:linear-gradient(135deg,var(--gld),var(--gldD))">&#10022;</div>
         <div><div class="ph-title">Show Details</div><div class="ph-sub">Client, program and metadata</div></div>
-      </div><span class="arr">&#9660;</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="loaded-show-badge" style="display:none;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(90,110,248,.12);border:1px solid rgba(90,110,248,.3);color:var(--ind2);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis"></span>
+        <span class="arr">&#9660;</span>
+      </div>
     </div>
     <div class="pb">
       <div class="sdg">
@@ -2502,6 +2506,22 @@ function buildPressCard(opts){
     adj:adjInp.value,
     photoUrl:_photoUrl||null
   });
+  // Apply freshly-imported data onto this EXISTING card (re-import de-dup) — only
+  // overwrites fields actually present in d, same "merge over" semantics as
+  // buildInfCard's _restoreFromData.
+  card._updateFromData=(d)=>{
+    if(!d)return;
+    if(d.outlet)outletInp.value=d.outlet;
+    if(d.mtype&&typeSel.querySelector('option[value="'+d.mtype+'"]')){typeSel.value=d.mtype;updateURLState();}
+    if(d.url&&!urlInp.disabled)urlInp.value=d.url;
+    if(d.headline)headlineInp.value=d.headline;
+    if(d.reach)reachInp.value=d.reach;
+    if(d.reachPct)reachPctInp.value=d.reachPct;
+    if(d.cpm)cpmInp.value=d.cpm;
+    if(d.adj)adjInp.value=d.adj;
+    if(d.photoUrl)_applyPressPhoto(d.photoUrl);
+    recalc();
+  };
 
   card.appendChild(hd);card.appendChild(r1);card.appendChild(r2);card.appendChild(r3);card.appendChild(photoWrap);card.appendChild(r4);card.appendChild(r5);card.appendChild(emvRow);
   recalc();
@@ -4462,6 +4482,19 @@ async function _checkRemoteConflict(key){
   }catch{return null;}
 }
 
+// Lightweight version history — one checkpoint per calendar day at most, so it
+// reads as a meaningful changelog (how EMV grew over time) rather than a noisy
+// log of every autosave. Stored inside state.history so it rides along with
+// the show through both localStorage and cloud sync with no extra plumbing.
+function _historyWithCheckpoint(priorEntry){
+  const history=(priorEntry.state&&priorEntry.state.history)||[];
+  const today=new Date().toISOString().slice(0,10);
+  const priorDay=(priorEntry.savedAt||'').slice(0,10);
+  if(priorDay===today)return history; // prior save was already today — no new checkpoint needed
+  const checkpoint={savedAt:priorEntry.savedAt,name:priorEntry.name,emv:priorEntry.emv,tot:priorEntry.tot};
+  return[...history,checkpoint].slice(-30);// cap so it can't grow unbounded
+}
+
 async function svUpdateShow(key){
   const all=svGetAll();
   const idx=all.findIndex(e=>e.key===key);
@@ -4477,11 +4510,13 @@ async function svUpdateShow(key){
   }
   let state=svSerialize();state.name=oldName;
   state=await _mergeRemoteCards(state);
+  state.history=_historyWithCheckpoint(all[idx]);
   window._loadedShowSavedAt=state.savedAt; // update before async cloud write so poll/merge don't see our own save as "newer"
   all[idx]={key,name:oldName,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
   svSetAll(all);
   window._currentShowKey=key;
   window._currentShowName=oldName;
+  updateLoadedShowBadge();
   const ce={name:oldName,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
   cloudSave(key,ce).then(()=>{
     if(_cloudShows)_cloudShows[key]=ce;
@@ -4540,12 +4575,13 @@ function svOpenSaveModal(){
 
 function _doSaveNew(rawName,bg){
   const name=rawName.trim()||('Show '+new Date().toLocaleDateString());
-  const state=svSerialize();state.name=name;
+  const state=svSerialize();state.name=name;state.history=[];
   const key='sv_'+Date.now();
   const entry={key,name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
   const all=svGetAll();all.unshift(entry);svSetAll(all);
   window._currentShowKey=key;window._currentShowName=name;
   window._loadedShowSavedAt=state.savedAt||'';
+  updateLoadedShowBadge();
   _stopCollabPoll();_startCollabPoll();
   const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
   cloudSave(key,cloudEntry).then(()=>{
@@ -4554,6 +4590,16 @@ function _doSaveNew(rawName,bg){
   }).catch(e=>{svRenderList();notif('\uD83D\uDCBE "'+name+'" saved locally (cloud: '+e.message+')');});
   $('sv-panel').classList.add('open');
   if(bg)bg.remove();
+}
+// Reflects which saved show (if any) is currently loaded, in the Show Details header.
+function updateLoadedShowBadge(){
+  const badge=$('loaded-show-badge');if(!badge)return;
+  if(window._currentShowName){
+    badge.textContent='● Loaded: '+window._currentShowName;
+    badge.style.display='inline-block';
+  }else{
+    badge.style.display='none';
+  }
 }
 function svLoadShow(key){
   // Check local first
@@ -4571,6 +4617,7 @@ function svLoadShow(key){
   window._currentShowName=entry.name;
   window._loadedShowSavedAt=entry.state?.savedAt||entry.savedAt||'';
   svDeserialize(entry.state);
+  updateLoadedShowBadge();
   _startCollabPoll();
   notif('\uD83D\uDCE5 "'+entry.name+'" loaded');
 }
@@ -4580,6 +4627,46 @@ function svDeleteShow(key){
   if(_cloudShows)delete _cloudShows[key];
   svSetAll(svGetAll().filter(e=>e.key!==key));
   svRenderList();
+}
+
+// Lightweight changelog viewer — shows the daily checkpoints recorded in
+// state.history plus the current values, so you can see how a show's EMV
+// has grown over time. View-only; there's no revert to an earlier point.
+function svShowHistory(entry){
+  const history=(entry.state&&entry.state.history)||[];
+  const bg=document.createElement('div');bg.className='sv-modal-bg';
+  const modal=document.createElement('div');modal.className='sv-modal';
+  modal.style.cssText='width:480px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column';
+  const ttl=document.createElement('div');ttl.className='sv-modal-ttl';
+  ttl.textContent='History — '+entry.name;
+  modal.appendChild(ttl);
+  const scroll=document.createElement('div');
+  scroll.style.cssText='flex:1;overflow-y:auto;border:1px solid var(--bd);border-radius:8px;min-height:0;max-height:50vh;margin-top:8px';
+  const rows=[...history,{savedAt:entry.savedAt,emv:entry.emv,tot:entry.tot,_current:true}];
+  if(rows.length===1){
+    const em=document.createElement('div');em.style.cssText='padding:16px;font-size:11px;color:var(--ft);text-align:center';
+    em.textContent='No history yet — a checkpoint is recorded automatically the first time you update this show on a new day.';
+    scroll.appendChild(em);
+  }else{
+    rows.forEach((r,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px;'+(i<rows.length-1?'border-bottom:1px solid var(--bd2)':'');
+      const dt=new Date(r.savedAt).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+      const left=document.createElement('div');
+      left.innerHTML='<div style="font-size:11px;color:var(--tx)">'+dt+'</div>'+(r._current?'<div style="font-size:9px;color:var(--tel);font-weight:600;margin-top:2px;letter-spacing:.04em">CURRENT</div>':'');
+      const right=document.createElement('div');right.style.cssText='text-align:right;font-family:"DM Mono",monospace;font-size:12px;color:var(--gld)';
+      right.textContent=r.emv||'$0';
+      row.appendChild(left);row.appendChild(right);
+      scroll.appendChild(row);
+    });
+  }
+  modal.appendChild(scroll);
+  const acts=document.createElement('div');acts.className='sv-modal-acts';acts.style.marginTop='14px';
+  const closeBtn=document.createElement('button');closeBtn.className='btn btn-g';closeBtn.textContent='Close';
+  closeBtn.addEventListener('click',()=>bg.remove());
+  acts.appendChild(closeBtn);modal.appendChild(acts);
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
+  bg.appendChild(modal);document.body.appendChild(bg);
 }
 
 function svRenderList(){
@@ -4634,9 +4721,14 @@ function svRenderList(){
     expBtn.title='Download HTML file containing only this show';
     expBtn.textContent='\uD83D\uDCE4 Export';
     expBtn.addEventListener('click',()=>svExportSingleShow(entry.key));
+    const histBtn=document.createElement('button');histBtn.className='sv-load';
+    histBtn.style.cssText='color:#8a7bc8;border-color:rgba(138,123,200,.35);background:rgba(138,123,200,.07)';
+    histBtn.title='View saved checkpoints for this show over time';
+    histBtn.textContent='🕚 History';
+    histBtn.addEventListener('click',()=>svShowHistory(entry));
     const delBtn=document.createElement('button');delBtn.className='sv-del';delBtn.textContent='Delete';
     delBtn.addEventListener('click',()=>{if(confirm('Delete "'+entry.name+'"?')){svDeleteShow(entry.key);}});
-    acts.appendChild(loadBtn);acts.appendChild(updBtn);acts.appendChild(expBtn);acts.appendChild(delBtn);
+    acts.appendChild(loadBtn);acts.appendChild(updBtn);acts.appendChild(expBtn);acts.appendChild(histBtn);acts.appendChild(delBtn);
     card.appendChild(cb);card.appendChild(info);card.appendChild(emvEl);card.appendChild(acts);
     list.appendChild(card);
   });
@@ -5210,13 +5302,35 @@ function _twDetectPostType(r,pl){
   }
 }
 
+// ── Bulk-import de-duplication — match by post URL so re-importing an updated
+// export (e.g. a newer Talkwalker pull with higher engagement numbers) updates
+// the existing card in place instead of creating a duplicate post ────────────
+function _normUrl(u){
+  if(!u)return '';
+  let s=String(u).trim().toLowerCase();
+  s=s.replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/[?#].*$/,'').replace(/\/+$/,'');
+  return s;
+}
+function _findInfCardByUrl(secId,url){
+  const norm=_normUrl(url);if(!norm)return null;
+  const cards=[...document.querySelectorAll('#inf-list-'+secId+' .inf-card')];
+  return cards.find(c=>c._serialize&&_normUrl(c._serialize().url)===norm)||null;
+}
+function _findPressCardByUrl(url){
+  const norm=_normUrl(url);if(!norm)return null;
+  const cards=[...document.querySelectorAll('#press-list-wom .press-card, #forum-list-wom .press-card')];
+  return cards.find(c=>c._data&&_normUrl(c._data().url)===norm)||null;
+}
+
 function _twImportSelected(){
   const selected=_twFlagged.filter(r=>r._sel&&r.type!=='skip');
   if(!selected.length){notif('No mentions selected for import');return;}
   const social=selected.filter(r=>r.type==='social');
   const press=selected.filter(r=>r.type==='press');
+  let socialAdded=0,socialUpdated=0,pressAdded=0,pressUpdated=0;
 
-  // Social → influencer cards in earned-oinfs
+  // Social → influencer cards in earned-oinfs. Re-import de-dup: if a card with
+  // this same post URL already exists, update it in place instead of adding a duplicate.
   social.forEach(r=>{
     const pl=r.pl||'xx';
     const name=r['extra_author_attributes.name']||r['extra_author_attributes.short_name']||'Unknown';
@@ -5228,10 +5342,17 @@ function _twImportSelected(){
     const eng=parseFloat(r.engagement||0);
     const engPct=followers>0?parseFloat((eng/followers*100).toFixed(2)):0;
     const secId='earned-oinfs';
-    actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
-    const card=buildInfCard({num:actualsInfCounts[secId],adjFactor:2.5,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
-    const listDiv=$('inf-list-'+secId);if(!listDiv)return;
-    listDiv.appendChild(card);
+    const existing=r.url?_findInfCardByUrl(secId,r.url):null;
+    let card;
+    if(existing){
+      card=existing;socialUpdated++;
+    }else{
+      actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
+      card=buildInfCard({num:actualsInfCounts[secId],adjFactor:2.5,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
+      const listDiv=$('inf-list-'+secId);if(!listDiv)return;
+      listDiv.appendChild(card);
+      socialAdded++;
+    }
     // Set handle name
     const nameInp=card.querySelector('.fi[placeholder="@handle or name"]');
     if(nameInp){nameInp.value=name;nameInp.dispatchEvent(new Event('input'));}
@@ -5265,7 +5386,7 @@ function _twImportSelected(){
     },120);
   });
 
-  // Press → individual press mention cards
+  // Press → individual press mention cards. Same URL-based de-dup as social above.
   const pressList=$('press-list-wom');
   if(pressList&&press.length>0){
     press.forEach(r=>{
@@ -5277,17 +5398,23 @@ function _twImportSelected(){
       const reach=parseFloat(r.reach||0);
       const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20};
       const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8};
-      const card=buildPressCard({
-        onEMVChange:runCalc,onRemove:runCalc,
-        data:{outlet,url,headline,mtype,reach,cpm:DEFAULT_CPM[mtype]||10,adj:DEFAULT_ADJ[mtype]||1.5}
-      });
-      pressList.appendChild(card);
+      const data={outlet,url,headline,mtype,reach,cpm:DEFAULT_CPM[mtype]||10,adj:DEFAULT_ADJ[mtype]||1.5};
+      const existing=url?_findPressCardByUrl(url):null;
+      if(existing){
+        if(existing._updateFromData)existing._updateFromData(data);
+        pressUpdated++;
+      }else{
+        const card=buildPressCard({onEMVChange:runCalc,onRemove:runCalc,data});
+        pressList.appendChild(card);
+        pressAdded++;
+      }
     });
   }
 
   runCalc();
   $('tw-overlay').classList.remove('open');
-  notif('Imported: '+social.length+' social + '+press.length+' press mentions ('+selected.length+' total)');
+  const added=socialAdded+pressAdded,updated=socialUpdated+pressUpdated;
+  notif('Imported: '+added+' new mention'+(added===1?'':'s')+(updated?', '+updated+' updated':'')+' ('+selected.length+' total)');
 }
 
 function parseTalkwalkerCSV(file){
@@ -5324,7 +5451,7 @@ function parseTalkwalkerCSV(file){
 
 // ── CSV IMPORT ────────────────────────────────────────────────────────────────
 // Column order for the template and import
-const CSV_COLS=['handle','platform','followers','engagement_pct',
+const CSV_COLS=['handle','platform','url','followers','engagement_pct',
   'qty_impressions','qty_views','qty_likes','qty_comments',
   'qty_shares','qty_reposts','qty_reactions','qty_upvotes','qty_replies','qty_remix','qty_follow'];
 
@@ -5345,15 +5472,15 @@ function downloadCSVTemplate(){
   const rows=[CSV_COLS.join(',')];
   // sample rows for each platform
   const samples=[
-    ['@account_ig','ig','120000','3.5','48000','','4200','315','150','','','','','',''],
-    ['@account_tt','tt','250000','5.2','','130000','13000','1000','500','','','','','',''],
-    ['@account_yt','yt','85000','2.1','','17850','','890','150','','','','','',''],
-    ['@account_yts','yts','85000','2.1','','17850','','890','','','','','','120',''],
-    ['@account_xx','xx','60000','1.8','18000','','1080','','','','','','130','',''],
-    ['@account_fb','fb','95000','2.4','22800','','','285','180','','950','','','',''],
-    ['@account_rd','rd','40000','4.0','','','','350','','','','1200','','',''],
-    ['@account_th','th','55000','3.1','17050','','1705','255','','190','','','','',''],
-    ['@account_qu','qu','30000','2.5','','2400','','180','90','','','750','','','120'],
+    ['@account_ig','ig','','120000','3.5','48000','','4200','315','150','','','','','',''],
+    ['@account_tt','tt','','250000','5.2','','130000','13000','1000','500','','','','','',''],
+    ['@account_yt','yt','','85000','2.1','','17850','','890','150','','','','','',''],
+    ['@account_yts','yts','','85000','2.1','','17850','','890','','','','','','120',''],
+    ['@account_xx','xx','','60000','1.8','18000','','1080','','','','','','130','',''],
+    ['@account_fb','fb','','95000','2.4','22800','','','285','180','','950','','','',''],
+    ['@account_rd','rd','','40000','4.0','','','','350','','','','1200','','',''],
+    ['@account_th','th','','55000','3.1','17050','','1705','255','','190','','','','',''],
+    ['@account_qu','qu','','30000','2.5','','2400','','180','90','','','750','','','120'],
   ];
   samples.forEach(r=>rows.push(r.join(',')));
   const blob=new Blob([rows.join('\n')],{type:'text/csv'});
@@ -5370,23 +5497,33 @@ function parseAndImportCSV(file){
       if(lines.length<2)return notif('CSV is empty or missing data rows.');
       const headers=lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/^"|"$/g,''));
       const get=(row,col)=>{const idx=headers.indexOf(col);return idx>=0?(row[idx]||'').replace(/^"|"$/g,'').trim():'';};
-      let imported=0;
+      let added=0,updated=0;
       for(let i=1;i<lines.length;i++){
         const row=lines[i].split(',');
         const handle=get(row,'handle');const pl=get(row,'platform').toLowerCase();
         if(!handle||!pl||!PLATS.find(p=>p[0]===pl))continue;
+        const url=get(row,'url');
         const followers=parseFloat(get(row,'followers'))||0;
         const engPct=parseFloat(get(row,'engagement_pct'))||0;
-        // Add card to earned-oinfs section
+        // Add card to earned-oinfs section — re-import de-dup: reuse the existing
+        // card if this row's URL matches one already entered, instead of duplicating it.
         const secId='earned-oinfs';
-        actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
-        const num=actualsInfCounts[secId];
-        const card=buildInfCard({num,adjFactor:2.5,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
-        const listDiv=$('inf-list-'+secId);if(!listDiv)continue;
-        listDiv.appendChild(card);
+        const existing=url?_findInfCardByUrl(secId,url):null;
+        let card;
+        if(existing){
+          card=existing;updated++;
+        }else{
+          actualsInfCounts[secId]=(actualsInfCounts[secId]||0)+1;
+          const num=actualsInfCounts[secId];
+          card=buildInfCard({num,adjFactor:2.5,isPrediction:false,onEMVChange:runCalc,onRemove:runCalc});
+          const listDiv=$('inf-list-'+secId);if(!listDiv)continue;
+          listDiv.appendChild(card);
+          added++;
+        }
         // Set values after card is in DOM
         const nameInp=card.querySelector('.fi[placeholder="@handle or name"]');
         if(nameInp){nameInp.value=handle;nameInp.dispatchEvent(new Event('input'));}
+        if(card._urlInp&&url)card._urlInp.value=url;
         const platSel=card.querySelectorAll('.fi')[1];// platform select is 2nd fi
         if(platSel&&platSel.tagName==='SELECT'){
           platSel.value=pl;platSel.dispatchEvent(new Event('change'));
@@ -5408,9 +5545,9 @@ function parseAndImportCSV(file){
           });
           runCalc();
         },50);
-        imported++;
       }
-      notif(imported+' influencer'+(imported!==1?'s':'')+' imported from CSV');
+      const total=added+updated;
+      notif(total+' influencer'+(total!==1?'s':'')+' imported from CSV'+(updated?' ('+added+' new, '+updated+' updated)':''));
     }catch(err){console.error(err);notif('Import error: '+err.message);}
   };
   reader.readAsText(file);
@@ -5680,6 +5817,7 @@ function _scheduleAutoSave(){
     const name=all[idx].name;
     state.name=name;
     state=await _mergeRemoteCards(state); // pull in any collaborator cards before we overwrite the doc
+    state.history=_historyWithCheckpoint(all[idx]);
     all[idx]={key:window._currentShowKey,name,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
     svSetAll(all);
     window._loadedShowSavedAt=state.savedAt; // update before async cloud write
