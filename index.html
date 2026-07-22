@@ -1649,8 +1649,8 @@ function buildEarnedSocSection(pb,sec){
   // All mention cards container
   const bdRowE=document.createElement('div');bdRowE.style.cssText='display:flex;justify-content:flex-end;padding:6px 18px 2px';
   const bdBtnE=document.createElement('button');bdBtnE.className='btn btn-g';
-  bdBtnE.style.cssText='font-size:10px;padding:4px 10px;color:var(--red);border-color:rgba(220,50,50,.25)';
-  bdBtnE.textContent='✕ Bulk Delete';bdBtnE.addEventListener('click',()=>bulkDeleteInfCards('earned-oinfs'));
+  bdBtnE.style.cssText='font-size:10px;padding:4px 10px';
+  bdBtnE.textContent='✎ Bulk Edit';bdBtnE.addEventListener('click',()=>bulkDeleteInfCards('earned-oinfs'));
   bdRowE.appendChild(bdBtnE);pb.appendChild(bdRowE);
   const listDiv=document.createElement('div');listDiv.id='inf-list-earned-oinfs';
   listDiv.className='ainf-wrap';pb.appendChild(listDiv);
@@ -1681,8 +1681,8 @@ function buildInfluencerSection(pb,sec){
   impWrap.appendChild(impInp);impWrap.appendChild(impBtn);
   btnRow.appendChild(impWrap);
   const bdBtn=document.createElement('button');bdBtn.type='button';bdBtn.className='btn btn-g';
-  bdBtn.style.cssText='font-size:10px;padding:5px 10px;white-space:nowrap;flex-shrink:0;color:var(--red);border-color:rgba(220,50,50,.25)';
-  bdBtn.textContent='✕ Bulk Delete';bdBtn.addEventListener('click',()=>bulkDeleteInfCards(sec.id));
+  bdBtn.style.cssText='font-size:10px;padding:5px 10px;white-space:nowrap;flex-shrink:0';
+  bdBtn.textContent='✎ Bulk Edit';bdBtn.addEventListener('click',()=>bulkDeleteInfCards(sec.id));
   btnRow.appendChild(bdBtn);
   pb.appendChild(btnRow);
   const listDiv=document.createElement('div');listDiv.id='inf-list-'+sec.id;
@@ -1933,8 +1933,8 @@ function buildSocSection(pb,sec){
   // All cards container
   const bdRowS=document.createElement('div');bdRowS.style.cssText='display:flex;justify-content:flex-end;padding:6px 18px 2px';
   const bdBtnS=document.createElement('button');bdBtnS.className='btn btn-g';
-  bdBtnS.style.cssText='font-size:10px;padding:4px 10px;color:var(--red);border-color:rgba(220,50,50,.25)';
-  bdBtnS.textContent='✕ Bulk Delete';bdBtnS.addEventListener('click',()=>bulkDeleteInfCards('soc'));
+  bdBtnS.style.cssText='font-size:10px;padding:4px 10px';
+  bdBtnS.textContent='✎ Bulk Edit';bdBtnS.addEventListener('click',()=>bulkDeleteInfCards('soc'));
   bdRowS.appendChild(bdBtnS);pb.appendChild(bdRowS);
   const listDiv=document.createElement('div');listDiv.id='inf-list-soc';listDiv.className='ainf-wrap';pb.appendChild(listDiv);
 }
@@ -2537,7 +2537,7 @@ function bulkDeleteInfCards(secId){
   const modal=document.createElement('div');modal.className='sv-modal';
   modal.style.cssText='width:520px;max-width:94vw;max-height:80vh;display:flex;flex-direction:column';
   const ttl=document.createElement('div');ttl.className='sv-modal-ttl';
-  ttl.textContent=(moveInfo?'Manage Entries':'Bulk Delete')+' — '+cards.length+' Entr'+(cards.length===1?'y':'ies');
+  ttl.textContent=(moveInfo?'Manage Entries':'Bulk Edit')+' — '+cards.length+' Entr'+(cards.length===1?'y':'ies');
   modal.appendChild(ttl);
   // Controls
   const ctrl=document.createElement('div');ctrl.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap';
