@@ -3908,39 +3908,6 @@ async function genPdf(){
           +'</table></div>');
       }
     }
-    // Media gallery — photos attached to press cards and influencer cards
-    const photoCards=[];
-    document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
-      if(!card._data||!card._cid)return;
-      const pd=card._data();
-      if(pd.photoUrl){photoCards.push({outlet:pd.outlet||'',headline:pd.headline||'',url:pd.url||'',photo:pd.photoUrl});}
-    });
-    ['paid-infs','earned-oinfs','soc'].forEach(sid=>{
-      document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
-        if(!card._serialize)return;
-        const s=card._serialize();
-        if(s.photoUrl){photoCards.push({outlet:s.name||'',headline:(card._platSel?.value||'').toUpperCase(),url:s.url||'',photo:s.photoUrl});}
-      });
-    });
-    if(photoCards.length){
-      if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
-      for(let i=0;i<photoCards.length;i+=3){
-        const row=photoCards.slice(i,i+3);
-        const cols=row.map(p=>{
-          const img='<img src="'+p.photo+'" style="width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;display:block">';
-          return '<div style="flex:1;min-width:0;text-align:center">'
-            +(p.url?'<a data-href="'+p.url+'" style="display:block">'+img+'</a>':img)
-            +(p.outlet||p.headline?'<div style="font-size:9px;font-weight:600;color:#333;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.outlet||p.headline)+'</div>':'')
-            +'</div>';
-        }).join('');
-        if(i===0){
-          await stamp('<div style="margin-top:18px;margin-bottom:4px;background:#d4a843;color:#fff;padding:16px 22px;border-radius:8px;display:flex;align-items:center;gap:16px">'
-            +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Media Gallery</div>'
-            +'<div style="font-size:10px;opacity:.75;margin-top:4px">Screenshots and photos of earned media mentions</div></div></div>');
-        }
-        await stamp('<div style="display:flex;gap:10px;margin-top:8px">'+cols+'</div>');
-      }
-    }
     const emvD=$('r-emv').textContent,bizD=$('r-biz').textContent,roiD=$('r-roi').textContent;
     const paidD=$('peso-P').textContent,earnD=$('peso-E').textContent,sharD=$('peso-S').textContent,ownD=$('peso-O').textContent;
     const cpmD=$('r-cpm')?.textContent||'--';
@@ -3966,6 +3933,41 @@ async function genPdf(){
       +'<div style="display:grid;grid-template-columns:repeat('+_metCards.length+',1fr);gap:11px">'
       +_metCards.join('')
       +'</div></div>');
+
+    // ── APPENDIX: Media Gallery — photos attached to press cards and influencer cards ──
+    const photoCards=[];
+    document.querySelectorAll('#press-list-wom .press-card').forEach(card=>{
+      if(!card._data||!card._cid)return;
+      const pd=card._data();
+      if(pd.photoUrl){photoCards.push({outlet:pd.outlet||'',headline:pd.headline||'',url:pd.url||'',photo:pd.photoUrl});}
+    });
+    ['paid-infs','earned-oinfs','soc'].forEach(sid=>{
+      document.querySelectorAll('#inf-list-'+sid+' .inf-card').forEach(card=>{
+        if(!card._serialize)return;
+        const s=card._serialize();
+        if(s.photoUrl){photoCards.push({outlet:s.name||'',headline:(card._platSel?.value||'').toUpperCase(),url:s.url||'',photo:s.photoUrl});}
+      });
+    });
+    if(photoCards.length){
+      pdf.addPage();cy=mg;
+      for(let i=0;i<photoCards.length;i+=3){
+        const row=photoCards.slice(i,i+3);
+        const cols=row.map(p=>{
+          const img='<img src="'+p.photo+'" style="width:100%;height:140px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;display:block">';
+          return '<div style="flex:1;min-width:0;text-align:center">'
+            +(p.url?'<a data-href="'+p.url+'" style="display:block">'+img+'</a>':img)
+            +(p.outlet||p.headline?'<div style="font-size:9px;font-weight:600;color:#333;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.outlet||p.headline)+'</div>':'')
+            +'</div>';
+        }).join('');
+        if(i===0){
+          await stamp('<div style="margin-bottom:4px;background:#d4a843;color:#fff;padding:16px 22px;border-radius:8px;display:flex;align-items:center;gap:16px">'
+            +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Appendix A — Media Gallery</div>'
+            +'<div style="font-size:10px;opacity:.75;margin-top:4px">Screenshots and photos of earned media mentions</div></div></div>');
+        }
+        await stamp('<div style="display:flex;gap:10px;margin-top:8px">'+cols+'</div>');
+      }
+    }
+
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
       pdf.text('Confidential \u2014 Pixis Drones \u2014 EMV figures are estimates based on industry benchmarks.',pw/2,ph-16,{align:'center'});
