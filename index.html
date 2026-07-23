@@ -571,7 +571,11 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           <div class="cnote" style="margin:0 0 12px"><strong>Formula:</strong> Followers &#215; Eng% &#215; Platform CPM &#215; Adj. Organic posts earn a 2.5&#215; authenticity premium.</div>
           <button class="btn btn-g" id="btn-add-inf" style="font-size:11px;padding:7px 14px;margin-bottom:11px">+ Add Influencer</button>
           <div id="inf-list"></div>
-          <div class="psec" style="margin-top:20px">5 &#8212; Planned Social Posts</div>
+          <div class="psec" style="margin-top:20px">5 &#8212; Collab Social Media (Predicted)</div>
+          <div class="cnote" style="margin:0 0 12px">Plan collab / co-authored posts on Instagram, Facebook, TikTok, or YouTube &#8212; the platforms with real collab-post support. 5&#215; mutual-endorsement premium, since both parties have signed off on the partnership.</div>
+          <button class="btn btn-g" id="btn-add-pred-collab" style="font-size:11px;padding:7px 14px;margin-bottom:11px">+ Add Collab Post</button>
+          <div id="pred-collab-list"></div>
+          <div class="psec" style="margin-top:20px">6 &#8212; Planned Social Posts</div>
           <div class="cnote" style="margin:0 0 10px">Add one entry per post type. Multiple entries per platform are supported. Reach estimated from total following &#215; reach rate, adjusted by post type multiplier.</div>
           <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
             <div style="display:grid;grid-template-columns:1fr 1fr 54px 30px;gap:6px;padding:7px 12px;background:var(--s3);border-bottom:1px solid var(--bd);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft)">
@@ -580,7 +584,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
             <div id="planned-posts-list"></div>
           </div>
           <button class="btn btn-g" id="btn-add-post" style="font-size:11px;padding:7px 14px;margin-top:9px">&#43; Add Post</button>
-          <div class="psec" style="margin-top:20px">6 &#8212; WOM / Press Assumptions</div>
+          <div class="psec" style="margin-top:20px">7 &#8212; WOM / Press Assumptions</div>
           <div class="cnote" style="margin:0 0 12px">Estimated press hits used in the WOM channel value calculation.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
             <div class="ff"><label class="fl">Est. Press Hits</label><input class="fi" type="number" id="p-wh" value="20"></div>
@@ -590,7 +594,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         </div>
       </div>
       <div style="padding:0 20px 20px">
-        <div class="psec">7 &#8212; Program Builder <span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">&#8212; multi-show programs with varied parameters</span></div>
+        <div class="psec">8 &#8212; Program Builder <span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">&#8212; multi-show programs with varied parameters</span></div>
         <div class="cnote" style="margin:0 0 12px"><strong>Optional.</strong> Configure each show using the inputs above then click &#8220;Capture Current Show&#8221; to add it to the program. Each show can have different attendance, type, and cost. Overrides the &#8220;Shows in Program&#8221; multiplier when at least one show is captured.</div>
         <button class="btn btn-g" id="btn-add-show-to-prog" style="font-size:11px;padding:7px 14px;margin-bottom:12px">&#43; Capture Current Show</button>
         <div id="prog-shows-wrap" style="display:none">
@@ -1306,6 +1310,7 @@ function wireEvents(){
   $('btn-add-show-to-prog').addEventListener('click',addCurrentShowToProgram);
   $('p-st').addEventListener('change',()=>{buildVirTable();buildMults();runCalcP();});
   $('btn-add-inf').addEventListener('click',addInfluencer);
+  $('btn-add-pred-collab').addEventListener('click',addPredCollabInfluencer);
   $('btn-pred-pdf').addEventListener('click',genPredPdf);
   $('btn-pred-reset').addEventListener('click',resetPred);
   $('btn-pred-save').addEventListener('click',predOpenSaveModal);
@@ -2053,13 +2058,15 @@ function buildInfCard(opts){
   const r2=document.createElement('div');r2.className='inf-g3';
   const follInp=mkNum(100000,1,0);const engInp=mkNum(3.5,'0.1',0);
   r2.appendChild(mkFld('Followers',follInp));r2.appendChild(mkFld('Engagement %',engInp,'% of followers'));
-  if(isPred){
+  if(isPred&&!(sec&&sec.partnerField)){
     const statSel=mkSel([['org','Organic / Earned'],['paid','Paid / Contracted']]);
     r2.appendChild(mkFld('Status',statSel));
     card._statSel=statSel;
   }else{
     r2.appendChild(document.createElement('div'));
   }
+  card._follInp=follInp;
+  card._engInp=engInp;
 
   // Row 3: auto-computed stats
   const statsWrap=document.createElement('div');statsWrap.className='inf-g3';statsWrap.style.marginTop='8px';
@@ -2199,7 +2206,7 @@ function buildInfCard(opts){
 
   function recalc(){
     const pl=platSel.value;
-    const adj=isPred?(card._statSel?.value==='paid'?BM.adj_paid:BM.adj_organic):adjFactor;
+    const adj=(isPred&&card._statSel)?(card._statSel.value==='paid'?BM.adj_paid:BM.adj_organic):adjFactor;
 
     if(isPred){
       // Prediction mode: derive estimated impressions/engagements and seed per-type qtys
@@ -2253,7 +2260,7 @@ function buildInfCard(opts){
   if(card._statSel)card._statSel.addEventListener('change',recalc);
 
   card._getEMV=()=>{
-    const adj=isPred?(card._statSel?.value==='paid'?BM.adj_paid:BM.adj_organic):adjFactor;
+    const adj=(isPred&&card._statSel)?(card._statSel.value==='paid'?BM.adj_paid:BM.adj_organic):adjFactor;
     if(isPred){
       const pl=platSel.value;
       const fo=parseFloat(follInp.value)||0;
@@ -2359,7 +2366,9 @@ function buildInfCard(opts){
     return{cid:card._cid,pl:platSel.value,name:nameInp.value,url:urlInp?urlInp.value:'',
       followers:card._followerCount||0,postType:postTypeSel?postTypeSel.value:null,
       valImp:parseFloat(valImpInp.value)||0,adjFactor,engQtys:qtys,engVals:vals,photoUrl:_photoUrl||null,
-      partnerHandle:partnerInp?partnerInp.value:''};
+      partnerHandle:partnerInp?partnerInp.value:'',
+      predFollowers:parseFloat(follInp.value)||0,predEngPct:parseFloat(engInp.value)||0,
+      status:card._statSel?card._statSel.value:undefined};
   };
 
   card.appendChild(hd);
@@ -3527,6 +3536,14 @@ function addInfluencer(){
   $('inf-list').prepend(card);runCalcP();
 }
 
+let predCollabCount=0;
+function addPredCollabInfluencer(){
+  predCollabCount++;
+  const num=predCollabCount;
+  const card=buildInfCard({num,adjFactor:5,isPrediction:true,onEMVChange:runCalcP,onRemove:runCalcP,secId:'collab-oinfs'});
+  $('pred-collab-list').prepend(card);runCalcP();
+}
+
 function runCalcP(){
   const sel=$('p-st').value;const v=VIR[sel];
   const at=parseFloat($('p-at').value)||0;const fl=parseFloat($('p-fl').value)||0;
@@ -3544,7 +3561,11 @@ function runCalcP(){
   document.querySelectorAll('#inf-list .inf-card').forEach(card=>{
     if(card._getEMV){infTot+=card._getEMV();if(card._updateDisp)card._updateDisp();}
   });
-  const socTot=offSoc+ugc+infTot;const contTot=7300;
+  let collabPredTot=0;
+  document.querySelectorAll('#pred-collab-list .inf-card').forEach(card=>{
+    if(card._getEMV){collabPredTot+=card._getEMV();if(card._updateDisp)card._updateDisp();}
+  });
+  const socTot=offSoc+ugc+infTot+collabPredTot;const contTot=7300;
   const womTot=womHits*(womReach/1000)*womCPM;
   const perShow=oohTot+socTot+contTot+womTot;
   const cons=perShow*0.5;const opt=perShow*1.7;
@@ -3595,7 +3616,7 @@ function runCalcP(){
   // Split totals into PESO buckets for prediction
   const paidPredTot=infTot; // paid influencers only (status=paid in inf cards)
   const earnedPredTot=oohTot+womTot;
-  const sharedPredTot=ugc;
+  const sharedPredTot=ugc+collabPredTot;
   const ownedPredTot=offSoc+contTot;
   if(!cg._built){
     [['ch-P','\uD83D\uDCB0','Paid','#e85d04'],['ch-E','\u2B50','Earned','var(--gld)'],['ch-S','\uD83D\uDD01','Shared','var(--ind2)'],['ch-O','\uD83C\uDFE0','Owned','var(--tel)']].forEach(([id,icon,name,col])=>{
@@ -3618,8 +3639,8 @@ function runCalcP(){
   if(!bd._built){
     const rows=[
       {cls:'sh',ids:['b1l','b1v']},{cls:'sub',ids:['b2l','b2v']},{cls:'sub',ids:['b3l','b3v']},
-      {cls:'sh',ids:['b4l','b4v']},{cls:'sub',ids:['b5l','b5v']},{cls:'sub',ids:['b6l','b6v']},{cls:'sub',ids:['b7l','b7v']},
-      {cls:'sh',ids:['b8l','b8v']},{cls:'sh',ids:['b9l','b9v']},{cls:'tot',ids:['b10l','b10v']}
+      {cls:'sh',ids:['b4l','b4v']},{cls:'sub',ids:['b5l','b5v']},{cls:'sub',ids:['b6l','b6v']},{cls:'sub',ids:['b7l','b7v']},{cls:'sub',ids:['b8l','b8v']},
+      {cls:'sh',ids:['b9l','b9v']},{cls:'sh',ids:['b10l','b10v']},{cls:'tot',ids:['b11l','b11v']}
     ];
     rows.forEach(({cls,ids})=>{
       const row=document.createElement('div');row.className='pbdr '+cls;
@@ -3630,6 +3651,7 @@ function runCalcP(){
     bd._built=true;
   }
   const infN=document.querySelectorAll('#inf-list .inf-card').length;
+  const collabN=document.querySelectorAll('#pred-collab-list .inf-card').length;
   $('b1l').textContent='[E1] Live Audience / Experiential';$('b1v').textContent=fmt(oohTot);
   $('b2l').textContent='Spectacular OOH ('+at.toLocaleString()+' att. \xd7 $'+v.cpm+' CPM \xd7 '+v.adj+'x)';$('b2v').textContent=fmt(oohSpec);
   $('b3l').textContent='Engagement Duration ('+at.toLocaleString()+' \xd7 '+du+'min \xd7 $0.20)';$('b3v').textContent=fmt(oohDur);
@@ -3637,14 +3659,16 @@ function runCalcP(){
   const totalPosts=plannedPosts.reduce((s,p)=>s+p.count,0);
   $('b5l').textContent='Owned: Official Posts ('+totalPosts+' posts, '+fl.toLocaleString()+' following)';$('b5v').textContent=fmt(offSoc);
   $('b6l').textContent='Shared: Earned UGC (~'+Math.round(at*v.sh).toLocaleString()+' creators \xd7 500 avg followers)';$('b6v').textContent=fmt(ugc);
-  $('b7l').textContent='Paid/Earned: Influencer Integration ('+infN+' influencer'+(infN!==1?'s':'')+')';$('b7v').textContent=fmt(infTot);
-  $('b8l').textContent='[O2] Content Assets Produced';$('b8v').textContent=fmt(contTot);
-  $('b9l').textContent='[E2] Press & Media ('+womHits+' hits \xd7 '+womReach.toLocaleString()+' reach \xd7 $'+womCPM+' CPM)';$('b9v').textContent=fmt(womTot);
-  $('b10l').textContent='Per-Show Target EMV';$('b10v').textContent=fmt(perShow);
+  $('b7l').textContent='Shared: Collab Social Posts ('+collabN+' post'+(collabN!==1?'s':'')+')';$('b7v').textContent=fmt(collabPredTot);
+  $('b8l').textContent='Paid/Earned: Influencer Integration ('+infN+' influencer'+(infN!==1?'s':'')+')';$('b8v').textContent=fmt(infTot);
+  $('b9l').textContent='[O2] Content Assets Produced';$('b9v').textContent=fmt(contTot);
+  $('b10l').textContent='[E2] Press & Media ('+womHits+' hits \xd7 '+womReach.toLocaleString()+' reach \xd7 $'+womCPM+' CPM)';$('b10v').textContent=fmt(womTot);
+  $('b11l').textContent='Per-Show Target EMV';$('b11v').textContent=fmt(perShow);
 }
 
 function resetPred(){
   $('inf-list').innerHTML='';infCount=0;
+  $('pred-collab-list').innerHTML='';predCollabCount=0;
   programShows=[];renderProgramShows();
   [['p-cl',''],['p-sn',''],['p-dt',''],['p-lo',''],['p-at','10000'],['p-fl','500000'],['p-du','12'],['p-co','75000'],['p-ns','1'],
    ['p-wh','20'],['p-wr','100000'],['p-wc','10']].forEach(([id,val])=>{const e=$(id);if(e)e.value=val;});
@@ -4811,12 +4835,15 @@ function predSerialize(){
   fields['p-st']=$('p-st')?.value||'cult';
   const infCards=[];
   document.querySelectorAll('#inf-list .inf-card').forEach(c=>{if(c._serialize)infCards.push(c._serialize());});
+  const infCardsCollab=[];
+  document.querySelectorAll('#pred-collab-list .inf-card').forEach(c=>{if(c._serialize)infCardsCollab.push(c._serialize());});
   const targetEmv=$('pe-t')?.textContent||'';
-  return{fields,plannedPosts:JSON.parse(JSON.stringify(plannedPosts)),programShows:JSON.parse(JSON.stringify(programShows)),infCards,targetEmv,savedAt:new Date().toISOString()};
+  return{fields,plannedPosts:JSON.parse(JSON.stringify(plannedPosts)),programShows:JSON.parse(JSON.stringify(programShows)),infCards,infCardsCollab,targetEmv,savedAt:new Date().toISOString()};
 }
 
 function predDeserialize(state){
   $('inf-list').innerHTML='';infCount=0;
+  $('pred-collab-list').innerHTML='';predCollabCount=0;
   const f=state.fields||{};
   ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
     const e=$(id);if(e&&f[id]!==undefined)e.value=f[id];
@@ -4842,6 +4869,25 @@ function predDeserialize(state){
     if(card._setEngQtys&&d.engQtys)card._setEngQtys(d.engQtys);
     if(card._setEngVals&&d.engVals)card._setEngVals(d.engVals);
     if(card._setPhotoUrl&&d.photoUrl)card._setPhotoUrl(d.photoUrl);
+    if(card._statSel&&d.status)card._statSel.value=d.status;
+    if(card._follInp&&d.predFollowers)card._follInp.value=d.predFollowers;
+    if(card._engInp&&d.predEngPct!==undefined)card._engInp.value=d.predEngPct;
+    if(card._follInp)card._follInp.dispatchEvent(new Event('input'));
+  });
+  // Restore predicted Collab Social Media cards
+  const collabCards=state.infCardsCollab||[];
+  [...collabCards].reverse().forEach(d=>{
+    addPredCollabInfluencer();
+    const card=$('pred-collab-list').firstElementChild;
+    if(card._platSel){card._platSel.value=d.pl||'ig';card._platSel.dispatchEvent(new Event('change'));}
+    if(card._nameInp)card._nameInp.value=d.name||'';
+    if(card._partnerInp&&d.partnerHandle)card._partnerInp.value=d.partnerHandle;
+    if(card._urlInp)card._urlInp.value=d.url||'';
+    if(card._setValImp&&d.valImp)card._setValImp(d.valImp);
+    if(card._setPhotoUrl&&d.photoUrl)card._setPhotoUrl(d.photoUrl);
+    if(card._follInp&&d.predFollowers)card._follInp.value=d.predFollowers;
+    if(card._engInp&&d.predEngPct!==undefined)card._engInp.value=d.predEngPct;
+    if(card._follInp)card._follInp.dispatchEvent(new Event('input'));
   });
   runCalcP();
 }
@@ -5002,8 +5048,15 @@ async function genPredPdf(){
       const nm=card.querySelector('.fi')?.value||'Unknown';
       infRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nm+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
     });
+    let collabPredTot=0,collabRows='';
+    document.querySelectorAll('#pred-collab-list .inf-card').forEach(card=>{
+      if(!card._getEMV)return;const emv=card._getEMV();collabPredTot+=emv;
+      const nm=card.querySelector('.fi')?.value||'Unknown';
+      const partner=card._partnerInp?.value||'';
+      collabRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nm+(partner?' × '+partner:'')+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
+    });
     const womHits=parseFloat($('p-wh')?.value)||20,womReach=parseFloat($('p-wr')?.value)||100000,womCPM=parseFloat($('p-wc')?.value)||10;
-    const socTot=offSoc+ugc+infTot,contTot=7300,womTot=womHits*(womReach/1000)*womCPM;
+    const socTot=offSoc+ugc+infTot+collabPredTot,contTot=7300,womTot=womHits*(womReach/1000)*womCPM;
     const perShow=oohTot+socTot+contTot+womTot,cons=perShow*.5,opt=perShow*1.7;
     let progT,progCost,progNs;
     if(programShows.length>0){progT=programShows.reduce((s,sh)=>s+sh.emv,0);progCost=programShows.reduce((s,sh)=>s+sh.co,0);progNs=programShows.length;}
@@ -5026,6 +5079,11 @@ async function genPredPdf(){
       await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Influencer Integration</div>'
         +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle / Name</th><th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>'
         +'<tbody>'+infRows+'</tbody></table></div>');
+    }
+    if(collabRows){
+      await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Collab Social Media (Predicted)</div>'
+        +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle / Name</th><th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>'
+        +'<tbody>'+collabRows+'</tbody></table></div>');
     }
     if(programShows.length>0){
       let pbRows='';
@@ -5051,7 +5109,7 @@ async function genPredPdf(){
       +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(programShows.length>0?progT*1.7:opt)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roi(programShows.length>0?progT*1.7:opt)+'</div></div></div>'
       +(progNs>1&&programShows.length===0?'<div style="background:#f0f2ff;border:1px solid #c8d0f0;border-radius:6px;padding:11px 14px;font-size:10px"><strong style="color:'+HC+'">Program Total ('+progNs+' shows):</strong> Conservative '+fmt(cons*progNs)+' \u2014 Target '+fmt(progT)+' \u2014 Optimistic '+fmt(opt*progNs)+'</div>':'')+'</div>');
     // PESO breakdown (per-show target values)
-    const pesoP=infTot,pesoE=oohTot+womTot,pesoS=ugc,pesoO=offSoc+contTot;
+    const pesoP=infTot,pesoE=oohTot+womTot,pesoS=ugc+collabPredTot,pesoO=offSoc+contTot;
     const pesoTotal=pesoP+pesoE+pesoS+pesoO;
     const pBar=(val,total,color)=>{const pct=total>0?Math.round(val/total*100):0;return '<div style="height:7px;border-radius:4px;background:#e8e8e8;margin-top:5px"><div style="height:100%;width:'+pct+'%;border-radius:4px;background:'+color+'"></div></div>';};
     await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Value Breakdown \u2014 Per Show (Target)</div>'
@@ -5076,9 +5134,9 @@ async function genPredPdf(){
       +'<div style="border:1px solid #eef;border-top:4px solid #5a6ef8;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#5a6ef8;letter-spacing:.1em;margin-bottom:5px">S \u2014 Shared</div>'
       +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoS)+'</div>'
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">UGC / Earned Social</div>'
+      +'<div style="font-size:9px;color:#888;margin-bottom:6px">UGC / Earned Social + Collab Posts</div>'
       +pBar(pesoS,pesoTotal,'#5a6ef8')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Est. '+(Math.round(at*(vir.sh||0))).toLocaleString()+' UGC creators<br>\xd7 500 avg followers</div>'
+      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Est. '+(Math.round(at*(vir.sh||0))).toLocaleString()+' UGC creators \xd7 500 avg followers: '+fmt(ugc)+'<br>Collab social posts: '+fmt(collabPredTot)+'</div>'
       +'</div>'
       // O — Owned / Content
       +'<div style="border:1px solid #dff;border-top:4px solid #2fd4b2;border-radius:6px;padding:13px">'
