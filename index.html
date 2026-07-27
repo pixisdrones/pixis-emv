@@ -2981,7 +2981,8 @@ async function cloudGetAll(){
 
 async function cloudSave(key,obj){
   const stateJson=JSON.stringify(obj.state||obj);
-  const baseFields={name:obj.name||'',savedAt:obj.savedAt||new Date().toISOString(),emv:obj.emv||'$0',tot:obj.tot||'$0'};
+  const savedAt=obj.savedAt||new Date().toISOString();
+  const baseFields={name:obj.name||'',savedAt,emv:obj.emv||'$0',tot:obj.tot||'$0'};
   const chunkCount=Math.ceil(stateJson.length/FS_CHUNK_SIZE);
   if(chunkCount>FS_MAX_CHUNKS){
     throw new Error('Show data is too large to sync to the cloud ('+(stateJson.length/1e6).toFixed(1)+'MB, cloud limit is ~'+(FS_CHUNK_SIZE*FS_MAX_CHUNKS/1e6).toFixed(0)+'MB) \u2014 try removing some photos. It will still save locally.');
@@ -2997,11 +2998,18 @@ async function cloudSave(key,obj){
       if(!cResp.ok){const e=await cResp.json().catch(()=>({}));throw new Error('chunk '+i+': '+(e.error?.message||'HTTP '+cResp.status));}
     }
   }
-  // Clean up any stale chunk docs left over from a previous, larger version of this show.
-  // DELETE on a doc that doesn't exist is a harmless no-op, so we don't need to know the old count.
-  await Promise.all(Array.from({length:FS_MAX_CHUNKS-chunkCount},(_,j)=>
-    fetch(FS_BASE+'/shows/'+_fsChunkKey(key,chunkCount+j)+'?key='+FS_API_KEY,{method:'DELETE'}).catch(()=>{})
-  ));
+  // Only clean up stale higher-numbered chunk docs if nobody else has written a
+  // newer version of this show while we were writing ours. Without this check,
+  // two tabs racing to save the same chunked show could have one tab's cleanup
+  // step delete chunk documents that belong to the other tab's newer, larger
+  // save \u2014 silently corrupting the show (reassembly then reads fewer chunks
+  // than the doc claims to have, producing truncated/unparseable JSON).
+  const stillOurs=await _checkRemoteConflict(key);
+  if(stillOurs===savedAt){
+    await Promise.all(Array.from({length:FS_MAX_CHUNKS-chunkCount},(_,j)=>
+      fetch(FS_BASE+'/shows/'+_fsChunkKey(key,chunkCount+j)+'?key='+FS_API_KEY,{method:'DELETE'}).catch(()=>{})
+    ));
+  }
 }
 
 async function cloudDelete(key){
@@ -4563,6 +4571,8 @@ async function svUpdateShow(key){
   svSetAll(all);
   window._currentShowKey=key;
   window._currentShowName=oldName;
+  window._autoSaveBlocked=false;
+  document.getElementById('stale-show-banner')?.remove();
   updateLoadedShowBadge();
   const ce={name:oldName,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
   cloudSave(key,ce).then(()=>{
@@ -4628,6 +4638,8 @@ function _doSaveNew(rawName,bg){
   const all=svGetAll();all.unshift(entry);svSetAll(all);
   window._currentShowKey=key;window._currentShowName=name;
   window._loadedShowSavedAt=state.savedAt||'';
+  window._autoSaveBlocked=false;
+  document.getElementById('stale-show-banner')?.remove();
   updateLoadedShowBadge();
   _stopCollabPoll();_startCollabPoll();
   const cloudEntry={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
@@ -4648,6 +4660,26 @@ function updateLoadedShowBadge(){
     badge.style.display='none';
   }
 }
+// A show whose metadata (emv/tot) shows real value but whose actual state has
+// no content in any of the places data lives is a strong signal of a corrupted
+// save — most likely a Firestore chunk-write race between two tabs leaving the
+// cloud doc's chunk count out of sync with its chunk documents, so reassembly
+// silently produces truncated/unparseable JSON that falls back to "{}".
+function _stateLooksCorrupted(entry){
+  const hasRealValue=(entry.emv&&entry.emv!=='$0')||(entry.tot&&entry.tot!=='$0');
+  if(!hasRealValue)return false;
+  const s=entry.state||{};
+  const empty=Object.keys(s.details||{}).length===0
+    &&(s.pressCards||[]).length===0
+    &&(s.infCardsSoc||[]).length===0
+    &&(s.infCardsEarned||[]).length===0
+    &&(s.infCardsPaid||[]).length===0
+    &&(s.infCardsCollab||[]).length===0
+    &&Object.keys(s.rows||{}).length===0
+    &&Object.keys(s.mentions||{}).length===0;
+  return empty;
+}
+
 function svLoadShow(key){
   // Check local first
   let entry=svGetAll().find(e=>e.key===key);
@@ -4658,12 +4690,24 @@ function svLoadShow(key){
     // Save locally for offline access
     const all=svGetAll();all.unshift(entry);svSetAll(all);
   }
-  if(!entry)return;
+  if(!entry){notif('⚠ Show not found');return;}
+  if(_stateLooksCorrupted(entry)){
+    alert('⚠ "'+entry.name+'" appears to have a corrupted save — it shows '+(entry.emv||entry.tot)+' of value but its underlying data is empty.\n\nThis usually happens when two browser tabs save the same show at the same time. To avoid losing whatever is still recoverable:\n\n• Do NOT click Save or Update on this show right now.\n• Check the 🕚 History button next to this show for a prior checkpoint value.\n• Contact support with the show name before re-entering data.');
+    return;
+  }
   document.querySelectorAll('.dm-row,.bi-row').forEach(r=>r.remove());
   window._currentShowKey=entry.key;
   window._currentShowName=entry.name;
   window._loadedShowSavedAt=entry.state?.savedAt||entry.savedAt||'';
-  svDeserialize(entry.state);
+  try{
+    svDeserialize(entry.state);
+  }catch(e){
+    console.error('svDeserialize failed:',e);
+    alert('⚠ "'+entry.name+'" failed to load due to an unexpected error: '+e.message+'\n\nThe show\'s saved data may be corrupted. Please do not click Save or Update, and contact support with this show\'s name.');
+    return;
+  }
+  window._autoSaveBlocked=false;
+  document.getElementById('stale-show-banner')?.remove();
   updateLoadedShowBadge();
   _startCollabPoll();
   notif('\uD83D\uDCE5 "'+entry.name+'" loaded');
@@ -5891,25 +5935,62 @@ function _scheduleAutoSave(){
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer=setTimeout(async()=>{
     if(!window._currentShowKey)return;
+    if(window._autoSaveBlocked)return; // remote has moved ahead of us — see _showStaleShowBanner
+    const key=window._currentShowKey;
+    // Never silently overwrite a newer remote save. Without this check, an idle
+    // tab holding a stale copy of a show would autosave straight over a
+    // collaborator's newer edits with zero warning — exactly what caused a real
+    // data-loss incident (a show's saved EMV dropped from $437k to $85k because
+    // a background tab's autosave clobbered a colleague's session). The manual
+    // "Update" button already guards against this via _checkRemoteConflict;
+    // autosave needs the same protection since it fires with no user present
+    // to confirm an overwrite.
+    const remoteSavedAt=await _checkRemoteConflict(key);
+    if(remoteSavedAt&&window._loadedShowSavedAt&&remoteSavedAt>window._loadedShowSavedAt){
+      window._autoSaveBlocked=true;
+      _showStaleShowBanner(window._currentShowName||'This show');
+      return;
+    }
     let state=svSerialize();
     const all=svGetAll();
-    const idx=all.findIndex(e=>e.key===window._currentShowKey);
+    const idx=all.findIndex(e=>e.key===key);
     if(idx===-1)return;
     const name=all[idx].name;
     state.name=name;
     state=await _mergeRemoteCards(state); // pull in any collaborator cards before we overwrite the doc
     state.history=_historyWithCheckpoint(all[idx]);
-    all[idx]={key:window._currentShowKey,name,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
+    all[idx]={key,name,emv:state.emv,tot:state.tot,savedAt:new Date().toISOString(),state};
     svSetAll(all);
     window._loadedShowSavedAt=state.savedAt; // update before async cloud write
     const ce={name,emv:state.emv,tot:state.tot,savedAt:state.savedAt,state};
-    cloudSave(window._currentShowKey,ce).then(()=>{
-      if(_cloudShows)_cloudShows[window._currentShowKey]=ce;
+    cloudSave(key,ce).then(()=>{
+      if(_cloudShows)_cloudShows[key]=ce;
     }).catch(()=>{});
     // Show brief auto-saved indicator in footer
     const badge=document.getElementById('sf-autosave');
     if(badge){badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),2500);}
   },8000);
+}
+
+// Persistent (non-auto-dismissing) banner shown when this tab's autosave has
+// detected a newer remote save and paused itself rather than risk clobbering
+// it. Stays until the user reloads the show.
+function _showStaleShowBanner(name){
+  if(document.getElementById('stale-show-banner'))return; // already showing
+  const bar=document.createElement('div');bar.id='stale-show-banner';
+  bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:#7a1f1f;color:#fff;padding:11px 20px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.3)';
+  const msg=document.createElement('span');
+  msg.innerHTML='⚠ <strong>'+name+'</strong> was updated elsewhere. Autosave is paused to avoid overwriting those changes — reload the show to pick them up and resume autosave.';
+  const btn=document.createElement('button');btn.type='button';btn.textContent='↺ Reload Show';
+  btn.style.cssText='background:#fff;color:#7a1f1f;border:none;padding:6px 14px;border-radius:5px;font-weight:700;cursor:pointer;font-size:11px;flex-shrink:0';
+  btn.addEventListener('click',()=>{
+    const key=window._currentShowKey;
+    bar.remove();
+    window._autoSaveBlocked=false;
+    if(key)svLoadShow(key);
+  });
+  bar.appendChild(msg);bar.appendChild(btn);
+  document.body.appendChild(bar);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
