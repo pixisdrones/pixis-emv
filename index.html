@@ -663,15 +663,16 @@ const BM_KEY='pixis_bm_v1';
 const BM_DEFAULTS={
   // Platform CPMs — EMV proxy ($ per 1,000 impressions). Source: Social Insider / Influencer Marketing Hub 2024-25
   cpm_ig:13,cpm_tt:9,cpm_yt:22,cpm_xx:7,cpm_fb:10,
-  cpm_yts:7,cpm_rd:4,cpm_th:5,cpm_qu:2.5,
+  cpm_yts:7,cpm_rd:4,cpm_th:5,cpm_qu:2.5,cpm_li:15,
   // Platform organic reach rates (% of followers who see each post). Source: Social Insider / Hootsuite 2025-26
   // Instagram raised to 8% to reflect Reels-weighted mix (Reels avg 15-30% for micro-accounts, static 3-6%)
   // TikTok & Shorts raised to reflect algorithm-driven discovery beyond followers
+  // LinkedIn: professional-network organic reach, practitioner benchmark (no official industry report yet)
   reach_ig:8,reach_tt:8,reach_yt:20,reach_xx:3,reach_fb:3,
-  reach_yts:5,reach_rd:10,reach_th:10,reach_qu:12,
+  reach_yts:5,reach_rd:10,reach_th:10,reach_qu:12,reach_li:6,
   // Value per engagement action ($) — legacy aggregate, kept for backward compat
   veng_ig:0.08,veng_tt:0.05,veng_yt:0.10,veng_xx:0.07,veng_fb:0.06,
-  veng_yts:0.04,veng_rd:0.05,veng_th:0.04,veng_qu:0.06,
+  veng_yts:0.04,veng_rd:0.05,veng_th:0.04,veng_qu:0.06,veng_li:0.09,
   // Influencer adjustment factors. Source: IZEA / CreatorIQ / Linqia 2024
   adj_paid:1.2,adj_organic:2.5,
   // OOH / Experiential. Source: OAAA 2024 / Freeman/Jack Morton agency benchmarks
@@ -704,7 +705,9 @@ const BM_DEFAULTS={
   // Threads: imp, like, cmt, repost, share
   evt_th_imp:0.003, evt_th_like:0.02,  evt_th_cmt:0.08,  evt_th_repost:0.12, evt_th_share:0.15,
   // Quora: upvote, cmt, share, view, follow
-  evt_qu_upvote:0.04,evt_qu_cmt:0.10,  evt_qu_share:0.08,evt_qu_view:0.002,  evt_qu_follow:0.25
+  evt_qu_upvote:0.04,evt_qu_cmt:0.10,  evt_qu_share:0.08,evt_qu_view:0.002,  evt_qu_follow:0.25,
+  // LinkedIn: imp, react, cmt, repost — professional-network premium reflected in higher per-action values
+  evt_li_imp:0.006,evt_li_react:0.03,  evt_li_cmt:0.15,  evt_li_repost:0.20
 };
 
 // ── Industry benchmark ranges (lo/hi) for every BM key ──────────────────────
@@ -715,10 +718,12 @@ const BM_RANGES={
   cpm_ig:{lo:5,hi:35,fmt:'$'},   cpm_tt:{lo:3,hi:20,fmt:'$'},  cpm_yt:{lo:8,hi:50,fmt:'$'},
   cpm_yts:{lo:3,hi:12,fmt:'$'},  cpm_xx:{lo:4,hi:15,fmt:'$'},  cpm_fb:{lo:5,hi:20,fmt:'$'},
   cpm_rd:{lo:1.5,hi:8,fmt:'$'},  cpm_th:{lo:2,hi:8,fmt:'$'},   cpm_qu:{lo:1,hi:5,fmt:'$'},
+  cpm_li:{lo:6,hi:30,fmt:'$'},
   // Organic reach rates
   reach_ig:{lo:5,hi:25,fmt:'%'},  reach_tt:{lo:3,hi:20,fmt:'%'}, reach_yt:{lo:12,hi:35,fmt:'%'},
   reach_yts:{lo:2,hi:15,fmt:'%'}, reach_xx:{lo:1,hi:8,fmt:'%'},  reach_fb:{lo:1,hi:6,fmt:'%'},
   reach_rd:{lo:5,hi:20,fmt:'%'}, reach_th:{lo:5,hi:20,fmt:'%'},  reach_qu:{lo:5,hi:20,fmt:'%'},
+  reach_li:{lo:2,hi:15,fmt:'%'},
   // Influencer adj
   adj_paid:{lo:1.0,hi:1.5,fmt:'x'},adj_organic:{lo:1.5,hi:4.0,fmt:'x'},
   // OOH
@@ -749,6 +754,8 @@ const BM_RANGES={
   evt_th_cmt:{lo:0.050,hi:0.150,fmt:'$'},evt_th_repost:{lo:0.080,hi:0.200,fmt:'$'},evt_th_share:{lo:0.100,hi:0.250,fmt:'$'},
   evt_qu_upvote:{lo:0.015,hi:0.080,fmt:'$'},evt_qu_cmt:{lo:0.060,hi:0.200,fmt:'$'},
   evt_qu_share:{lo:0.040,hi:0.150,fmt:'$'},evt_qu_view:{lo:0.001,hi:0.005,fmt:'$'},evt_qu_follow:{lo:0.100,hi:0.500,fmt:'$'},
+  evt_li_imp:{lo:0.003,hi:0.012,fmt:'$'},evt_li_react:{lo:0.015,hi:0.060,fmt:'$'},
+  evt_li_cmt:{lo:0.080,hi:0.250,fmt:'$'},evt_li_repost:{lo:0.100,hi:0.300,fmt:'$'},
 };
 
 // ── Helper: format a range label value ───────────────────────────────────────
@@ -852,6 +859,12 @@ const ENG_TYPES={
     {id:'share',  n:'Shares',   pr:0.10},
     {id:'follow', n:'Follows',  pr:0.02},
   ],
+  li:[
+    {id:'imp',    n:'Est. Views', pr:0.35, isEst:true},
+    {id:'react',  n:'Reactions',  pr:0.40},
+    {id:'cmt',    n:'Comments',   pr:0.15},
+    {id:'repost', n:'Reposts',    pr:0.10},
+  ],
 };
 function getEngVal(plat,typeId){return BM['evt_'+plat+'_'+typeId]??0.01;}
 let BM={...BM_DEFAULTS};
@@ -860,7 +873,7 @@ function saveBM(){try{localStorage.setItem(BM_KEY,JSON.stringify(BM));}catch{}}
 function getPlCPM(p){return BM['cpm_'+p]||10;}
 function getPlReach(p){return(BM['reach_'+p]||20)/100;}
 function getPlVEng(p){return BM['veng_'+p]||0.08;}
-const PLATS=[['ig','Instagram'],['tt','TikTok'],['yt','YouTube'],['yts','YouTube Shorts'],['xx','X / Twitter'],['fb','Facebook'],['rd','Reddit'],['th','Threads'],['qu','Quora']];
+const PLATS=[['ig','Instagram'],['tt','TikTok'],['yt','YouTube'],['yts','YouTube Shorts'],['xx','X / Twitter'],['fb','Facebook'],['rd','Reddit'],['th','Threads'],['qu','Quora'],['li','LinkedIn']];
 // Post type options per platform: [multiplier_value, display_name]
 const PLAT_POST_TYPES={
   ig:[['1.5','Reel'],['1.0','Static / Photo'],['1.2','Carousel'],['0.3','Story']],
@@ -872,9 +885,10 @@ const PLAT_POST_TYPES={
   rd:[['1.0','Post'],['1.1','Crosspost']],
   th:[['1.0','Post'],['1.2','Repost']],
   qu:[['1.0','Answer'],['0.7','Question']],
+  li:[['1.0','Post'],['1.15','Video'],['1.1','Document']],
 };
 // Platform adjustment multipliers for organic reach calculation
-const PLAT_ADJ={ig:2,tt:2.2,yt:2,yts:1.8,xx:1.5,fb:1.8,rd:1.5,th:1.5,qu:1.3};
+const PLAT_ADJ={ig:2,tt:2.2,yt:2,yts:1.8,xx:1.5,fb:1.8,rd:1.5,th:1.5,qu:1.3,li:1.6};
 
 // ── PESO constants ─────────────────────────────────────────────────────────
 const PESO_COLS={P:'#e85d04',E:'#d4a843',S:'#5a6ef8',O:'#2fd4b2'};
@@ -919,9 +933,9 @@ const SECS=[
   // ── SHARED ────────────────────────────────────────────────────────────────
   {id:'collab-oinfs',peso:'S',num:'S1',title:'Collab Social Media',sub:'Co-authored posts with linked collaborator accounts',col:'#5a6ef8',
    type:'earned-soc',adj:5,pfx:'csoc',
-   plats:['ig','fb','tt','yt'],partnerField:true,
+   plats:['ig','fb','tt','yt','li'],partnerField:true,
    premiumLabel:'mutual-endorsement',
-   ov:'Official collab/co-authored posts — restricted to Instagram, Facebook, TikTok, and YouTube, the platforms with real, launched collab-post support. Valued with a 5× premium reflecting a formally agreed partnership endorsed by both parties across their combined audiences. Note: on YouTube, only the uploading channel sees full post metrics — linked collaborator channels do not get shared analytics.'},
+   ov:'Official collab/co-authored posts — restricted to Instagram, Facebook, TikTok, YouTube, and LinkedIn, the platforms with real, launched collab-post support. Valued with a 5× premium reflecting a formally agreed partnership endorsed by both parties across their combined audiences. Note: on YouTube, only the uploading channel sees full post metrics; on LinkedIn, a collaborator added as a Company Page (not a personal profile) also does not receive engagement analytics — only the post’s creator sees full metrics.'},
   // ── OWNED ─────────────────────────────────────────────────────────────────
   {id:'soc',peso:'O',num:'O1',title:'Official Brand Social',sub:'Brand-owned channels & planned posts',col:'#2fd4b2',
    type:'soc',
@@ -943,7 +957,7 @@ const SECS=[
 ];
 const VIR={corp:{l:'Corporate / Private',sh:.05,cpm:8,adj:2},pub:{l:'Public / Generic Art',sh:.10,cpm:15,adj:3},brand:{l:'Brand Launch / IP',sh:.20,cpm:30,adj:4},cult:{l:'Cultural Moment',sh:.35,cpm:55,adj:7}};
 // PCPM is now a live proxy into BM — always read via getPlCPM(platform)
-const PCPM={get ig(){return BM.cpm_ig;},get tt(){return BM.cpm_tt;},get yt(){return BM.cpm_yt;},get yts(){return BM.cpm_yts;},get xx(){return BM.cpm_xx;},get fb(){return BM.cpm_fb;},get rd(){return BM.cpm_rd;},get th(){return BM.cpm_th;},get qu(){return BM.cpm_qu;}};
+const PCPM={get ig(){return BM.cpm_ig;},get tt(){return BM.cpm_tt;},get yt(){return BM.cpm_yt;},get yts(){return BM.cpm_yts;},get xx(){return BM.cpm_xx;},get fb(){return BM.cpm_fb;},get rd(){return BM.cpm_rd;},get th(){return BM.cpm_th;},get qu(){return BM.cpm_qu;},get li(){return BM.cpm_li;}};
 let infCount=0;
 let programShows=[];
 let plannedPosts=[];let ppCount=0;
@@ -1163,6 +1177,7 @@ function buildBenchmarksPanel(){
     rd:'<a class="bm-src-link" target="_blank" rel="noopener" href="https://ads.reddit.com/">Reddit Ads</a> benchmarks 2024',
     th:'Meta practitioner proxy / <a class="bm-src-link" target="_blank" rel="noopener" href="https://sproutsocial.com/insights/social-media-benchmarks/">Sprout Social</a> 2024–25',
     qu:'<a class="bm-src-link" target="_blank" rel="noopener" href="https://business.quora.com/advertising">Quora Ads</a> / agency practice',
+    li:'<a class="bm-src-link" target="_blank" rel="noopener" href="https://business.linkedin.com/marketing-solutions/success/best-practices">LinkedIn Marketing Solutions</a> / agency practitioner proxy — no official industry benchmark report yet',
   };
   PLATS.forEach(([p,pn])=>{
     const tr=document.createElement('tr');
@@ -1534,6 +1549,7 @@ function buildEarnedSocSection(pb,sec){
   const ALL_SOC_PLATS=[
     ['fb','Facebook',      '#1877f2','f'],
     ['ig','Instagram',     '#e1306c','IG'],
+    ['li','LinkedIn',      '#0a66c2','in'],
     ['qu','Quora',         '#a82400','Q'],
     ['rd','Reddit',        '#ff4500','\u25cf'],
     ['th','Threads',       '#aaa','@'],
@@ -2009,13 +2025,17 @@ function buildInfCard(opts){
     rPartner.appendChild(mkFld('Collab Partner Handle',partnerInp,'The other account tagged as a collaborator on this post'));
   }
   // Followers + Post Type row (actuals only)
-  let follInpActuals=null,postTypeSel=null,rFollowers=null;
+  let follInpActuals=null,postTypeSel=null,rFollowers=null,followersLbl=null;
   const rebuildPostTypeOpts=(pl)=>{
     if(!postTypeSel)return;
     postTypeSel.innerHTML='';
     (PLAT_POST_TYPES[pl]||[['1.0','Post']]).forEach(([,t])=>{
       const o=document.createElement('option');o.value=t;o.textContent=t;postTypeSel.appendChild(o);
     });
+  };
+  // YouTube/YouTube Shorts audiences are "subscribers," not "followers"
+  const updateFollowersLabel=(pl)=>{
+    if(followersLbl)followersLbl.textContent=(pl==='yt'||pl==='yts')?'Subscribers':'Followers';
   };
   if(!isPred){
     follInpActuals=mkNum(0,1,0);
@@ -2025,7 +2045,10 @@ function buildInfCard(opts){
     rebuildPostTypeOpts(platSel.value);
     postTypeSel.addEventListener('change',()=>{buildEngTypeRows(platSel.value);recalc();});
     rFollowers=document.createElement('div');rFollowers.style.cssText='margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px';
-    rFollowers.appendChild(mkFld('Followers',follInpActuals));
+    const follFld=mkFld('Followers',follInpActuals);
+    followersLbl=follFld.querySelector('.fl');
+    updateFollowersLabel(platSel.value);
+    rFollowers.appendChild(follFld);
     rFollowers.appendChild(mkFld('Post Type',postTypeSel));
   }
 
@@ -2253,6 +2276,7 @@ function buildInfCard(opts){
     const pl=platSel.value;
     valImpInp.value=getPlCPM(pl).toFixed(2);
     rebuildPostTypeOpts(pl);
+    updateFollowersLabel(pl);
     buildEngTypeRows(pl);
     recalc();
   });
@@ -2345,6 +2369,7 @@ function buildInfCard(opts){
     // construction time (Instagram's, by default) — rebuild it for the actual
     // restored platform before trying to match d.postType against its options.
     rebuildPostTypeOpts(platSel.value);
+    updateFollowersLabel(platSel.value);
     if(d.postType&&postTypeSel){
       const opts=Array.from(postTypeSel.options).map(o=>o.value);
       const match=opts.find(v=>v===d.postType)||opts[0];
@@ -2696,6 +2721,7 @@ function detectPlatformFromURL(url){
   if(u.includes('reddit.com'))return 'rd';
   if(u.includes('threads.net'))return 'th';
   if(u.includes('quora.com'))return 'qu';
+  if(u.includes('linkedin.com'))return 'li';
   return null;
 }
 
@@ -3857,7 +3883,7 @@ async function genPdf(){
         continue;
       }
       if(sec.type==='influencers'||sec.type==='earned-soc'){
-        const PLAT_LBL={'ig':'Instagram','tt':'TikTok','yt':'YouTube','yts':'YouTube Shorts','xx':'X / Twitter','fb':'Facebook','rd':'Reddit','th':'Threads','qu':'Quora'};
+        const PLAT_LBL={'ig':'Instagram','tt':'TikTok','yt':'YouTube','yts':'YouTube Shorts','xx':'X / Twitter','fb':'Facebook','rd':'Reddit','th':'Threads','qu':'Quora','li':'LinkedIn'};
         const byPlat={};let secTot=0;
         document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
           if(!card._getEMV)return;
@@ -4333,7 +4359,7 @@ function exportCSVMentions(){
   const shows=svGetAll();
   if(!shows.length){notif('⚠ No saved shows to export');return;}
   const esc=v=>{if(v===null||v===undefined)return '';const s=String(v);if(/[,"\n]/.test(s))return '"'+s.replace(/"/g,'""')+'"';return s;};
-  const PLAT={ig:'Instagram',tt:'TikTok',yt:'YouTube',yts:'YouTube Shorts',xx:'X / Twitter',fb:'Facebook',rd:'Reddit',th:'Threads',qu:'Quora'};
+  const PLAT={ig:'Instagram',tt:'TikTok',yt:'YouTube',yts:'YouTube Shorts',xx:'X / Twitter',fb:'Facebook',rd:'Reddit',th:'Threads',qu:'Quora',li:'LinkedIn'};
   const MTYPE={blog:'Blog / Online',tv:'TV / Broadcast',forum:'Forum / Community',award:'Award / Recognition',nl:'Newsletter',on:'Online News',print:'Print',po:'Podcast'};
   const rows=[['Show Name','Client','Program','Show Date','City','State','Section','Entry Type','Name / Outlet / Description','Platform','URL','Total Audience','Reach %','Adj. Reach','Rate / CPM ($)','Adj Factor','Est. EMV ($)'].join(',')];
   let totalRows=0;
