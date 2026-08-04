@@ -2566,11 +2566,22 @@ function addForumMentionCard(){
   list.appendChild(card);runCalc();
 }
 
-// Sections whose cards can be reclassified between Earned and Owned media —
-// same card shape under the hood, just a different default adj. factor.
+// Sections whose cards can be reclassified between Earned, Shared/Collab, and
+// Owned media — same card shape under the hood, just a different section id
+// and default adj. factor. Each section lists every other section it can move to.
 const INF_MOVE_TARGETS={
-  'earned-oinfs':{dest:'soc',destLabel:'Owned Media',destAdj:1.0},
-  'soc':{dest:'earned-oinfs',destLabel:'Earned Media',destAdj:2.5}
+  'earned-oinfs':[
+    {dest:'collab-oinfs',destLabel:'Collab Social Media',destAdj:5},
+    {dest:'soc',destLabel:'Official Brand Social',destAdj:1.0}
+  ],
+  'collab-oinfs':[
+    {dest:'earned-oinfs',destLabel:'Social Media Mentions',destAdj:2.5},
+    {dest:'soc',destLabel:'Official Brand Social',destAdj:1.0}
+  ],
+  'soc':[
+    {dest:'earned-oinfs',destLabel:'Social Media Mentions',destAdj:2.5},
+    {dest:'collab-oinfs',destLabel:'Collab Social Media',destAdj:5}
+  ]
 };
 
 function bulkDeleteInfCards(secId){
@@ -2632,26 +2643,29 @@ function bulkDeleteInfCards(secId){
     notif('🗑 Deleted '+checked.length+' entr'+(checked.length===1?'y':'ies'));
   });
   acts.appendChild(cancel);
-  if(moveInfo){
-    const moveBtn=document.createElement('button');moveBtn.className='btn btn-g';
-    moveBtn.style.cssText='background:rgba(90,110,248,.15);border:1px solid rgba(90,110,248,.35);color:#7b8ff5;font-weight:600';
-    moveBtn.textContent='⇄ Move to '+moveInfo.destLabel;
-    moveBtn.addEventListener('click',()=>{
-      const checked=[...modal.querySelectorAll('.bd-chk:checked')].map(c=>parseInt(c.dataset.idx));
-      if(!checked.length){notif('Nothing selected');return;}
-      // Descending order so each prepend into the destination list preserves the original top-to-bottom order
-      checked.sort((a,b)=>b-a).forEach(idx=>{
-        const card=cards[idx];
-        const data=card._serialize?card._serialize():null;
-        if(!data)return;
-        card.remove();
-        const newCard=addActualsInfluencer(moveInfo.dest,moveInfo.destAdj,data.cid);
-        if(newCard&&newCard._restoreFromData)newCard._restoreFromData(data);
+  if(moveInfo&&moveInfo.length){
+    acts.style.flexWrap='wrap';
+    moveInfo.forEach(info=>{
+      const moveBtn=document.createElement('button');moveBtn.className='btn btn-g';
+      moveBtn.style.cssText='background:rgba(90,110,248,.15);border:1px solid rgba(90,110,248,.35);color:#7b8ff5;font-weight:600';
+      moveBtn.textContent='⇄ Move to '+info.destLabel;
+      moveBtn.addEventListener('click',()=>{
+        const checked=[...modal.querySelectorAll('.bd-chk:checked')].map(c=>parseInt(c.dataset.idx));
+        if(!checked.length){notif('Nothing selected');return;}
+        // Descending order so each prepend into the destination list preserves the original top-to-bottom order
+        checked.sort((a,b)=>b-a).forEach(idx=>{
+          const card=cards[idx];
+          const data=card._serialize?card._serialize():null;
+          if(!data)return;
+          card.remove();
+          const newCard=addActualsInfluencer(info.dest,info.destAdj,data.cid);
+          if(newCard&&newCard._restoreFromData)newCard._restoreFromData(data);
+        });
+        runCalc();bg.remove();
+        notif('⇄ Moved '+checked.length+' entr'+(checked.length===1?'y':'ies')+' to '+info.destLabel);
       });
-      runCalc();bg.remove();
-      notif('⇄ Moved '+checked.length+' entr'+(checked.length===1?'y':'ies')+' to '+moveInfo.destLabel);
+      acts.appendChild(moveBtn);
     });
-    acts.appendChild(moveBtn);
   }
   acts.appendChild(delBtn);modal.appendChild(acts);
   bg.addEventListener('click',e=>{if(e.target===bg)bg.remove();});
