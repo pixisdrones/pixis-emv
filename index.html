@@ -2340,6 +2340,11 @@ function buildInfCard(opts){
     if(!d)return;
     if(d.pl&&platSel.querySelector('option[value="'+d.pl+'"]'))platSel.value=d.pl;
     valImpInp.value=d.valImp||getPlCPM(platSel.value)||0;
+    // platSel.value was just set directly (no 'change' event), so the post-type
+    // dropdown still has whichever platform's options it was built with at
+    // construction time (Instagram's, by default) — rebuild it for the actual
+    // restored platform before trying to match d.postType against its options.
+    rebuildPostTypeOpts(platSel.value);
     if(d.postType&&postTypeSel){
       const opts=Array.from(postTypeSel.options).map(o=>o.value);
       const match=opts.find(v=>v===d.postType)||opts[0];
