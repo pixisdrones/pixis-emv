@@ -3804,9 +3804,11 @@ function renderProgramShows(){
 // per-post metric breakdown tables (Metric / Measurement / QTY / Est. EMV).
 // The reach metric (always the first entry in ENG_TYPES for that platform —
 // Est. Views / Views / Impressions) is always included, even at zero, and
-// shown as an effective CPM ($ rate × 1,000); every other metric is shown as
-// a flat cost-per-engagement rate and only included when its quantity is
-// nonzero, so posts aren't cluttered with unused engagement types.
+// labeled as CPM-priced; every other metric is labeled as Cost per Engagement
+// and only included when its quantity is nonzero, so posts aren't cluttered
+// with unused engagement types. The Measurement column names the pricing
+// method only (CPM / Cost per Engagement) — the actual $ rate is proprietary
+// and isn't shown in client-facing reports.
 function _pdfCardMetricRows(card,pl){
   const ser=card._serialize?card._serialize():{};
   const engQtys=ser.engQtys||{};const engVals=ser.engVals||{};
@@ -3819,7 +3821,7 @@ function _pdfCardMetricRows(card,pl){
     const isReach=idx===0;
     if(!isReach&&qty===0)return;
     const emv=qty*val*adj;
-    const measurement=isReach?('$'+(val*1000).toFixed(2)+' CPM'):('$'+val.toFixed(3)+'/eng');
+    const measurement=isReach?'CPM':'Cost per Engagement';
     rows.push({label:t.n,measurement,qty,emv});
   });
   if(!rows.length)rows.push({label:'Post',measurement:'—',qty:0,emv:0});
