@@ -31,8 +31,8 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .tab{padding:9px 24px;border:none;background:transparent;color:var(--dm);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;letter-spacing:.04em;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px}
 .tab.on{background:linear-gradient(135deg,var(--ind),#3a4fc8);color:#fff;box-shadow:0 3px 14px rgba(90,110,248,.35)}
 .badge{font-size:9px;background:rgba(255,255,255,.15);padding:2px 5px;border-radius:4px;letter-spacing:.06em}
-.panel{background:var(--s2);border:1px solid var(--bd);border-radius:14px;margin-bottom:12px;overflow:hidden}
-.ph{padding:16px 20px;background:var(--s3);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .15s}
+.panel{background:var(--s2);border:1px solid var(--bd);border-radius:14px;margin-bottom:12px}
+.ph{padding:16px 20px;background:var(--s3);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background .15s;position:sticky;top:0;z-index:5;border-radius:14px 14px 0 0}
 .ph:hover{background:var(--s4)}
 .ph-l{display:flex;align-items:center;gap:10px}
 .ph-num{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
@@ -41,8 +41,9 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .ph-total{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--gld)}
 .arr{font-size:11px;color:var(--ft);transition:transform .22s}
 .panel.open .arr{transform:rotate(180deg)}
+.panel:not(.open) .ph{border-radius:14px}
 .pb{display:none}
-.panel.open .pb{display:block}
+.panel.open .pb{display:block;overflow:hidden;border-radius:0 0 14px 14px}
 .sdg{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:14px;padding:20px}
 .ff{display:flex;flex-direction:column;gap:5px}
 .fl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ft)}
