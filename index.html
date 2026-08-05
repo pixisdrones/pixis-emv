@@ -3800,6 +3800,53 @@ function renderProgramShows(){
   if(avgEl)avgEl.textContent=programShows.length>0?fmt(totalEMV/programShows.length):'$0';
 }
 
+// Builds one row per engagement metric for a single post/card, for the PDF's
+// per-post metric breakdown tables (Metric / Measurement / QTY / Est. EMV).
+// The reach metric (always the first entry in ENG_TYPES for that platform —
+// Est. Views / Views / Impressions) is always included, even at zero, and
+// shown as an effective CPM ($ rate × 1,000); every other metric is shown as
+// a flat cost-per-engagement rate and only included when its quantity is
+// nonzero, so posts aren't cluttered with unused engagement types.
+function _pdfCardMetricRows(card,pl){
+  const ser=card._serialize?card._serialize():{};
+  const engQtys=ser.engQtys||{};const engVals=ser.engVals||{};
+  const adj=ser.adjFactor||1;
+  const types=ENG_TYPES[pl]||[];
+  const rows=[];
+  types.forEach((t,idx)=>{
+    const qty=parseFloat(engQtys[t.id])||0;
+    const val=parseFloat(engVals[t.id])||0;
+    const isReach=idx===0;
+    if(!isReach&&qty===0)return;
+    const emv=qty*val*adj;
+    const measurement=isReach?('$'+(val*1000).toFixed(2)+' CPM'):('$'+val.toFixed(3)+'/eng');
+    rows.push({label:t.n,measurement,qty,emv});
+  });
+  if(!rows.length)rows.push({label:'Post',measurement:'—',qty:0,emv:0});
+  return rows;
+}
+// Renders the metric rows for a group of posts (already grouped by platform)
+// with the Handle cell vertically merged (rowspan) across each post's own
+// metric rows, hyperlinked once per post.
+function _pdfMetricGroupRows(posts,HC,fmtEmv){
+  let html='';
+  posts.forEach(post=>{
+    const nameCell=post.url
+      ?'<a data-href="'+post.url+'" style="font-weight:600;color:'+HC+';text-decoration:underline">'+post.nm+'</a>'
+      :'<span style="font-weight:600">'+post.nm+'</span>';
+    const n=post.rows.length;
+    post.rows.forEach((r,i)=>{
+      html+='<tr>';
+      if(i===0)html+='<td rowspan="'+n+'" style="padding:6px 9px;border:1px solid #e5e7eb;vertical-align:middle">'+nameCell+'</td>';
+      html+='<td style="padding:6px 9px;border:1px solid #e5e7eb">'+r.label+'</td>'
+        +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+r.measurement+'</td>'
+        +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+r.qty.toLocaleString()+'</td>'
+        +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmtEmv(r.emv)+'</td></tr>';
+    });
+  });
+  return html;
+}
+
 async function genPdf(){
   const btn=$('btn-pdf');btn.disabled=true;btn.textContent='Building...';
   try{
@@ -3888,40 +3935,31 @@ async function genPdf(){
         document.querySelectorAll('#inf-list-'+sec.id+' .inf-card').forEach(card=>{
           if(!card._getEMV)return;
           const rawEmv=card._getEMV();
-          const ser=card._serialize?card._serialize():{};
           const pl=card._platSel?.value||'other';
           const nm=card._nameInp?.value||card.querySelector('input[type="text"]')?.value||'Unknown';
           const url=card._urlInp?.value||'';
-          const views=(ser.engQtys?.view)||card._followerCount||0;
-          const totalEng=Object.entries(ser.engQtys||{}).filter(([k])=>k!=='view').reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+          const rows=_pdfCardMetricRows(card,pl);
           secTot+=rawEmv;
           if(!byPlat[pl])byPlat[pl]=[];
-          byPlat[pl].push({rawEmv,nm,url,views,totalEng});
+          byPlat[pl].push({rawEmv,nm,url,rows});
         });
         if(!Object.keys(byPlat).length)continue;
         if(_pendingPesoHeader){await stamp(_pendingPesoHeader);_pendingPesoHeader=null;}
         const _secHdrHtml='<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">'+sec.num+'. '+sec.title+'</div></div>';
-        const colgrp='<colgroup><col style="width:36%"><col style="width:18%"><col style="width:18%"><col style="width:28%"></colgroup>';
+        const colgrp='<colgroup><col style="width:26%"><col style="width:22%"><col style="width:18%"><col style="width:14%"><col style="width:20%"></colgroup>';
         const tblHdr='<table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed">'+colgrp
-          +'<thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle / Username</th>'
-          +'<th style="padding:7px 9px;text-align:right">Impressions</th>'
-          +'<th style="padding:7px 9px;text-align:right">Engagements</th>'
+          +'<thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle</th>'
+          +'<th style="padding:7px 9px;text-align:left">Metric</th>'
+          +'<th style="padding:7px 9px;text-align:right">Measurement</th>'
+          +'<th style="padding:7px 9px;text-align:right">QTY</th>'
           +'<th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>';
         let _firstPlatGroup=true;
         for(const [pl,group] of Object.entries(byPlat)){
           const plLabel=PLAT_LBL[pl]||pl;
-          let rowsHTML='<tr style="background:#e8edff"><td colspan="4" style="padding:5px 9px;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:'+HC+'">'+plLabel+'</td></tr>';
-          group.forEach(c=>{
-            const nameCell=c.url
-              ?'<a data-href="'+c.url+'" style="font-weight:600;color:'+HC+';text-decoration:underline">'+c.nm+'</a>'
-              :'<span style="font-weight:600">'+c.nm+'</span>';
-            rowsHTML+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nameCell+'</td>'
-              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+c.views.toLocaleString()+'</td>'
-              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right">'+c.totalEng.toLocaleString()+'</td>'
-              +'<td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmtEmv(c.rawEmv)+'</td></tr>';
-          });
+          let rowsHTML='<tr style="background:#e8edff"><td colspan="5" style="padding:5px 9px;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:'+HC+'">'+plLabel+'</td></tr>';
+          rowsHTML+=_pdfMetricGroupRows(group,HC,fmtEmv);
           const platTot=group.reduce((s,c)=>s+c.rawEmv,0);
-          rowsHTML+='<tr style="background:#e8edff"><td colspan="3" style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:600;font-size:10px;color:'+HC+'">'+plLabel+' Total</td>'
+          rowsHTML+='<tr style="background:#e8edff"><td colspan="4" style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:600;font-size:10px;color:'+HC+'">'+plLabel+' Total</td>'
             +'<td style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:700;color:'+AC+'">'+fmtEmv(platTot)+'</td></tr>';
           await stamp((_firstPlatGroup?_secHdrHtml:'')+tblHdr+'<tbody>'+rowsHTML+'</tbody></table>');
           _firstPlatGroup=false;
@@ -4005,18 +4043,36 @@ async function genPdf(){
       }
       // Individual post tracking cards for Official Brand Social
       if(isSoc){
-        let socInfRows='';let socInfTot=0;
+        const PLAT_LBL={'ig':'Instagram','tt':'TikTok','yt':'YouTube','yts':'YouTube Shorts','xx':'X / Twitter','fb':'Facebook','rd':'Reddit','th':'Threads','qu':'Quora','li':'LinkedIn'};
+        const socByPlat={};let socInfTot=0;
         document.querySelectorAll('#inf-list-soc .inf-card').forEach(card=>{
           if(!card._getEMV)return;const emv=card._getEMV();if(!emv)return;socInfTot+=emv;
+          const pl=card._platSel?.value||'other';
           const nm=card._nameInp?.value||card.querySelector('input[type="text"]')?.value||'Unknown';
           const url=card._urlInp?.value||'';
-          const urlCell=url?'<a data-href="'+url+'" style="font-size:9px;color:#5a6ef8;word-break:break-all">'+url+'</a>':'<span style="color:#444;font-size:9px">—</span>';
-          socInfRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb"><div style="font-weight:600">'+nm+'</div><div>'+urlCell+'</div></td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
+          const rows=_pdfCardMetricRows(card,pl);
+          if(!socByPlat[pl])socByPlat[pl]=[];
+          socByPlat[pl].push({rawEmv:emv,nm,url,rows});
         });
-        if(socInfRows){
-          await stamp('<div style="margin-top:4px"><div style="font-size:10px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Post Tracking</div>'
-            +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:#f5f5f5;color:#333"><th style="padding:6px 9px;text-align:left;border:1px solid #e5e7eb">Post / Account</th><th style="padding:6px 9px;text-align:right;border:1px solid #e5e7eb">EMV</th></tr></thead>'
-            +'<tbody>'+socInfRows+'</tbody></table></div>');
+        if(Object.keys(socByPlat).length){
+          const colgrp='<colgroup><col style="width:26%"><col style="width:22%"><col style="width:18%"><col style="width:14%"><col style="width:20%"></colgroup>';
+          const tblHdr='<table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed">'+colgrp
+            +'<thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Handle</th>'
+            +'<th style="padding:7px 9px;text-align:left">Metric</th>'
+            +'<th style="padding:7px 9px;text-align:right">Measurement</th>'
+            +'<th style="padding:7px 9px;text-align:right">QTY</th>'
+            +'<th style="padding:7px 9px;text-align:right">Est. EMV</th></tr></thead>';
+          let _firstSoc=true;
+          for(const [pl,group] of Object.entries(socByPlat)){
+            const plLabel=PLAT_LBL[pl]||pl;
+            let rowsHTML2='<tr style="background:#e8edff"><td colspan="5" style="padding:5px 9px;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:'+HC+'">'+plLabel+'</td></tr>';
+            rowsHTML2+=_pdfMetricGroupRows(group,HC,fmtEmv);
+            const platTot=group.reduce((s,c)=>s+c.rawEmv,0);
+            rowsHTML2+='<tr style="background:#e8edff"><td colspan="4" style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:600;font-size:10px;color:'+HC+'">'+plLabel+' Total</td>'
+              +'<td style="padding:6px 9px;border:1px solid #d8dcf0;text-align:right;font-weight:700;color:'+AC+'">'+fmtEmv(platTot)+'</td></tr>';
+            await stamp((_firstSoc?'<div style="font-size:10px;font-weight:700;color:#333;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Individual Post Tracking</div>':'')+tblHdr+'<tbody>'+rowsHTML2+'</tbody></table>');
+            _firstSoc=false;
+          }
         }
         const socCombinedTot=socInfTot;
         await stamp('<div style="display:flex;justify-content:flex-end;margin-top:4px">'
