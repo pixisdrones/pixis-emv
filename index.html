@@ -369,6 +369,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .tw-flag.green{background:rgba(61,214,140,.15);color:#3dd68c}
 .tw-flag.yellow{background:rgba(212,168,67,.15);color:#d4a843}
 .tw-flag.red{background:rgba(240,90,90,.15);color:#f05a5a}
+.tw-flag.dup{background:rgba(90,140,240,.15);color:#6c9bf0;margin-top:4px}
 .tw-author{font-size:11px;color:var(--tx);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
 .tw-src-lbl{font-size:9.5px;color:var(--ft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
 .tw-snippet{font-size:10px;color:var(--dm);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -5438,13 +5439,29 @@ function _twFmtReach(n){
   return n>0?n.toString():'—';
 }
 
+// Duplicate check against posts already in the show — same URL match used by
+// _twImportSelected, run early so the review table can show it before import.
+function _twFindDup(f,url){
+  if(!url)return null;
+  if(f.type==='social'){
+    const card=_findInfCardByUrl('earned-oinfs',url);
+    return card?(card.querySelector('.fi[placeholder="@handle or name"]')?.value||'existing post'):null;
+  }
+  if(f.type==='press'){
+    const card=_findPressCardByUrl(url);
+    return card?(card._data?.().outlet||'existing post'):null;
+  }
+  return null;
+}
+
 function _twReflag(){
   const kws=$('tw-keywords').value.split(',');
   _twFlagged=_twRawRows.map((r,i)=>{
     const f=_twFlagRow(r,kws);
     const existing=_twFlagged[i];
     const sel=existing?._selOverride;
-    return{...r,_idx:i,...f,_sel:sel!==undefined?sel:f.flag!=='red'};
+    const dupName=_twFindDup(f,r.url);
+    return{...r,_idx:i,...f,dupName,_sel:sel!==undefined?sel:f.flag!=='red'};
   });
 }
 
@@ -5464,7 +5481,14 @@ function _twRenderTable(filter){
     const tdFlag=document.createElement('td');
     const badge=document.createElement('span');badge.className='tw-flag '+r.flag;
     badge.textContent=r.flag==='green'?'🟢 Include':r.flag==='yellow'?'🟡 Review':'🔴 Exclude';
-    tdFlag.appendChild(badge);tr.appendChild(tdFlag);
+    tdFlag.appendChild(badge);
+    if(r.dupName){
+      const dup=document.createElement('span');dup.className='tw-flag dup';
+      dup.title='Matches an existing post by URL — importing will update it instead of adding a duplicate';
+      dup.textContent='🔁 Update: '+r.dupName.substring(0,20);
+      tdFlag.appendChild(document.createElement('br'));tdFlag.appendChild(dup);
+    }
+    tr.appendChild(tdFlag);
     // Author / Source
     const tdAuth=document.createElement('td');
     const authorName=r['extra_author_attributes.name']||r['extra_source_attributes.name']||r['provider']||'—';
