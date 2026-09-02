@@ -817,18 +817,18 @@ const ENG_TYPES={
     {id:'save',  n:'Saves',    pr:0.02},
   ],
   yt:[
-    {id:'view',  n:'Views',    pr:0.70},
+    {id:'view',  n:'Est. Views',    pr:0.70, isEst:true},
     {id:'like',  n:'Likes',    pr:0.20},
     {id:'cmt',   n:'Comments', pr:0.10},
   ],
   yts:[
-    {id:'view',  n:'Views',    pr:0.65},
+    {id:'view',  n:'Est. Views',    pr:0.65, isEst:true},
     {id:'like',  n:'Likes',    pr:0.20},
     {id:'cmt',   n:'Comments', pr:0.10},
     {id:'remix', n:'Remix',    pr:0.05},
   ],
   xx:[
-    {id:'view',  n:'Views',        pr:0.40},
+    {id:'view',  n:'Est. Views',        pr:0.40, isEst:true},
     {id:'vview', n:'Video Views',  pr:0.15},
     {id:'reply', n:'Replies',      pr:0.10},
     {id:'rt',    n:'Reposts',      pr:0.10},
@@ -2433,7 +2433,7 @@ function buildPressCard(opts){
 
   const PRESS_TYPES=[['blog','Blog / Digital'],['tv','Broadcast Media (TV / Radio)'],['forum','Forum / Community'],['award','Industry Awards / Recognition'],['nl','Newsletter'],['on','Online News / Blog'],['print','Print'],['po','Podcast / Vlog']];
   const DEFAULT_CPM={blog:8,tv:25,forum:5,award:5,nl:5,on:10,print:30,po:20};
-  const DEFAULT_ADJ={blog:1.5,tv:2.5,forum:1.2,award:1.5,nl:1.2,on:2,print:1.5,po:1.8};
+  const DEFAULT_ADJ={blog:4,tv:4,forum:4,award:4,nl:4,on:4,print:4,po:4};
 
   const mkFld=(lbl,inp)=>{const f=document.createElement('div');f.className='ff';const l=document.createElement('label');l.className='fl';l.textContent=lbl;f.appendChild(l);f.appendChild(inp);return f;};
   const mkTxt=(ph,val)=>{const i=document.createElement('input');i.type='text';i.className='fi';i.placeholder=ph;if(val)i.value=val;return i;};
@@ -2502,7 +2502,7 @@ function buildPressCard(opts){
   // Row 5: CPM + adj factor
   const r5=document.createElement('div');r5.className='press-card-g2';
   const cpmInp=mkNum(d.cpm||DEFAULT_CPM[typeSel.value]||10,'0.01');
-  const adjInp=mkNum(d.adj||DEFAULT_ADJ[typeSel.value]||1.5,'0.1');
+  const adjInp=mkNum(d.adj||DEFAULT_ADJ[typeSel.value]||4,'0.1');
   r5.appendChild(mkFld('CPM Rate ($)',cpmInp));
   r5.appendChild(mkFld('Adj. Factor',adjInp));
 
@@ -2537,7 +2537,7 @@ function buildPressCard(opts){
   typeSel.addEventListener('change',()=>{
     const t=typeSel.value;
     if(!d.cpm)cpmInp.value=DEFAULT_CPM[t]||10;
-    if(!d.adj)adjInp.value=DEFAULT_ADJ[t]||1.5;
+    if(!d.adj)adjInp.value=DEFAULT_ADJ[t]||4;
     if(!d.reachPct)reachPctInp.value=PRESS_DEFAULT_REACH_PCT[t]||5;
     updateURLState();
     recalc();
@@ -5661,8 +5661,8 @@ function _twImportSelected(){
       const url=r.url||'';
       const reach=parseFloat(r.reach||0);
       const DEFAULT_CPM={on:10,blog:8,nl:5,tv:25,po:20};
-      const DEFAULT_ADJ={on:2,blog:1.5,nl:1.2,tv:2.5,po:1.8};
-      const data={outlet,url,headline,mtype,reach,cpm:DEFAULT_CPM[mtype]||10,adj:DEFAULT_ADJ[mtype]||1.5};
+      const DEFAULT_ADJ={on:4,blog:4,nl:4,tv:4,po:4};
+      const data={outlet,url,headline,mtype,reach,cpm:DEFAULT_CPM[mtype]||10,adj:DEFAULT_ADJ[mtype]||4};
       const existing=url?_findPressCardByUrl(url):null;
       if(existing){
         if(existing._updateFromData)existing._updateFromData(data);
