@@ -4873,18 +4873,22 @@ function svShowHistory(entry){
   bg.appendChild(modal);document.body.appendChild(bg);
 }
 
-function svRenderList(){
-  // Merge local + cloud shows
+// Merge local + cloud shows — the single source of truth for "all saved shows",
+// shared by svRenderList (what's shown) and genProgramReport (what's selectable),
+// so a cloud-only show's checkbox always matches a real entry to select.
+function svGetMerged(){
   const local=svGetAll();
   const cloudMap=_cloudShows||{};
   const cloudKeys=new Set(Object.keys(cloudMap));
   const merged=[];
-  // Cloud shows first
   Object.entries(cloudMap).forEach(([key,data])=>{merged.push({...data,key,_isCloud:true});});
-  // Local-only shows (not in cloud)
   local.forEach(entry=>{if(!cloudKeys.has(entry.key))merged.push(entry);});
-  // Sort newest first
   merged.sort((a,b)=>new Date(b.savedAt)-new Date(a.savedAt));
+  return merged;
+}
+
+function svRenderList(){
+  const merged=svGetMerged();
 
   const cnt=$('sv-cnt');if(cnt)cnt.textContent=merged.length;
   const wrap=$('sv-list-wrap');if(!wrap)return;
@@ -5859,7 +5863,7 @@ function calcShowFromData(state){
 }
 
 async function genProgramReport(){
-  const all=svGetAll();
+  const all=svGetMerged();
   const selected=all.filter(e=>{const cb=document.querySelector('.sv-check[data-key="'+e.key+'"]');return cb&&cb.checked;});
   if(!selected.length){notif('Select at least one show');return;}
   const btn=$('btn-prog-report');btn.disabled=true;btn.textContent='Building\u2026';
