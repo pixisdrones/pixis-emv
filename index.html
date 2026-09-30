@@ -553,11 +553,13 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           <div class="psec">2 &#8212; Hard Inputs</div>
           <div class="pstack">
             <div class="ff"><label class="fl">Expected Attendance</label><input class="fi" type="number" id="p-at" value="10000"></div>
-            <div class="ff"><label class="fl">Client Social Following</label><input class="fi" type="number" id="p-fl" value="500000"></div>
             <div class="ff"><label class="fl">Show Duration (mins)</label><input class="fi" type="number" id="p-du" value="12"></div>
             <div class="ff"><label class="fl">Show Cost ($)</label><input class="fi" type="number" id="p-co" value="75000"></div>
             <div class="ff"><label class="fl">Shows in Program</label><input class="fi" type="number" id="p-ns" value="1"></div>
           </div>
+          <div class="psec" style="margin-top:14px">Social Following by Channel</div>
+          <div class="cnote" style="margin:0 0 10px">Drives the reach estimate for Planned Social Posts below, and seeds the starting follower count for new Influencer Integration and Collab Social Media entries (each stays independently editable).</div>
+          <table class="vt" id="pred-follow-tbl"><thead><tr><th>Platform</th><th>Following</th></tr></thead><tbody id="pred-follow-body"></tbody></table>
           <div class="psec">3 &#8212; Show Type / Virality</div>
           <select class="fi" id="p-st" style="cursor:pointer;margin-bottom:10px">
             <option value="corp">Corporate / Private</option>
@@ -874,8 +876,25 @@ function loadBM(){try{const s=localStorage.getItem(BM_KEY);if(s)BM={...BM_DEFAUL
 function saveBM(){try{localStorage.setItem(BM_KEY,JSON.stringify(BM));}catch{}}
 function getPlCPM(p){return BM['cpm_'+p]||10;}
 function getPlReach(p){return(BM['reach_'+p]||20)/100;}
+function getPredFollowing(p){return parseFloat($('p-fl-'+p)?.value)||0;}
+function buildPredFollowTable(){
+  const tb=$('pred-follow-body');if(!tb||tb.childElementCount)return;
+  PLATS.forEach(([p,pn])=>{
+    const tr=document.createElement('tr');
+    const tdN=document.createElement('td');tdN.textContent=pn;
+    const tdI=document.createElement('td');
+    const inp=document.createElement('input');
+    inp.type='number';inp.className='fi';inp.id='p-fl-'+p;inp.min=0;inp.step=1;
+    inp.value=p==='ig'?500000:0;// preserves the tool's old single-following default, which only ever modeled Instagram
+    inp.style.cssText='width:100%;padding:5px 6px';
+    tdI.appendChild(inp);
+    tr.appendChild(tdN);tr.appendChild(tdI);tb.appendChild(tr);
+  });
+}
 function getPlVEng(p){return BM['veng_'+p]||0.08;}
 const PLATS=[['ig','Instagram'],['tt','TikTok'],['yt','YouTube'],['yts','YouTube Shorts'],['xx','X / Twitter'],['fb','Facebook'],['rd','Reddit'],['th','Threads'],['qu','Quora'],['li','LinkedIn']];
+const PRED_FOLLOW_IDS=PLATS.map(([p])=>'p-fl-'+p);
+function resetPredFollowDefaults(){PLATS.forEach(([p])=>{const e=$('p-fl-'+p);if(e)e.value=p==='ig'?500000:0;});}
 // Post type options per platform: [multiplier_value, display_name]
 const PLAT_POST_TYPES={
   ig:[['1.5','Reel'],['1.0','Static / Photo'],['1.2','Carousel'],['0.3','Story']],
@@ -1042,6 +1061,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   wireEvents();
   buildVirTable();
   buildMults();
+  buildPredFollowTable();
   runCalc();
   runCalcP();
   // Seed saved shows from embedded export data (if present and local is empty)
@@ -1318,7 +1338,7 @@ function wireEvents(){
     };
     rd.readAsDataURL(f);
   });
-  ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
+  ['p-cl','p-sn','p-dt','p-lo','p-at','p-du','p-co','p-ns','p-wh','p-wr','p-wc',...PRED_FOLLOW_IDS].forEach(id=>{
     const el=$(id);if(el)el.addEventListener('input',calcPDebounced);
   });
   $('btn-add-post').addEventListener('click',addPlannedPost);
@@ -2081,7 +2101,7 @@ function buildInfCard(opts){
 
   // Row 2: followers + eng% + (prediction only) status
   const r2=document.createElement('div');r2.className='inf-g3';
-  const follInp=mkNum(100000,1,0);const engInp=mkNum(3.5,'0.1',0);
+  const follInp=mkNum(isPred?getPredFollowing(platSel.value):100000,1,0);const engInp=mkNum(3.5,'0.1',0);
   r2.appendChild(mkFld('Followers',follInp));r2.appendChild(mkFld('Engagement %',engInp,'% of followers'));
   if(isPred&&!(sec&&sec.partnerField)){
     const statSel=mkSel([['org','Organic / Earned'],['paid','Paid / Contracted']]);
@@ -2092,6 +2112,20 @@ function buildInfCard(opts){
   }
   card._follInp=follInp;
   card._engInp=engInp;
+  // Prediction cards seed Followers from the per-channel "Social Following by
+  // Channel" table (Section 2) whenever the platform changes — but only until
+  // the user manually edits the field, same override pattern as the actuals
+  // Est. Views auto-estimate. Guarded so the sync's own dispatched 'input'
+  // isn't mistaken for a manual edit.
+  let _followSyncing=false,_predFollowSynced=true;
+  const _syncPredFollower=pl=>{
+    if(!isPred||!_predFollowSynced)return;
+    _followSyncing=true;
+    follInp.value=getPredFollowing(pl);
+    follInp.dispatchEvent(new Event('input'));
+    _followSyncing=false;
+  };
+  if(isPred)follInp.addEventListener('input',()=>{if(!_followSyncing)_predFollowSynced=false;});
 
   // Row 3: auto-computed stats
   const statsWrap=document.createElement('div');statsWrap.className='inf-g3';statsWrap.style.marginTop='8px';
@@ -2280,6 +2314,7 @@ function buildInfCard(opts){
     rebuildPostTypeOpts(pl);
     updateFollowersLabel(pl);
     buildEngTypeRows(pl);
+    _syncPredFollower(pl);
     recalc();
   });
   if(isPred)[follInp,engInp,valImpInp].forEach(i=>i.addEventListener('input',recalc));
@@ -3601,16 +3636,19 @@ function addPredCollabInfluencer(){
 
 function runCalcP(){
   const sel=$('p-st').value;const v=VIR[sel];
-  const at=parseFloat($('p-at').value)||0;const fl=parseFloat($('p-fl').value)||0;
+  const at=parseFloat($('p-at').value)||0;
   const du=parseFloat($('p-du').value)||0;const co=parseFloat($('p-co').value)||0;
   const ns=parseFloat($('p-ns').value)||1;
   const womHits=parseFloat($('p-wh')?.value)||20;
   const womReach=parseFloat($('p-wr')?.value)||100000;
   const womCPM=parseFloat($('p-wc')?.value)||10;
   const oohSpec=(at/1000)*v.cpm*v.adj;const oohDur=at*du*0.20;const oohTot=oohSpec+oohDur;
-  const reach=fl*(BM.reach_ig/100||0.03);
   let offSoc=0;
-  plannedPosts.forEach(p=>{if(PCPM[p.pl]&&PLAT_ADJ[p.pl])offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];});
+  plannedPosts.forEach(p=>{
+    if(!PCPM[p.pl]||!PLAT_ADJ[p.pl])return;
+    const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
+    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];
+  });
   const ugc=(at*v.sh*500/1000)*8*v.adj;
   let infTot=0;
   document.querySelectorAll('#inf-list .inf-card').forEach(card=>{
@@ -3712,7 +3750,8 @@ function runCalcP(){
   $('b3l').textContent='Engagement Duration ('+at.toLocaleString()+' \xd7 '+du+'min \xd7 $0.20)';$('b3v').textContent=fmt(oohDur);
   $('b4l').textContent='[O1+S] Social / UGC Total';$('b4v').textContent=fmt(socTot);
   const totalPosts=plannedPosts.reduce((s,p)=>s+p.count,0);
-  $('b5l').textContent='Owned: Official Posts ('+totalPosts+' posts, '+fl.toLocaleString()+' following)';$('b5v').textContent=fmt(offSoc);
+  const channelCount=new Set(plannedPosts.map(p=>p.pl)).size;
+  $('b5l').textContent='Owned: Official Posts ('+totalPosts+' post'+(totalPosts!==1?'s':'')+' across '+channelCount+' channel'+(channelCount!==1?'s':'')+')';$('b5v').textContent=fmt(offSoc);
   $('b6l').textContent='Shared: Earned UGC (~'+Math.round(at*v.sh).toLocaleString()+' creators \xd7 500 avg followers)';$('b6v').textContent=fmt(ugc);
   $('b7l').textContent='Shared: Collab Social Posts ('+collabN+' post'+(collabN!==1?'s':'')+')';$('b7v').textContent=fmt(collabPredTot);
   $('b8l').textContent='Paid/Earned: Influencer Integration ('+infN+' influencer'+(infN!==1?'s':'')+')';$('b8v').textContent=fmt(infTot);
@@ -3725,8 +3764,9 @@ function resetPred(){
   $('inf-list').innerHTML='';infCount=0;
   $('pred-collab-list').innerHTML='';predCollabCount=0;
   programShows=[];renderProgramShows();
-  [['p-cl',''],['p-sn',''],['p-dt',''],['p-lo',''],['p-at','10000'],['p-fl','500000'],['p-du','12'],['p-co','75000'],['p-ns','1'],
+  [['p-cl',''],['p-sn',''],['p-dt',''],['p-lo',''],['p-at','10000'],['p-du','12'],['p-co','75000'],['p-ns','1'],
    ['p-wh','20'],['p-wr','100000'],['p-wc','10']].forEach(([id,val])=>{const e=$(id);if(e)e.value=val;});
+  resetPredFollowDefaults();
   plannedPosts=[];ppCount=0;renderPlannedPosts();
   $('p-st').value='cult';buildVirTable();buildMults();runCalcP();
   window._currentPredKey=null;window._currentPredName=null;
@@ -3740,12 +3780,15 @@ function notif(msg){
 }
 
 // ── PROGRAM BUILDER (Prediction) ─────────────────────────────────────────────
-function calcShowEMVRaw(at,fl,du,st,postsSnap,womHits,womReach,womCPM){
+function calcShowEMVRaw(at,du,st,postsSnap,womHits,womReach,womCPM){
   const v=VIR[st]||VIR.cult;
   const oohSpec=(at/1000)*v.cpm*v.adj;const oohDur=at*du*0.20;const oohTot=oohSpec+oohDur;
-  const reach=fl*(BM.reach_ig/100||0.03);
   let offSoc=0;
-  (postsSnap||[]).forEach(p=>{if(PCPM[p.pl]&&PLAT_ADJ[p.pl])offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];});
+  (postsSnap||[]).forEach(p=>{
+    if(!PCPM[p.pl]||!PLAT_ADJ[p.pl])return;
+    const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
+    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];
+  });
   const ugc=(at*v.sh*500/1000)*8*v.adj;
   const contTot=7300;
   const womTot=(womHits||20)*((womReach||100000)/1000)*(womCPM||10);
@@ -3753,7 +3796,7 @@ function calcShowEMVRaw(at,fl,du,st,postsSnap,womHits,womReach,womCPM){
 }
 
 function addCurrentShowToProgram(){
-  const at=parseFloat($('p-at').value)||0,fl=parseFloat($('p-fl').value)||0;
+  const at=parseFloat($('p-at').value)||0;
   const du=parseFloat($('p-du').value)||0,co=parseFloat($('p-co').value)||0;
   const st=$('p-st').value;
   const postsSnap=JSON.parse(JSON.stringify(plannedPosts));
@@ -3762,9 +3805,9 @@ function addCurrentShowToProgram(){
   const womCPM=parseFloat($('p-wc')?.value)||10;
   let infTot=0;
   document.querySelectorAll('#inf-list .inf-card').forEach(card=>{if(card._getEMV)infTot+=card._getEMV();});
-  const emv=calcShowEMVRaw(at,fl,du,st,postsSnap,womHits,womReach,womCPM)+infTot;
+  const emv=calcShowEMVRaw(at,du,st,postsSnap,womHits,womReach,womCPM)+infTot;
   const sn=$('p-sn').value.trim()||('Show '+(programShows.length+1));
-  programShows.push({name:sn,at,fl,du,co,st,emv});
+  programShows.push({name:sn,at,du,co,st,emv});
   renderProgramShows();runCalcP();
   notif('\u2713 "'+sn+'" added to program');
 }
@@ -4998,7 +5041,7 @@ function predSetAll(arr){
 
 function predSerialize(){
   const fields={};
-  ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
+  ['p-cl','p-sn','p-dt','p-lo','p-at','p-du','p-co','p-ns','p-wh','p-wr','p-wc',...PRED_FOLLOW_IDS].forEach(id=>{
     const e=$(id);if(e)fields[id]=e.value;
   });
   fields['p-st']=$('p-st')?.value||'cult';
@@ -5014,9 +5057,12 @@ function predDeserialize(state){
   $('inf-list').innerHTML='';infCount=0;
   $('pred-collab-list').innerHTML='';predCollabCount=0;
   const f=state.fields||{};
-  ['p-cl','p-sn','p-dt','p-lo','p-at','p-fl','p-du','p-co','p-ns','p-wh','p-wr','p-wc'].forEach(id=>{
+  ['p-cl','p-sn','p-dt','p-lo','p-at','p-du','p-co','p-ns','p-wh','p-wr','p-wc',...PRED_FOLLOW_IDS].forEach(id=>{
     const e=$(id);if(e&&f[id]!==undefined)e.value=f[id];
   });
+  // Migrate pre-per-channel saves: the old single "Client Social Following" field
+  // only ever modeled Instagram's reach rate, so fold it into p-fl-ig specifically.
+  if(f['p-fl']!==undefined&&f['p-fl-ig']===undefined){const e=$('p-fl-ig');if(e)e.value=f['p-fl'];}
   if(f['p-st']){$('p-st').value=f['p-st'];}
   buildVirTable();buildMults();
   plannedPosts=JSON.parse(JSON.stringify(state.plannedPosts||[]));
@@ -5041,7 +5087,10 @@ function predDeserialize(state){
     if(card._statSel&&d.status)card._statSel.value=d.status;
     if(card._follInp&&d.predFollowers)card._follInp.value=d.predFollowers;
     if(card._engInp&&d.predEngPct!==undefined)card._engInp.value=d.predEngPct;
-    if(card._follInp)card._follInp.dispatchEvent(new Event('input'));
+    // Only mark as a user override (and force a recalc) when a real saved value
+    // exists — otherwise leave the fresh per-channel default already in place
+    // from addInfluencer()/the platform-change handler untouched.
+    if(card._follInp&&d.predFollowers)card._follInp.dispatchEvent(new Event('input'));
   });
   // Restore predicted Collab Social Media cards
   const collabCards=state.infCardsCollab||[];
@@ -5056,7 +5105,7 @@ function predDeserialize(state){
     if(card._setPhotoUrl&&d.photoUrl)card._setPhotoUrl(d.photoUrl);
     if(card._follInp&&d.predFollowers)card._follInp.value=d.predFollowers;
     if(card._engInp&&d.predEngPct!==undefined)card._engInp.value=d.predEngPct;
-    if(card._follInp)card._follInp.dispatchEvent(new Event('input'));
+    if(card._follInp&&d.predFollowers)card._follInp.dispatchEvent(new Event('input'));
   });
   runCalcP();
 }
@@ -5206,10 +5255,13 @@ async function genPredPdf(){
     };
     const gv=id=>$(id)?.value||'--';
     const sel=$('p-st').value,vir=VIR[sel];
-    const at=parseFloat($('p-at').value)||0,fl=parseFloat($('p-fl').value)||0,du=parseFloat($('p-du').value)||0,co=parseFloat($('p-co').value)||0,ns=parseFloat($('p-ns').value)||1;
+    const at=parseFloat($('p-at').value)||0,du=parseFloat($('p-du').value)||0,co=parseFloat($('p-co').value)||0,ns=parseFloat($('p-ns').value)||1;
     const oohSpec=(at/1000)*vir.cpm*vir.adj,oohDur=at*du*.20,oohTot=oohSpec+oohDur;
-    const reach=fl*(BM.reach_ig/100||0.03);
-    let offSoc=0;plannedPosts.forEach(p=>{if(PCPM[p.pl]&&PLAT_ADJ[p.pl])offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];});
+    let offSoc=0;plannedPosts.forEach(p=>{
+      if(!PCPM[p.pl]||!PLAT_ADJ[p.pl])return;
+      const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
+      offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];
+    });
     const ugc=(at*vir.sh*500/1000)*8*vir.adj;
     let infTot=0,infRows='';
     document.querySelectorAll('#inf-list .inf-card').forEach(card=>{
@@ -5240,7 +5292,7 @@ async function genPredPdf(){
       +'<div><strong>Client:</strong> '+gv('p-cl')+'</div><div><strong>Show:</strong> '+gv('p-sn')+'</div>'
       +'<div><strong>Date:</strong> '+gv('p-dt')+'</div><div><strong>Location:</strong> '+gv('p-lo')+'</div>'
       +'<div><strong>Show Type:</strong> '+vir.l+'</div><div><strong>Shows in Program:</strong> '+progNs+'</div>'
-      +'<div><strong>Attendance:</strong> '+at.toLocaleString()+'</div><div><strong>Following:</strong> '+fl.toLocaleString()+'</div>'
+      +'<div><strong>Attendance:</strong> '+at.toLocaleString()+'</div><div><strong>Following:</strong> '+(PLATS.map(([p])=>{const v=getPredFollowing(p);return v>0?(p.toUpperCase()+' '+_twFmtReach(v)):null;}).filter(Boolean).join(' \xb7 ')||'--')+'</div>'
       +'<div><strong>Duration:</strong> '+du+' min</div><div><strong>Cost/Show:</strong> '+(co>0?fmt(co):'--')+'</div>'
       +'<div><strong>WOM Hits:</strong> '+womHits+'</div><div><strong>WOM Reach/Hit:</strong> '+womReach.toLocaleString()+' @ $'+womCPM+' CPM</div>'
       +'</div></div>');
