@@ -5351,13 +5351,16 @@ async function genPredPdf(){
       const head='<div style="border:1px solid '+outlineColor+';border-top:4px solid '+topColor+';border-radius:6px;padding:13px">'
         +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:'+labelColor+';letter-spacing:.1em;margin-bottom:5px">'+label+'</div>';
       if(progNs>1){
+        // Per Show and Program are the same category scaled uniformly, so the bar
+        // (a proportion of the category's share of the total) is identical either
+        // way — shown once, above the Per Show section, instead of duplicated.
         const section=(eyebrow,scale)=>'<div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;white-space:nowrap">'+eyebrow+'</div>'
           +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(val*scale)+'</div>'
-          +pBar(val*scale,pesoTotal*scale,topColor)
           +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">'+detailFn(scale)+'</div>';
         return head
           +'<div style="font-size:9px;color:#888;margin-bottom:6px">'+desc+'</div>'
-          +section('Per Show',1)
+          +pBar(val,pesoTotal,topColor)
+          +'<div style="margin-top:8px">'+section('Per Show',1)+'</div>'
           +'<div style="border-top:1px solid #ddd;margin-top:10px;padding-top:8px">'+section('Program',progScale)+'</div>'
           +'</div>';
       }
