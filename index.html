@@ -5284,16 +5284,6 @@ async function genPredPdf(){
     else{progT=perShow*ns;progCost=co*ns;progNs=ns;}
     const roi=x=>progCost>0?(x/progCost).toFixed(1)+'x':'--';// program-cost-denominated
     const roiPerShow=x=>co>0?(x/co).toFixed(1)+'x':'--';// single-show-cost-denominated
-    // Scenario grid: when no heterogeneous Program Builder shows are captured, the
-    // grid is genuinely per-show (title says so) — Target previously always showed
-    // the full program-scaled total here, overstating per-show value by Nx, and
-    // Conservative/Optimistic's ROI divided a per-show dollar figure by the full
-    // program cost. Both are now consistently per-show in that case.
-    const usingCapturedProgram=programShows.length>0;
-    const scenTarget=usingCapturedProgram?progT:perShow;
-    const scenCons=usingCapturedProgram?progT*0.5:cons;
-    const scenOpt=usingCapturedProgram?progT*1.7:opt;
-    const scenRoi=x=>usingCapturedProgram?roi(x):roiPerShow(x);
     await stamp('<div style="background:'+HC+';color:#fff;padding:30px 36px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
       +'<div style="display:flex;align-items:center;gap:14px"><img src="'+PIXIS_LOGO_2C+'" style="height:38px;object-fit:contain">'
       +'<div><div style="font-size:11px;color:#9ba8cc;text-transform:uppercase;letter-spacing:.1em">Predictive Media Valuation</div><div style="font-size:10px;color:#6a7a99;margin-top:2px">Pre-Show Forecast</div></div></div>'
@@ -5333,23 +5323,40 @@ async function genPredPdf(){
         +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Show</th><th style="padding:7px 9px;text-align:right">Attendance</th><th style="padding:7px 9px;text-align:left">Type</th><th style="padding:7px 9px;text-align:right">Cost</th><th style="padding:7px 9px;text-align:right">Target EMV</th></tr></thead>'
         +'<tbody>'+pbRows+'</tbody></table></div>');
     }
-    const scTitle=usingCapturedProgram?'Predicted Value \u2014 Program Scenarios ('+progNs+' Shows)':'Predicted Value \u2014 3 Scenarios (Per Show)';
-    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">'+scTitle+'</div>'
+    // Scenario cards: a "Per Show" row (always shown, from this show's own current
+    // inputs) duplicated into a "Program Total" row whenever the program has more
+    // than one show \u2014 whether that total came from the flat "Shows in Program"
+    // multiplier or from captured Program Builder shows. A row label only appears
+    // once there's more than one row to tell apart.
+    const scenarioRow=(consVal,targetVal,optVal,roiFn,rowLabel)=>
+      (rowLabel?'<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:.08em;margin-bottom:6px">'+rowLabel+'</div>':'')
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px">'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:5px">Conservative</div><div style="font-size:20px;font-weight:700;color:#555">'+fmt(scenCons)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+scenRoi(scenCons)+'</div></div>'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+HC+';margin-bottom:5px">Target</div><div style="font-size:20px;font-weight:700;color:'+HC+'">'+fmt(scenTarget)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+scenRoi(scenTarget)+'</div></div>'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(scenOpt)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+scenRoi(scenOpt)+'</div></div></div>'
-      +(progNs>1&&!usingCapturedProgram?'<div style="background:#f0f2ff;border:1px solid #c8d0f0;border-radius:6px;padding:11px 14px;font-size:10px"><strong style="color:'+HC+'">Program Total ('+progNs+' shows):</strong> Conservative '+fmt(cons*progNs)+' \u2014 Target '+fmt(progT)+' \u2014 Optimistic '+fmt(opt*progNs)+'</div>':'')+'</div>');
-    // PESO breakdown (per-show target values)
+      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:5px">Conservative</div><div style="font-size:20px;font-weight:700;color:#555">'+fmt(consVal)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(consVal)+'</div></div>'
+      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+HC+';margin-bottom:5px">Target</div><div style="font-size:20px;font-weight:700;color:'+HC+'">'+fmt(targetVal)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(targetVal)+'</div></div>'
+      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(optVal)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(optVal)+'</div></div></div>';
+    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">Predicted Value \u2014 3 Scenarios</div>'
+      +scenarioRow(cons,perShow,opt,roiPerShow,progNs>1?'Per Show':'')
+      +(progNs>1?scenarioRow(progT*0.5,progT,progT*1.7,roi,'Program Total ('+progNs+' Shows)'):'')
+      +'</div>');
+    // PESO breakdown (per-show target values, optionally split with a program-total
+    // column per category -- scaled by the program's own EMV ratio so the four
+    // categories always foot to the program total shown in the scenario cards above)
     const pesoP=infTot,pesoE=oohTot+womTot,pesoS=ugc+collabPredTot,pesoO=offSoc+contTot;
     const pesoTotal=pesoP+pesoE+pesoS+pesoO;
     const pBar=(val,total,color)=>{const pct=total>0?Math.round(val/total*100):0;return '<div style="height:7px;border-radius:4px;background:#e8e8e8;margin-top:5px"><div style="height:100%;width:'+pct+'%;border-radius:4px;background:'+color+'"></div></div>';};
-    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Value Breakdown \u2014 Per Show (Target)</div>'
+    const progScale=pesoTotal>0?progT/pesoTotal:progNs;
+    const pesoValueHTML=val=>progNs>1
+      ?'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1px">'
+        +'<div><div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;white-space:nowrap">Per Show</div><div style="font-size:17px;font-weight:700;color:#333">'+fmt(val)+'</div></div>'
+        +'<div style="border-left:1px solid #ddd;padding-left:8px"><div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;white-space:nowrap">Program</div><div style="font-size:17px;font-weight:700;color:#333">'+fmt(val*progScale)+'</div></div>'
+        +'</div>'
+      :'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(val)+'</div>';
+    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Value Breakdown</div>'
       +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">'
       // P — Paid / OOH
       +'<div style="border:1px solid #fdd;border-top:4px solid #e85d04;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#e85d04;letter-spacing:.1em;margin-bottom:5px">P \u2014 Paid</div>'
-      +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoP)+'</div>'
+      +pesoValueHTML(pesoP)
       +'<div style="font-size:9px;color:#888;margin-bottom:6px">Contracted Influencers</div>'
       +pBar(pesoP,pesoTotal,'#e85d04')
       +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Influencer integration:<br>'+fmt(infTot)+'</div>'
@@ -5357,7 +5364,7 @@ async function genPredPdf(){
       // E — Earned / WOM
       +'<div style="border:1px solid #ffd;border-top:4px solid '+AC+';border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:'+AC+';letter-spacing:.1em;margin-bottom:5px">E \u2014 Earned</div>'
-      +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoE)+'</div>'
+      +pesoValueHTML(pesoE)
       +'<div style="font-size:9px;color:#888;margin-bottom:6px">Live Audience + Press / Media</div>'
       +pBar(pesoE,pesoTotal,AC)
       +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Live Audience: '+fmt(oohTot)+'<br>Press &amp; Media: '+fmt(womTot)+'</div>'
@@ -5365,7 +5372,7 @@ async function genPredPdf(){
       // S — Shared / Social
       +'<div style="border:1px solid #eef;border-top:4px solid #5a6ef8;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#5a6ef8;letter-spacing:.1em;margin-bottom:5px">S \u2014 Shared</div>'
-      +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoS)+'</div>'
+      +pesoValueHTML(pesoS)
       +'<div style="font-size:9px;color:#888;margin-bottom:6px">UGC / Earned Social + Collab Posts</div>'
       +pBar(pesoS,pesoTotal,'#5a6ef8')
       +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Est. '+(Math.round(at*(vir.sh||0))).toLocaleString()+' UGC creators \xd7 500 avg followers: '+fmt(ugc)+'<br>Collab social posts: '+fmt(collabPredTot)+'</div>'
@@ -5373,23 +5380,11 @@ async function genPredPdf(){
       // O — Owned / Content
       +'<div style="border:1px solid #dff;border-top:4px solid #2fd4b2;border-radius:6px;padding:13px">'
       +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#2a9a7a;letter-spacing:.1em;margin-bottom:5px">O \u2014 Owned</div>'
-      +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(pesoO)+'</div>'
+      +pesoValueHTML(pesoO)
       +'<div style="font-size:9px;color:#888;margin-bottom:6px">Official Social + Content</div>'
       +pBar(pesoO,pesoTotal,'#2fd4b2')
       +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Social posts: '+fmt(offSoc)+'<br>Content assets: '+fmt(contTot)+'</div>'
       +'</div>'
-      +'</div>'
-      +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:13px 20px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:center">'
-      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.04em">Total EMV \u2014 Per Show</div>'
-      +'<div style="font-size:22px;font-weight:700;color:'+HC+'">'+fmt(pesoTotal)+'</div>'
-      +'<div style="font-size:10px;color:#888">ROI: '+roiPerShow(pesoTotal)+'</div>'
-      +'</div>'
-      +(progNs>1?'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #c8d0f0">'
-        +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.04em">Total Program EMV ('+progNs+' shows)</div>'
-        +'<div style="font-size:22px;font-weight:700;color:'+HC+'">'+fmt(progT)+'</div>'
-        +'<div style="font-size:10px;color:#888">ROI: '+roi(progT)+'</div>'
-        +'</div>':'')
       +'</div></div>');
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
