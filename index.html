@@ -5282,7 +5282,18 @@ async function genPredPdf(){
     let progT,progCost,progNs;
     if(programShows.length>0){progT=programShows.reduce((s,sh)=>s+sh.emv,0);progCost=programShows.reduce((s,sh)=>s+sh.co,0);progNs=programShows.length;}
     else{progT=perShow*ns;progCost=co*ns;progNs=ns;}
-    const roi=x=>progCost>0?(x/progCost).toFixed(1)+'x':'--';
+    const roi=x=>progCost>0?(x/progCost).toFixed(1)+'x':'--';// program-cost-denominated
+    const roiPerShow=x=>co>0?(x/co).toFixed(1)+'x':'--';// single-show-cost-denominated
+    // Scenario grid: when no heterogeneous Program Builder shows are captured, the
+    // grid is genuinely per-show (title says so) — Target previously always showed
+    // the full program-scaled total here, overstating per-show value by Nx, and
+    // Conservative/Optimistic's ROI divided a per-show dollar figure by the full
+    // program cost. Both are now consistently per-show in that case.
+    const usingCapturedProgram=programShows.length>0;
+    const scenTarget=usingCapturedProgram?progT:perShow;
+    const scenCons=usingCapturedProgram?progT*0.5:cons;
+    const scenOpt=usingCapturedProgram?progT*1.7:opt;
+    const scenRoi=x=>usingCapturedProgram?roi(x):roiPerShow(x);
     await stamp('<div style="background:'+HC+';color:#fff;padding:30px 36px;border-radius:8px;display:flex;justify-content:space-between;align-items:center">'
       +'<div style="display:flex;align-items:center;gap:14px"><img src="'+PIXIS_LOGO_2C+'" style="height:38px;object-fit:contain">'
       +'<div><div style="font-size:11px;color:#9ba8cc;text-transform:uppercase;letter-spacing:.1em">Predictive Media Valuation</div><div style="font-size:10px;color:#6a7a99;margin-top:2px">Pre-Show Forecast</div></div></div>'
@@ -5322,13 +5333,13 @@ async function genPredPdf(){
         +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Show</th><th style="padding:7px 9px;text-align:right">Attendance</th><th style="padding:7px 9px;text-align:left">Type</th><th style="padding:7px 9px;text-align:right">Cost</th><th style="padding:7px 9px;text-align:right">Target EMV</th></tr></thead>'
         +'<tbody>'+pbRows+'</tbody></table></div>');
     }
-    const scTitle=programShows.length>0?'Predicted Value \u2014 Program Scenarios ('+progNs+' Shows)':'Predicted Value \u2014 3 Scenarios (Per Show)';
+    const scTitle=usingCapturedProgram?'Predicted Value \u2014 Program Scenarios ('+progNs+' Shows)':'Predicted Value \u2014 3 Scenarios (Per Show)';
     await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">'+scTitle+'</div>'
       +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px">'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:5px">Conservative</div><div style="font-size:20px;font-weight:700;color:#555">'+fmt(programShows.length>0?progT*0.5:cons)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roi(programShows.length>0?progT*0.5:cons)+'</div></div>'
-      +'<div style="border:2px solid '+AC+';border-radius:7px;padding:15px;text-align:center;background:#fffbf0"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+AC+';margin-bottom:5px">Target &#9733;</div><div style="font-size:20px;font-weight:700;color:'+HC+'">'+fmt(progT)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roi(progT)+'</div></div>'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(programShows.length>0?progT*1.7:opt)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roi(programShows.length>0?progT*1.7:opt)+'</div></div></div>'
-      +(progNs>1&&programShows.length===0?'<div style="background:#f0f2ff;border:1px solid #c8d0f0;border-radius:6px;padding:11px 14px;font-size:10px"><strong style="color:'+HC+'">Program Total ('+progNs+' shows):</strong> Conservative '+fmt(cons*progNs)+' \u2014 Target '+fmt(progT)+' \u2014 Optimistic '+fmt(opt*progNs)+'</div>':'')+'</div>');
+      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:5px">Conservative</div><div style="font-size:20px;font-weight:700;color:#555">'+fmt(scenCons)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+scenRoi(scenCons)+'</div></div>'
+      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+HC+';margin-bottom:5px">Target</div><div style="font-size:20px;font-weight:700;color:'+HC+'">'+fmt(scenTarget)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+scenRoi(scenTarget)+'</div></div>'
+      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(scenOpt)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+scenRoi(scenOpt)+'</div></div></div>'
+      +(progNs>1&&!usingCapturedProgram?'<div style="background:#f0f2ff;border:1px solid #c8d0f0;border-radius:6px;padding:11px 14px;font-size:10px"><strong style="color:'+HC+'">Program Total ('+progNs+' shows):</strong> Conservative '+fmt(cons*progNs)+' \u2014 Target '+fmt(progT)+' \u2014 Optimistic '+fmt(opt*progNs)+'</div>':'')+'</div>');
     // PESO breakdown (per-show target values)
     const pesoP=infTot,pesoE=oohTot+womTot,pesoS=ugc+collabPredTot,pesoO=offSoc+contTot;
     const pesoTotal=pesoP+pesoE+pesoS+pesoO;
@@ -5368,10 +5379,17 @@ async function genPredPdf(){
       +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Social posts: '+fmt(offSoc)+'<br>Content assets: '+fmt(contTot)+'</div>'
       +'</div>'
       +'</div>'
-      +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:13px 20px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="background:#f0f2ff;border:2px solid '+HC+';border-radius:7px;padding:13px 20px">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center">'
       +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.04em">Total EMV \u2014 Per Show</div>'
       +'<div style="font-size:22px;font-weight:700;color:'+HC+'">'+fmt(pesoTotal)+'</div>'
-      +'<div style="font-size:10px;color:#888">ROI: '+roi(progT)+'</div>'
+      +'<div style="font-size:10px;color:#888">ROI: '+roiPerShow(pesoTotal)+'</div>'
+      +'</div>'
+      +(progNs>1?'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #c8d0f0">'
+        +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.04em">Total Program EMV ('+progNs+' shows)</div>'
+        +'<div style="font-size:22px;font-weight:700;color:'+HC+'">'+fmt(progT)+'</div>'
+        +'<div style="font-size:10px;color:#888">ROI: '+roi(progT)+'</div>'
+        +'</div>':'')
       +'</div></div>');
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
