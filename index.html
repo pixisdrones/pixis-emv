@@ -5338,53 +5338,46 @@ async function genPredPdf(){
       +scenarioRow(cons,perShow,opt,roiPerShow,progNs>1?'Per Show':'')
       +(progNs>1?scenarioRow(progT*0.5,progT,progT*1.7,roi,'Program Total ('+progNs+' Shows)'):'')
       +'</div>');
-    // PESO breakdown (per-show target values, optionally split with a program-total
-    // column per category -- scaled by the program's own EMV ratio so the four
-    // categories always foot to the program total shown in the scenario cards above)
+    // PESO breakdown: per-show figures, with a Program section stacked beneath
+    // each category (scaled by the program's own EMV ratio so the four categories
+    // always foot to the program total shown in the scenario cards above) whenever
+    // the prediction has more than one show. Each section -- Per Show and Program --
+    // gets its own bar graph and its own breakdown detail line directly beneath it.
     const pesoP=infTot,pesoE=oohTot+womTot,pesoS=ugc+collabPredTot,pesoO=offSoc+contTot;
     const pesoTotal=pesoP+pesoE+pesoS+pesoO;
     const pBar=(val,total,color)=>{const pct=total>0?Math.round(val/total*100):0;return '<div style="height:7px;border-radius:4px;background:#e8e8e8;margin-top:5px"><div style="height:100%;width:'+pct+'%;border-radius:4px;background:'+color+'"></div></div>';};
     const progScale=pesoTotal>0?progT/pesoTotal:progNs;
-    const pesoValueHTML=val=>progNs>1
-      ?'<div style="margin-bottom:1px">'
-        +'<div><div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;white-space:nowrap">Per Show</div><div style="font-size:17px;font-weight:700;color:#333">'+fmt(val)+'</div></div>'
-        +'<div style="border-top:1px solid #ddd;margin-top:6px;padding-top:6px"><div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;white-space:nowrap">Program</div><div style="font-size:17px;font-weight:700;color:#333">'+fmt(val*progScale)+'</div></div>'
-        +'</div>'
-      :'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(val)+'</div>';
+    const pesoCard=(outlineColor,topColor,labelColor,label,val,desc,detailFn)=>{
+      const head='<div style="border:1px solid '+outlineColor+';border-top:4px solid '+topColor+';border-radius:6px;padding:13px">'
+        +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:'+labelColor+';letter-spacing:.1em;margin-bottom:5px">'+label+'</div>';
+      if(progNs>1){
+        const section=(eyebrow,scale)=>'<div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;white-space:nowrap">'+eyebrow+'</div>'
+          +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(val*scale)+'</div>'
+          +pBar(val*scale,pesoTotal*scale,topColor)
+          +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">'+detailFn(scale)+'</div>';
+        return head
+          +'<div style="font-size:9px;color:#888;margin-bottom:6px">'+desc+'</div>'
+          +section('Per Show',1)
+          +'<div style="border-top:1px solid #ddd;margin-top:10px;padding-top:8px">'+section('Program',progScale)+'</div>'
+          +'</div>';
+      }
+      return head
+        +'<div style="font-size:17px;font-weight:700;color:#333;margin-bottom:1px">'+fmt(val)+'</div>'
+        +'<div style="font-size:9px;color:#888;margin-bottom:6px">'+desc+'</div>'
+        +pBar(val,pesoTotal,topColor)
+        +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">'+detailFn(1)+'</div>'
+        +'</div>';
+    };
     await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">PESO Value Breakdown</div>'
       +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">'
-      // P — Paid / OOH
-      +'<div style="border:1px solid #fdd;border-top:4px solid #e85d04;border-radius:6px;padding:13px">'
-      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#e85d04;letter-spacing:.1em;margin-bottom:5px">P \u2014 Paid</div>'
-      +pesoValueHTML(pesoP)
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Contracted Influencers</div>'
-      +pBar(pesoP,pesoTotal,'#e85d04')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Influencer integration:<br>'+fmt(infTot)+'</div>'
-      +'</div>'
-      // E — Earned / WOM
-      +'<div style="border:1px solid #ffd;border-top:4px solid '+AC+';border-radius:6px;padding:13px">'
-      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:'+AC+';letter-spacing:.1em;margin-bottom:5px">E \u2014 Earned</div>'
-      +pesoValueHTML(pesoE)
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Live Audience + Press / Media</div>'
-      +pBar(pesoE,pesoTotal,AC)
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Live Audience: '+fmt(oohTot)+'<br>Press &amp; Media: '+fmt(womTot)+'</div>'
-      +'</div>'
-      // S — Shared / Social
-      +'<div style="border:1px solid #eef;border-top:4px solid #5a6ef8;border-radius:6px;padding:13px">'
-      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#5a6ef8;letter-spacing:.1em;margin-bottom:5px">S \u2014 Shared</div>'
-      +pesoValueHTML(pesoS)
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">UGC / Earned Social + Collab Posts</div>'
-      +pBar(pesoS,pesoTotal,'#5a6ef8')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Est. '+(Math.round(at*(vir.sh||0))).toLocaleString()+' UGC creators \xd7 500 avg followers: '+fmt(ugc)+'<br>Collab social posts: '+fmt(collabPredTot)+'</div>'
-      +'</div>'
-      // O — Owned / Content
-      +'<div style="border:1px solid #dff;border-top:4px solid #2fd4b2;border-radius:6px;padding:13px">'
-      +'<div style="font-size:8px;font-weight:700;text-transform:uppercase;color:#2a9a7a;letter-spacing:.1em;margin-bottom:5px">O \u2014 Owned</div>'
-      +pesoValueHTML(pesoO)
-      +'<div style="font-size:9px;color:#888;margin-bottom:6px">Official Social + Content</div>'
-      +pBar(pesoO,pesoTotal,'#2fd4b2')
-      +'<div style="font-size:9px;color:#555;margin-top:8px;line-height:1.6">Social posts: '+fmt(offSoc)+'<br>Content assets: '+fmt(contTot)+'</div>'
-      +'</div>'
+      +pesoCard('#fdd','#e85d04','#e85d04','P — Paid',pesoP,'Contracted Influencers',
+        scale=>'Influencer integration:<br>'+fmt(infTot*scale))
+      +pesoCard('#ffd',AC,AC,'E — Earned',pesoE,'Live Audience + Press / Media',
+        scale=>'Live Audience: '+fmt(oohTot*scale)+'<br>Press &amp; Media: '+fmt(womTot*scale))
+      +pesoCard('#eef','#5a6ef8','#5a6ef8','S — Shared',pesoS,'UGC / Earned Social + Collab Posts',
+        scale=>'Est. '+(Math.round(at*(vir.sh||0)*scale)).toLocaleString()+' UGC creators \xd7 500 avg followers: '+fmt(ugc*scale)+'<br>Collab social posts: '+fmt(collabPredTot*scale))
+      +pesoCard('#dff','#2fd4b2','#2a9a7a','O — Owned',pesoO,'Official Social + Content',
+        scale=>'Social posts: '+fmt(offSoc*scale)+'<br>Content assets: '+fmt(contTot*scale))
       +'</div></div>');
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
