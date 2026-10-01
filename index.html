@@ -908,8 +908,13 @@ const PLAT_POST_TYPES={
   qu:[['1.0','Answer'],['0.7','Question']],
   li:[['1.0','Post'],['1.15','Video'],['1.1','Document']],
 };
-// Platform adjustment multipliers for organic reach calculation
-const PLAT_ADJ={ig:2,tt:2.2,yt:2,yts:1.8,xx:1.5,fb:1.8,rd:1.5,th:1.5,qu:1.3,li:1.6};
+// Owned-media factor for a brand's own planned social posts — matches the flat
+// 1.0x adjFactor the actuals side already uses for Official Brand Social cards
+// (direct, controlled distribution isn't given an organic-reach credibility
+// premium). Previously this used PLAT_ADJ (1.5-2.2x), a per-platform premium
+// meant for earned/organic third-party content, which inflated predicted owned
+// social value well above what the tool's own stated methodology calls for.
+const OWNED_POST_ADJ=1.0;
 
 // ── PESO constants ─────────────────────────────────────────────────────────
 const PESO_COLS={P:'#e85d04',E:'#d4a843',S:'#5a6ef8',O:'#2fd4b2'};
@@ -3645,9 +3650,9 @@ function runCalcP(){
   const oohSpec=(at/1000)*v.cpm*v.adj;const oohDur=at*du*0.20;const oohTot=oohSpec+oohDur;
   let offSoc=0;
   plannedPosts.forEach(p=>{
-    if(!PCPM[p.pl]||!PLAT_ADJ[p.pl])return;
+    if(!PCPM[p.pl])return;
     const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
-    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];
+    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
   });
   const ugc=(at*v.sh*500/1000)*8*v.adj;
   let infTot=0;
@@ -3785,9 +3790,9 @@ function calcShowEMVRaw(at,du,st,postsSnap,womHits,womReach,womCPM){
   const oohSpec=(at/1000)*v.cpm*v.adj;const oohDur=at*du*0.20;const oohTot=oohSpec+oohDur;
   let offSoc=0;
   (postsSnap||[]).forEach(p=>{
-    if(!PCPM[p.pl]||!PLAT_ADJ[p.pl])return;
+    if(!PCPM[p.pl])return;
     const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
-    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];
+    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
   });
   const ugc=(at*v.sh*500/1000)*8*v.adj;
   const contTot=7300;
@@ -5258,9 +5263,9 @@ async function genPredPdf(){
     const at=parseFloat($('p-at').value)||0,du=parseFloat($('p-du').value)||0,co=parseFloat($('p-co').value)||0,ns=parseFloat($('p-ns').value)||1;
     const oohSpec=(at/1000)*vir.cpm*vir.adj,oohDur=at*du*.20,oohTot=oohSpec+oohDur;
     let offSoc=0;plannedPosts.forEach(p=>{
-      if(!PCPM[p.pl]||!PLAT_ADJ[p.pl])return;
+      if(!PCPM[p.pl])return;
       const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
-      offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*PLAT_ADJ[p.pl];
+      offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
     });
     const ugc=(at*vir.sh*500/1000)*8*vir.adj;
     let infTot=0,infRows='';
