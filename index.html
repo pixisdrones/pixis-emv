@@ -558,7 +558,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
             <div class="ff"><label class="fl">Shows in Program</label><input class="fi" type="number" id="p-ns" value="1"></div>
           </div>
           <div class="psec" style="margin-top:14px">Social Following by Channel</div>
-          <div class="cnote" style="margin:0 0 10px">Drives the reach estimate for Planned Social Posts below, and seeds the starting follower count for new Influencer Integration and Collab Social Media entries (each stays independently editable).</div>
+          <div class="cnote" style="margin:0 0 10px">Drives the reach estimate for Owned Social Posts below, and seeds the starting follower count for new Influencer Integration and Collab Social Media entries (each stays independently editable).</div>
           <table class="vt" id="pred-follow-tbl"><thead><tr><th>Platform</th><th>Following</th></tr></thead><tbody id="pred-follow-body"></tbody></table>
           <div class="psec">3 &#8212; Show Type / Virality</div>
           <select class="fi" id="p-st" style="cursor:pointer;margin-bottom:10px">
@@ -579,13 +579,18 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           <div class="cnote" style="margin:0 0 12px">Plan collab / co-authored posts on Instagram, Facebook, TikTok, or YouTube &#8212; the platforms with real collab-post support. 5&#215; mutual-endorsement premium, since both parties have signed off on the partnership.</div>
           <button class="btn btn-g" id="btn-add-pred-collab" style="font-size:11px;padding:7px 14px;margin-bottom:11px">+ Add Collab Post</button>
           <div id="pred-collab-list"></div>
-          <div class="psec" style="margin-top:20px">6 &#8212; Planned Social Posts</div>
+          <div class="psec" style="margin-top:20px">6 &#8212; Owned Social Posts</div>
           <div class="cnote" style="margin:0 0 10px">Add one entry per post type. Multiple entries per platform are supported. Reach estimated from total following &#215; reach rate, adjusted by post type multiplier.</div>
           <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
             <div style="display:grid;grid-template-columns:1fr 1fr 54px 30px;gap:6px;padding:7px 12px;background:var(--s3);border-bottom:1px solid var(--bd);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft)">
               <span>Platform</span><span>Post Type</span><span style="text-align:center">Count</span><span></span>
             </div>
             <div id="planned-posts-list"></div>
+          </div>
+          <div class="inf-g3">
+            <div class="inf-stat"><div class="inf-stat-lbl">Est. Impressions</div><div class="inf-stat-val" id="osp-impr">0</div></div>
+            <div class="inf-stat"><div class="inf-stat-lbl">Est. Engagements</div><div class="inf-stat-val" id="osp-engs">0</div></div>
+            <div class="inf-stat"><div class="inf-stat-lbl">Eng. Rate</div><div class="inf-stat-val" id="osp-rate">0%</div></div>
           </div>
           <button class="btn btn-g" id="btn-add-post" style="font-size:11px;padding:7px 14px;margin-top:9px">&#43; Add Post</button>
           <div class="psec" style="margin-top:20px">7 &#8212; WOM / Press Assumptions</div>
@@ -625,6 +630,11 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           <span class="prog-lbl">shows)</span>
         </div>
         <span style="font-size:11px;color:var(--ft)">Target Program EMV: <span class="prog-val" id="prog-emv">&#8212;</span></span>
+      </div>
+      <div class="inf-g3" style="margin:0 20px 14px">
+        <div class="inf-stat"><div class="inf-stat-lbl">Est. Impressions</div><div class="inf-stat-val" id="pmv-impr">0</div></div>
+        <div class="inf-stat"><div class="inf-stat-lbl">Est. Engagements</div><div class="inf-stat-val" id="pmv-engs">0</div></div>
+        <div class="inf-stat"><div class="inf-stat-lbl">Eng. Rate</div><div class="inf-stat-val" id="pmv-rate">0%</div></div>
       </div>
       <div class="prc-grid" id="prc-grid"></div>
       <div class="ch-lbl" id="ch-lbl">Channel Breakdown (Target Estimate)</div>
@@ -2382,6 +2392,16 @@ function buildInfCard(opts){
     }
   };
   card._updateDisp=()=>{emvVal.textContent=fmt(card._getEMV());};
+  card._getImpr=()=>{
+    if(!isPred)return 0;
+    const fo=parseFloat(follInp.value)||0;
+    return fo*getPlReach(platSel.value);
+  };
+  card._getEngs=()=>{
+    if(!isPred)return 0;
+    const fo=parseFloat(follInp.value)||0;
+    return fo*((parseFloat(engInp.value)||0)/100);
+  };
   card._platSel=platSel;
   card._nameInp=nameInp;
   card._metricsBtn=qmBtn;
@@ -3677,6 +3697,32 @@ function addPredCollabInfluencer(){
   $('pred-collab-list').prepend(card);runCalcP();
 }
 
+// Est. impressions/engagements for the Owned Social Posts plan — same reach
+// (following × reach rate) and engagement-rate (veng) bases used elsewhere
+// for owned/influencer predictions, scaled by each entry's post count and
+// post-type multiplier.
+function getOwnedPostStats(){
+  let impr=0,engs=0;
+  plannedPosts.forEach(p=>{
+    if(!PCPM[p.pl])return;
+    const fo=getPredFollowing(p.pl);
+    impr+=fo*getPlReach(p.pl)*p.count*p.mult;
+    engs+=fo*getPlVEng(p.pl)*p.count*p.mult;
+  });
+  return{impr,engs,rate:impr>0?(engs/impr*100):0};
+}
+// Total predicted social reach for this show — Owned Social Posts plus every
+// prediction-mode influencer/collab card (via their _getImpr/_getEngs).
+function getPredSocialStats(){
+  const owned=getOwnedPostStats();
+  let impr=owned.impr,engs=owned.engs;
+  document.querySelectorAll('#inf-list .inf-card, #pred-collab-list .inf-card').forEach(card=>{
+    if(card._getImpr)impr+=card._getImpr();
+    if(card._getEngs)engs+=card._getEngs();
+  });
+  return{impr,engs,rate:impr>0?(engs/impr*100):0};
+}
+
 function runCalcP(){
   const sel=$('p-st').value;const v=VIR[sel];
   const at=parseFloat($('p-at').value)||0;
@@ -3701,6 +3747,24 @@ function runCalcP(){
   document.querySelectorAll('#pred-collab-list .inf-card').forEach(card=>{
     if(card._getEMV){collabPredTot+=card._getEMV();if(card._updateDisp)card._updateDisp();}
   });
+
+  // IMPRESSIONS / ENGAGEMENT SUMMARIES — Owned Social Posts section, then the
+  // show-wide total (Owned + Influencer + Collab) shown above the scenario
+  // cards and in the sticky footer.
+  const ownedStats=getOwnedPostStats();
+  if($('osp-impr')){
+    $('osp-impr').textContent=Math.round(ownedStats.impr).toLocaleString();
+    $('osp-engs').textContent=Math.round(ownedStats.engs).toLocaleString();
+    $('osp-rate').textContent=ownedStats.rate.toFixed(1)+'%';
+  }
+  const socialStats=getPredSocialStats();
+  [['pmv-impr','pmv-engs','pmv-rate'],['sf-impr','sf-engs','sf-rate']].forEach(([iId,eId,rId])=>{
+    if(!$(iId))return;
+    $(iId).textContent=Math.round(socialStats.impr).toLocaleString();
+    $(eId).textContent=Math.round(socialStats.engs).toLocaleString();
+    $(rId).textContent=socialStats.rate.toFixed(1)+'%';
+  });
+
   const socTot=offSoc+ugc+infTot+collabPredTot;const contTot=7300;
   const womTot=womHits*(womReach/1000)*womCPM;
   const perShow=oohTot+socTot+contTot+womTot;
@@ -6600,6 +6664,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="sf-item"><div class="sf-lbl">Biz Impact</div><div class="sf-val teal" id="sf-biz">$0</div></div>
   <div class="sf-item"><div class="sf-lbl">ROI</div><div class="sf-val ind" id="sf-roi">--</div></div>
   <div class="sf-item"><div class="sf-lbl">Prog. CPM</div><div class="sf-val" style="color:#e85d04" id="sf-cpm">--</div></div>
+  <div class="sf-div"></div>
+  <div class="sf-item"><div class="sf-lbl">Est. Impressions</div><div class="sf-val" id="sf-impr">0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Est. Engagements</div><div class="sf-val" id="sf-engs">0</div></div>
+  <div class="sf-item"><div class="sf-lbl">Eng. Rate</div><div class="sf-val" id="sf-rate">0%</div></div>
   <div class="sf-div"></div>
   <span class="sf-autosave" id="sf-autosave">✓ Auto-saved</span>
   <button class="btn btn-g sf-save" id="sf-save-btn" style="font-size:11px;padding:8px 16px">💾 Save Show</button>
