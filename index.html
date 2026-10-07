@@ -156,13 +156,9 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .prc{background:var(--s3);border:1px solid var(--bd);border-radius:11px;padding:18px;text-align:center}
 .prc.prc-hi{border-color:rgba(212,168,67,.3);background:rgba(212,168,67,.04)}
 .prc-tier{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
-.prc-tier.c{color:var(--ft)}
-.prc-tier.t{color:var(--gld)}
-.prc-tier.o{color:var(--tel)}
+.prc-tier.pred{color:var(--gld)}
 .prc-emv{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin:4px 0}
-.prc-emv.c{color:var(--dm)}
-.prc-emv.t{color:var(--gld2)}
-.prc-emv.o{color:var(--tel)}
+.prc-emv.pred{color:var(--gld2)}
 .prc-roi{font-family:'DM Mono',monospace;font-size:11px;color:var(--ft)}
 .prc-prog{font-size:10px;color:var(--ft);margin-top:5px}
 .ch-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft);padding:4px 20px 6px;display:none}
@@ -619,7 +615,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
   <div class="panel open" id="pan-pred-out">
     <div class="ph" data-panel="pan-pred-out">
       <div class="ph-l"><div class="ph-num">&#128200;</div>
-      <div><div class="ph-title">Predicted Media Value</div><div class="ph-sub">Conservative &#183; Target &#183; Optimistic</div></div></div>
+      <div><div class="ph-title">Predicted Media Value</div><div class="ph-sub">Full-Funnel Predicted Estimate</div></div></div>
       <span class="arr">&#9660;</span>
     </div>
     <div class="pb">
@@ -629,7 +625,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           <input class="fi" type="number" id="p-nsd" value="1" style="width:60px;padding:5px 7px;font-size:12px;text-align:center">
           <span class="prog-lbl">shows)</span>
         </div>
-        <span style="font-size:11px;color:var(--ft)">Target Program EMV: <span class="prog-val" id="prog-emv">&#8212;</span></span>
+        <span style="font-size:11px;color:var(--ft)">Predicted EMV (per show): <span class="prog-val" id="prog-emv">&#8212;</span></span>
       </div>
       <div class="inf-g3" style="margin:0 20px 14px">
         <div class="inf-stat"><div class="inf-stat-lbl">Est. Impressions</div><div class="inf-stat-val" id="pmv-impr">0</div></div>
@@ -637,10 +633,10 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         <div class="inf-stat"><div class="inf-stat-lbl">Eng. Rate</div><div class="inf-stat-val" id="pmv-rate">0%</div></div>
       </div>
       <div class="prc-grid" id="prc-grid"></div>
-      <div class="ch-lbl" id="ch-lbl">Channel Breakdown (Target Estimate)</div>
+      <div class="ch-lbl" id="ch-lbl">Channel Breakdown (Predicted)</div>
       <div class="ch-grid" id="ch-grid"></div>
       <div class="pred-bd">
-        <div class="pbdh">Detailed Breakdown by Channel (Target)</div>
+        <div class="pbdh">Detailed Breakdown by Channel (Predicted)</div>
         <div id="pred-bdown"></div>
       </div>
       <div class="pred-bd">
@@ -961,6 +957,12 @@ const PLAT_POST_TYPES={
 // meant for earned/organic third-party content, which inflated predicted owned
 // social value well above what the tool's own stated methodology calls for.
 const OWNED_POST_ADJ=1.0;
+// The Prediction report's single headline figure — applied uniformly across
+// every category (OOH, Owned Social, Shared, Influencer/Collab, Press) so the
+// scenario card, channel cards, and detailed breakdown all foot to the same
+// number. Replaces the former Conservative/Target/Optimistic range: this is
+// the old Optimistic (high-end) multiplier, now the sole predicted value.
+const PRED_ADJ=1.7;
 
 // ── PESO constants ─────────────────────────────────────────────────────────
 const PESO_COLS={P:'#e85d04',E:'#d4a843',S:'#5a6ef8',O:'#2fd4b2'};
@@ -3731,21 +3733,21 @@ function runCalcP(){
   const womHits=parseFloat($('p-wh')?.value)||20;
   const womReach=parseFloat($('p-wr')?.value)||100000;
   const womCPM=parseFloat($('p-wc')?.value)||10;
-  const oohSpec=(at/1000)*v.cpm*v.adj;const oohDur=at*du*0.20;const oohTot=oohSpec+oohDur;
-  let offSoc=0;
+  const oohSpec0=(at/1000)*v.cpm*v.adj;const oohDur0=at*du*0.20;const oohTot0=oohSpec0+oohDur0;
+  let offSoc0=0;
   plannedPosts.forEach(p=>{
     if(!PCPM[p.pl])return;
     const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
-    offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
+    offSoc0+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
   });
-  const ugc=(at*v.sh*500/1000)*8*v.adj;
-  let infTot=0;
+  const ugc0=(at*v.sh*500/1000)*8*v.adj;
+  let infTot0=0;
   document.querySelectorAll('#inf-list .inf-card').forEach(card=>{
-    if(card._getEMV){infTot+=card._getEMV();if(card._updateDisp)card._updateDisp();}
+    if(card._getEMV){infTot0+=card._getEMV();if(card._updateDisp)card._updateDisp();}
   });
-  let collabPredTot=0;
+  let collabPredTot0=0;
   document.querySelectorAll('#pred-collab-list .inf-card').forEach(card=>{
-    if(card._getEMV){collabPredTot+=card._getEMV();if(card._updateDisp)card._updateDisp();}
+    if(card._getEMV){collabPredTot0+=card._getEMV();if(card._updateDisp)card._updateDisp();}
   });
 
   // IMPRESSIONS / ENGAGEMENT SUMMARIES — Owned Social Posts section, then the
@@ -3765,10 +3767,14 @@ function runCalcP(){
     $(rId).textContent=socialStats.rate.toFixed(1)+'%';
   });
 
-  const socTot=offSoc+ugc+infTot+collabPredTot;const contTot=7300;
-  const womTot=womHits*(womReach/1000)*womCPM;
+  const womTot0=womHits*(womReach/1000)*womCPM;
+  // PRED_ADJ is applied once, uniformly, across every category here, so the
+  // headline, channel cards, and detailed breakdown below all foot together.
+  const oohSpec=oohSpec0*PRED_ADJ,oohDur=oohDur0*PRED_ADJ,oohTot=oohTot0*PRED_ADJ;
+  const offSoc=offSoc0*PRED_ADJ,ugc=ugc0*PRED_ADJ,infTot=infTot0*PRED_ADJ,collabPredTot=collabPredTot0*PRED_ADJ;
+  const contTot=7300*PRED_ADJ,womTot=womTot0*PRED_ADJ;
+  const socTot=offSoc+ugc+infTot+collabPredTot;
   const perShow=oohTot+socTot+contTot+womTot;
-  const cons=perShow*0.5;const opt=perShow*1.7;
 
   // Program totals — captured shows + current live inputs always included
   let progT,progCost,progNs;
@@ -3786,30 +3792,25 @@ function runCalcP(){
   $('prog-emv').textContent=fmt(perShow);$('p-nsd').value=progNs;
   const roiP=x=>progCost>0?(x/progCost).toFixed(1)+'x':'--';
 
-  // SCENARIO CARDS: build once, update textContent only
+  // PREDICTED VALUE CARD: a single card (build once, update textContent
+  // only) — replaces the former Conservative/Target/Optimistic 3-card range.
   const pg=$('prc-grid');
   if(!pg._built){
-    [['c','Conservative',false],['t','Target',true],['o','Optimistic',false]].forEach(([tier,lbl,isTgt])=>{
-      const card=document.createElement('div');card.className='prc'+(isTgt?' prc-hi':'');
-      const tierEl=document.createElement('div');tierEl.className='prc-tier '+tier;
-      tierEl.textContent='\u25C6 '+lbl+(isTgt?' \u2605':'');
-      const emvEl=document.createElement('div');emvEl.className='prc-emv '+tier;emvEl.id='pe-'+tier;emvEl.textContent='$0';
-      const roiEl=document.createElement('div');roiEl.className='prc-roi';roiEl.id='pr-'+tier;roiEl.textContent='ROI: --';
-      const progEl=document.createElement('div');progEl.className='prc-prog';progEl.id='pp-'+tier;progEl.textContent='';
-      card.appendChild(tierEl);card.appendChild(emvEl);card.appendChild(roiEl);card.appendChild(progEl);
-      pg.appendChild(card);
-    });
+    pg.style.gridTemplateColumns='1fr';
+    const card=document.createElement('div');card.className='prc prc-hi';
+    const tierEl=document.createElement('div');tierEl.className='prc-tier pred';
+    tierEl.textContent='\u25C6 Predicted';
+    const emvEl=document.createElement('div');emvEl.className='prc-emv pred';emvEl.id='pe-pred';emvEl.textContent='$0';
+    const roiEl=document.createElement('div');roiEl.className='prc-roi';roiEl.id='pr-pred';roiEl.textContent='ROI: --';
+    const progEl=document.createElement('div');progEl.className='prc-prog';progEl.id='pp-pred';progEl.textContent='';
+    card.appendChild(tierEl);card.appendChild(emvEl);card.appendChild(roiEl);card.appendChild(progEl);
+    pg.appendChild(card);
     pg._built=true;
   }
   const hasProg=programShows.length>0;
-  const scenarios=hasProg
-    ?[['c',progT*0.5,''],['t',progT,''],['o',progT*1.7,'']]
-    :[['c',cons*ns,cons],['t',progT,perShow],['o',opt*ns,opt]];
-  scenarios.forEach(([tier,prog,ps])=>{
-    $('pe-'+tier).textContent=fmt(prog);
-    $('pr-'+tier).textContent='ROI: '+roiP(prog);
-    $('pp-'+tier).textContent=(!hasProg&&progNs>1)?'Per show: '+fmt(ps):'';
-  });
+  $('pe-pred').textContent=fmt(progT);
+  $('pr-pred').textContent='ROI: '+roiP(progT);
+  $('pp-pred').textContent=(!hasProg&&progNs>1)?'Per show: '+fmt(perShow):'';
 
   // CHANNEL CARDS: build once, update textContent only
   const cg=$('ch-grid');
@@ -3880,7 +3881,7 @@ function runCalcP(){
   $('b8l').textContent='Paid/Earned: Influencer Integration ('+infN+' influencer'+(infN!==1?'s':'')+')';$('b8v').textContent=fmt(infTot);
   $('b9l').textContent='[O2] Content Assets Produced';$('b9v').textContent=fmt(contTot);
   $('b10l').textContent='[E2] Press & Media ('+womHits+' hits \xd7 '+womReach.toLocaleString()+' reach \xd7 $'+womCPM+' CPM)';$('b10v').textContent=fmt(womTot);
-  $('b11l').textContent='Per-Show Target EMV';$('b11v').textContent=fmt(perShow);
+  $('b11l').textContent='Per-Show Predicted EMV';$('b11v').textContent=fmt(perShow);
 }
 
 function resetPred(){
@@ -3929,7 +3930,9 @@ function addCurrentShowToProgram(){
   const womCPM=parseFloat($('p-wc')?.value)||10;
   let infTot=0;
   document.querySelectorAll('#inf-list .inf-card').forEach(card=>{if(card._getEMV)infTot+=card._getEMV();});
-  const emv=calcShowEMVRaw(at,du,st,postsSnap,womHits,womReach,womCPM)+infTot;
+  // Scaled by PRED_ADJ so a captured show's EMV sits on the same Predicted
+  // basis as the live current show (see PRED_ADJ definition).
+  const emv=(calcShowEMVRaw(at,du,st,postsSnap,womHits,womReach,womCPM)+infTot)*PRED_ADJ;
   const sn=$('p-sn').value.trim()||('Show '+(programShows.length+1));
   programShows.push({name:sn,at,du,co,st,emv});
   renderProgramShows();runCalcP();
@@ -5174,7 +5177,7 @@ function predSerialize(){
   document.querySelectorAll('#inf-list .inf-card').forEach(c=>{if(c._serialize)infCards.push(c._serialize());});
   const infCardsCollab=[];
   document.querySelectorAll('#pred-collab-list .inf-card').forEach(c=>{if(c._serialize)infCardsCollab.push(c._serialize());});
-  const targetEmv=$('pe-t')?.textContent||'';
+  const targetEmv=$('pe-pred')?.textContent||'';
   return{fields,plannedPosts:JSON.parse(JSON.stringify(plannedPosts)),programShows:JSON.parse(JSON.stringify(programShows)),infCards,infCardsCollab,targetEmv,savedAt:new Date().toISOString()};
 }
 
@@ -5382,29 +5385,36 @@ async function genPredPdf(){
     const gv=id=>$(id)?.value||'--';
     const sel=$('p-st').value,vir=VIR[sel];
     const at=parseFloat($('p-at').value)||0,du=parseFloat($('p-du').value)||0,co=parseFloat($('p-co').value)||0,ns=parseFloat($('p-ns').value)||1;
-    const oohSpec=(at/1000)*vir.cpm*vir.adj,oohDur=at*du*.20,oohTot=oohSpec+oohDur;
-    let offSoc=0;plannedPosts.forEach(p=>{
+    const oohSpec0=(at/1000)*vir.cpm*vir.adj,oohDur0=at*du*.20,oohTot0=oohSpec0+oohDur0;
+    let offSoc0=0;plannedPosts.forEach(p=>{
       if(!PCPM[p.pl])return;
       const reach=getPredFollowing(p.pl)*getPlReach(p.pl);
-      offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
+      offSoc0+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
     });
-    const ugc=(at*vir.sh*500/1000)*8*vir.adj;
-    let infTot=0,infRows='';
+    const ugc0=(at*vir.sh*500/1000)*8*vir.adj;
+    let infTot0=0,infRows='';
     document.querySelectorAll('#inf-list .inf-card').forEach(card=>{
-      if(!card._getEMV)return;const emv=card._getEMV();infTot+=emv;
+      if(!card._getEMV)return;const emv=card._getEMV()*PRED_ADJ;infTot0+=card._getEMV();
       const nm=card.querySelector('.fi')?.value||'Unknown';
       infRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nm+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
     });
-    let collabPredTot=0,collabRows='';
+    let collabPredTot0=0,collabRows='';
     document.querySelectorAll('#pred-collab-list .inf-card').forEach(card=>{
-      if(!card._getEMV)return;const emv=card._getEMV();collabPredTot+=emv;
+      if(!card._getEMV)return;const emv=card._getEMV()*PRED_ADJ;collabPredTot0+=card._getEMV();
       const nm=card.querySelector('.fi')?.value||'Unknown';
       const partner=card._partnerInp?.value||'';
       collabRows+='<tr><td style="padding:6px 9px;border:1px solid #e5e7eb">'+nm+(partner?' × '+partner:'')+'</td><td style="padding:6px 9px;border:1px solid #e5e7eb;text-align:right;font-weight:700;color:'+HC+'">'+fmt(emv)+'</td></tr>';
     });
     const womHits=parseFloat($('p-wh')?.value)||20,womReach=parseFloat($('p-wr')?.value)||100000,womCPM=parseFloat($('p-wc')?.value)||10;
-    const socTot=offSoc+ugc+infTot+collabPredTot,contTot=7300,womTot=womHits*(womReach/1000)*womCPM;
-    const perShow=oohTot+socTot+contTot+womTot,cons=perShow*.5,opt=perShow*1.7;
+    const womTot0=womHits*(womReach/1000)*womCPM;
+    // PRED_ADJ applied once, uniformly, across every category — see its
+    // definition for why (keeps this PDF's headline, tables, and breakdown
+    // all footing to the same number as each other and as the live report).
+    const oohSpec=oohSpec0*PRED_ADJ,oohDur=oohDur0*PRED_ADJ,oohTot=oohTot0*PRED_ADJ;
+    const offSoc=offSoc0*PRED_ADJ,ugc=ugc0*PRED_ADJ,infTot=infTot0*PRED_ADJ,collabPredTot=collabPredTot0*PRED_ADJ;
+    const contTot=7300*PRED_ADJ,womTot=womTot0*PRED_ADJ;
+    const socTot=offSoc+ugc+infTot+collabPredTot;
+    const perShow=oohTot+socTot+contTot+womTot;
     let progT,progCost,progNs;
     if(programShows.length>0){progT=programShows.reduce((s,sh)=>s+sh.emv,0);progCost=programShows.reduce((s,sh)=>s+sh.co,0);progNs=programShows.length;}
     else{progT=perShow*ns;progCost=co*ns;progNs=ns;}
@@ -5446,7 +5456,7 @@ async function genPredPdf(){
       pbRows+='<tr style="background:#f0f2ff"><td colspan="4" style="padding:7px 9px;border:1px solid #e5e7eb;font-weight:700;text-align:right;color:'+HC+'">Program Total</td>'
         +'<td style="padding:7px 9px;border:1px solid #e5e7eb;font-weight:700;text-align:right;color:'+AC+'">'+fmt(progT)+'</td></tr>';
       await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Program Builder &#8212; '+progNs+' Shows</div>'
-        +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Show</th><th style="padding:7px 9px;text-align:right">Attendance</th><th style="padding:7px 9px;text-align:left">Type</th><th style="padding:7px 9px;text-align:right">Cost</th><th style="padding:7px 9px;text-align:right">Target EMV</th></tr></thead>'
+        +'<table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr style="background:'+HC+';color:#fff"><th style="padding:7px 9px;text-align:left">Show</th><th style="padding:7px 9px;text-align:right">Attendance</th><th style="padding:7px 9px;text-align:left">Type</th><th style="padding:7px 9px;text-align:right">Cost</th><th style="padding:7px 9px;text-align:right">Predicted EMV</th></tr></thead>'
         +'<tbody>'+pbRows+'</tbody></table></div>');
     }
     // Scenario cards: a "Per Show" row (always shown, from this show's own current
@@ -5454,15 +5464,12 @@ async function genPredPdf(){
     // than one show \u2014 whether that total came from the flat "Shows in Program"
     // multiplier or from captured Program Builder shows. A row label only appears
     // once there's more than one row to tell apart.
-    const scenarioRow=(consVal,targetVal,optVal,roiFn,rowLabel)=>
+    const scenarioRow=(val,roiFn,rowLabel)=>
       (rowLabel?'<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:.08em;margin-bottom:6px">'+rowLabel+'</div>':'')
-      +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:14px">'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:5px">Conservative</div><div style="font-size:20px;font-weight:700;color:#555">'+fmt(consVal)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(consVal)+'</div></div>'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+HC+';margin-bottom:5px">Target</div><div style="font-size:20px;font-weight:700;color:'+HC+'">'+fmt(targetVal)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(targetVal)+'</div></div>'
-      +'<div style="border:1px solid #ddd;border-radius:7px;padding:15px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2a8a6a;margin-bottom:5px">Optimistic</div><div style="font-size:20px;font-weight:700;color:#2a8a6a">'+fmt(optVal)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(optVal)+'</div></div></div>';
-    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">Predicted Value \u2014 3 Scenarios</div>'
-      +scenarioRow(cons,perShow,opt,roiPerShow,progNs>1?'Per Show':'')
-      +(progNs>1?scenarioRow(progT*0.5,progT,progT*1.7,roi,'Program Total ('+progNs+' Shows)'):'')
+      +'<div style="border:1px solid '+HC+';border-radius:7px;padding:15px;text-align:center;margin-bottom:14px"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+HC+';margin-bottom:5px">Predicted</div><div style="font-size:24px;font-weight:700;color:'+HC+'">'+fmt(val)+'</div><div style="font-size:10px;color:#888;margin-top:4px">ROI: '+roiFn(val)+'</div></div>';
+    await stamp('<div style="margin-top:6px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em">Predicted Value</div>'
+      +scenarioRow(perShow,roiPerShow,progNs>1?'Per Show':'')
+      +(progNs>1?scenarioRow(progT,roi,'Program Total ('+progNs+' Shows)'):'')
       +'</div>');
     // PESO breakdown: per-show figures, with a Program section stacked beneath
     // each category (scaled by the program's own EMV ratio so the four categories
