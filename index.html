@@ -131,7 +131,10 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
 .cnote{margin:10px 18px;padding:10px 14px;background:rgba(212,108,255,.05);border:1px solid rgba(212,108,255,.16);border-radius:16px;font-size:10.5px;color:var(--ft);line-height:1.6}
 .cnote strong{color:var(--ind2)}
 .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px}
-.psec{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gld);margin-bottom:12px;padding-bottom:7px;border-bottom:1px dashed rgba(255,255,255,.32)}
+.psec{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gld);margin-bottom:12px;padding-bottom:7px;border-bottom:1px dashed rgba(255,255,255,.32);scroll-margin-top:66px}
+.psec-nav{display:flex;gap:7px;overflow-x:auto;padding:12px 20px;background:var(--s3);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:4}
+.psec-chip{flex-shrink:0;font-size:10px;font-weight:600;letter-spacing:.02em;color:var(--dm);background:var(--s4);border:1px solid var(--bd);border-radius:999px;padding:6px 13px;text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.psec-chip:hover{background:rgba(212,108,255,.14);color:var(--tx);border-color:rgba(212,108,255,.3)}
 .pstack{display:flex;flex-direction:column;gap:11px;margin-bottom:20px}
 .vt{width:100%;border-collapse:collapse;margin-top:8px}
 .vt th{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ft);text-align:left;padding:7px 9px;border-bottom:1px solid var(--bd)}
@@ -537,16 +540,26 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
       </div><span class="arr">&#9660;</span>
     </div>
     <div class="pb">
+      <div class="psec-nav" id="psec-nav">
+        <a href="#psec-1" class="psec-chip">1. Show Details</a>
+        <a href="#psec-2" class="psec-chip">2. Hard Inputs</a>
+        <a href="#psec-3" class="psec-chip">3. Show Type</a>
+        <a href="#psec-4" class="psec-chip">4. Influencers</a>
+        <a href="#psec-5" class="psec-chip">5. Collab Social</a>
+        <a href="#psec-6" class="psec-chip">6. Owned Posts</a>
+        <a href="#psec-7" class="psec-chip">7. WOM / Press</a>
+        <a href="#psec-8" class="psec-chip">8. Program Builder</a>
+      </div>
       <div class="pgrid">
         <div>
-          <div class="psec">1 &#8212; Show Details</div>
+          <div class="psec" id="psec-1">1 &#8212; Show Details</div>
           <div class="pstack">
             <div class="ff"><label class="fl">Client Name</label><input class="fi" id="p-cl" placeholder="e.g. Nike"></div>
             <div class="ff"><label class="fl">Show Name</label><input class="fi" id="p-sn" placeholder="e.g. World Cup Launch"></div>
             <div class="ff"><label class="fl">Date / Season</label><input class="fi" id="p-dt" placeholder="e.g. July 4, 2026"></div>
             <div class="ff"><label class="fl">Location / Market</label><input class="fi" id="p-lo" placeholder="e.g. Multiple Markets"></div>
           </div>
-          <div class="psec">2 &#8212; Hard Inputs</div>
+          <div class="psec" id="psec-2">2 &#8212; Hard Inputs</div>
           <div class="pstack">
             <div class="ff"><label class="fl">Expected Attendance</label><input class="fi" type="number" id="p-at" value="10000"></div>
             <div class="ff"><label class="fl">Show Duration (mins)</label><input class="fi" type="number" id="p-du" value="12"></div>
@@ -556,7 +569,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           <div class="psec" style="margin-top:14px">Social Following by Channel</div>
           <div class="cnote" style="margin:0 0 10px">Drives the reach estimate for Owned Social Posts below, and seeds the starting follower count for new Influencer Integration and Collab Social Media entries (each stays independently editable).</div>
           <table class="vt" id="pred-follow-tbl"><thead><tr><th>Platform</th><th>Following</th></tr></thead><tbody id="pred-follow-body"></tbody></table>
-          <div class="psec">3 &#8212; Show Type / Virality</div>
+          <div class="psec" id="psec-3">3 &#8212; Show Type / Virality</div>
           <select class="fi" id="p-st" style="cursor:pointer;margin-bottom:10px">
             <option value="corp">Corporate / Private</option>
             <option value="pub">Public / Generic Art</option>
@@ -565,17 +578,18 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
           </select>
           <table class="vt"><thead><tr><th>Type</th><th>Share%</th><th>CPM</th><th>Adj</th></tr></thead><tbody id="vt-body"></tbody></table>
           <div class="mults" id="mults-el"></div>
+          <div class="cnote" style="margin:10px 0 0"><strong>Scope:</strong> this selector only affects Live Audience / OOH value and the Shared/UGC share rate below. It does not change Owned, Paid, or Collab values — those are driven entirely by the follower, post, and influencer inputs elsewhere on this page.</div>
         </div>
         <div>
-          <div class="psec">4 &#8212; Influencer Integration</div>
+          <div class="psec" id="psec-4">4 &#8212; Influencer Integration</div>
           <div class="cnote" style="margin:0 0 12px"><strong>Formula:</strong> Followers &#215; Eng% &#215; Platform CPM &#215; Adj. Organic posts earn a 2.5&#215; authenticity premium.</div>
           <button class="btn btn-g" id="btn-add-inf" style="font-size:11px;padding:7px 14px;margin-bottom:11px">+ Add Influencer</button>
           <div id="inf-list"></div>
-          <div class="psec" style="margin-top:20px">5 &#8212; Collab Social Media (Predicted)</div>
+          <div class="psec" id="psec-5" style="margin-top:20px">5 &#8212; Collab Social Media (Predicted)</div>
           <div class="cnote" style="margin:0 0 12px">Plan collab / co-authored posts on Instagram, Facebook, TikTok, or YouTube &#8212; the platforms with real collab-post support. 5&#215; mutual-endorsement premium, since both parties have signed off on the partnership.</div>
           <button class="btn btn-g" id="btn-add-pred-collab" style="font-size:11px;padding:7px 14px;margin-bottom:11px">+ Add Collab Post</button>
           <div id="pred-collab-list"></div>
-          <div class="psec" style="margin-top:20px">6 &#8212; Owned Social Posts</div>
+          <div class="psec" id="psec-6" style="margin-top:20px">6 &#8212; Owned Social Posts</div>
           <div class="cnote" style="margin:0 0 10px">Add one entry per post type. Multiple entries per platform are supported. Reach estimated from total following &#215; reach rate, adjusted by post type multiplier.</div>
           <div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
             <div style="display:grid;grid-template-columns:1fr 1fr 54px 30px;gap:6px;padding:7px 12px;background:var(--s3);border-bottom:1px solid var(--bd);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ft)">
@@ -589,7 +603,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
             <div class="inf-stat"><div class="inf-stat-lbl">Eng. Rate</div><div class="inf-stat-val" id="osp-rate">0%</div></div>
           </div>
           <button class="btn btn-g" id="btn-add-post" style="font-size:11px;padding:7px 14px;margin-top:9px">&#43; Add Post</button>
-          <div class="psec" style="margin-top:20px">7 &#8212; WOM / Press Assumptions</div>
+          <div class="psec" id="psec-7" style="margin-top:20px">7 &#8212; WOM / Press Assumptions</div>
           <div class="cnote" style="margin:0 0 12px">Estimated press hits used in the WOM channel value calculation.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
             <div class="ff"><label class="fl">Est. Press Hits</label><input class="fi" type="number" id="p-wh" value="20"></div>
@@ -599,7 +613,7 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         </div>
       </div>
       <div style="padding:0 20px 20px">
-        <div class="psec">8 &#8212; Program Builder <span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">&#8212; multi-show programs with varied parameters</span></div>
+        <div class="psec" id="psec-8">8 &#8212; Program Builder <span style="font-size:9px;font-weight:400;color:var(--ft);text-transform:none;letter-spacing:0">&#8212; multi-show programs with varied parameters</span></div>
         <div class="cnote" style="margin:0 0 12px"><strong>Optional.</strong> Configure each show using the inputs above then click &#8220;Capture Current Show&#8221; to add it to the program. Each show can have different attendance, type, and cost. Overrides the &#8220;Shows in Program&#8221; multiplier when at least one show is captured.</div>
         <button class="btn btn-g" id="btn-add-show-to-prog" style="font-size:11px;padding:7px 14px;margin-bottom:12px">&#43; Capture Current Show</button>
         <div id="prog-shows-wrap" style="display:none">
@@ -633,11 +647,13 @@ header{padding:20px 0 18px;display:flex;align-items:center;justify-content:space
         <div class="inf-stat"><div class="inf-stat-lbl">Eng. Rate</div><div class="inf-stat-val" id="pmv-rate">0%</div></div>
       </div>
       <div class="prc-grid" id="prc-grid"></div>
+      <div class="cnote" id="pred-assump-note" style="margin:0 20px 16px"></div>
       <div class="ch-lbl" id="ch-lbl">Channel Breakdown (Predicted)</div>
       <div class="ch-grid" id="ch-grid"></div>
       <div class="pred-bd">
         <div class="pbdh">Detailed Breakdown by Channel (Predicted)</div>
         <div id="pred-bdown"></div>
+        <div style="padding:8px 14px;font-size:10px;color:var(--ft);border-top:1px dashed rgba(255,255,255,.14)">* Based on manually entered assumptions (expected press hits, reach, and UGC participation), not measured or platform-reported data.</div>
       </div>
       <div class="pred-bd">
         <div class="pbdh">Required Influencer Reach <span style="font-weight:400;text-transform:none;letter-spacing:0">&#8212; earned following needed to balance Owned value</span></div>
@@ -1380,7 +1396,7 @@ function wireEvents(){
     t.disabled=false;t.checked=$('cb-qr').checked;handleRowToggle('wQR');t.disabled=!$('cb-qr').checked;
   });
   $('btn-pdf').addEventListener('click',genPdf);
-  $('btn-reset').addEventListener('click',resetAll);
+  $('btn-reset').addEventListener('click',()=>{if(confirm('Reset all Actuals inputs? This clears everything on screen that hasn\'t been saved.'))resetAll();});
   $('upzone').addEventListener('click',()=>$('logo-file').click());
   $('logo-file').addEventListener('change',e=>{
     const f=e.target.files[0];if(!f)return;
@@ -1404,7 +1420,7 @@ function wireEvents(){
   $('btn-add-inf').addEventListener('click',addInfluencer);
   $('btn-add-pred-collab').addEventListener('click',addPredCollabInfluencer);
   $('btn-pred-pdf').addEventListener('click',genPredPdf);
-  $('btn-pred-reset').addEventListener('click',resetPred);
+  $('btn-pred-reset').addEventListener('click',()=>{if(confirm('Reset all Prediction inputs? This clears everything on screen that hasn\'t been saved.'))resetPred();});
   $('btn-pred-save').addEventListener('click',predOpenSaveModal);
   $('pred-sv-ph').addEventListener('click',()=>{$('pred-sv-panel').classList.toggle('open');});
   predRenderList();
@@ -1453,6 +1469,10 @@ function switchMode(m){
   $('tab-p').classList.toggle('on',m==='p');
   $('tab-bm').classList.toggle('on',m==='bm');
   if(m==='bm'&&!$('bm-body')._built)buildBenchmarksPanel();
+  // Refresh the sticky footer immediately to the tab just switched to,
+  // rather than waiting on that tab's own debounced recalc.
+  if(m==='a')runCalc();
+  else if(m==='p')runCalcP();
 }
 
 function buildSections(){
@@ -3346,6 +3366,13 @@ function openScreenshotAnalyzer(card,platformHint){
 function buildStdSection(pb,sec){
   if(sec.id==='wom'){buildWomSection(pb,sec);return;}
   if(sec.id==='soc'){buildSocSection(pb,sec);return;}
+  // Content Assets Produced rows default to the live Benchmarks tab rates
+  // (cont_ph/vi/ae/sf) instead of a separate hardcoded figure, so editing
+  // those sourced benchmarks actually changes what a new show starts with.
+  if(sec.id==='cont'){
+    const map={cPH:'cont_ph',cVI:'cont_vi',cAE:'cont_ae',cSF:'cont_sf'};
+    sec.rows.forEach(r=>{if(map[r.id]&&BM[map[r.id]]!=null)r.r=BM[map[r.id]];});
+  }
   const hdr=document.createElement('div');hdr.className='sc-hdr';
   hdr.innerHTML='<span>Sub-Channel</span><span>Action</span><span style="text-align:right">Metric</span><span style="text-align:right">Rate ($)</span><span style="text-align:right">Adj.</span><span style="text-align:right">EMV</span>';
   pb.appendChild(hdr);
@@ -3621,9 +3648,10 @@ function runCalc(){
       cpmEl.textContent='$'+(pCPM>=10?pCPM.toFixed(1):pCPM.toFixed(2));
     }else{cpmEl.textContent='--';}
   }
-  // Sticky footer update
+  // Sticky footer update — only while Actuals is the visible tab, so it never
+  // shows stale Actuals numbers while the user is working in Prediction.
   const _sf=id=>document.getElementById(id);
-  if(_sf('sf-paid')){
+  if(_sf('sf-paid')&&$('mode-a').style.display!=='none'){
     _sf('sf-paid').textContent=fmt(pesoTot.P||0);
     _sf('sf-earned').textContent=fmt(pesoTot.E||0);
     _sf('sf-shared').textContent=fmt(pesoTot.S||0);
@@ -3760,19 +3788,18 @@ function runCalcP(){
     $('osp-rate').textContent=ownedStats.rate.toFixed(1)+'%';
   }
   const socialStats=getPredSocialStats();
-  [['pmv-impr','pmv-engs','pmv-rate'],['sf-impr','sf-engs','sf-rate']].forEach(([iId,eId,rId])=>{
-    if(!$(iId))return;
-    $(iId).textContent=Math.round(socialStats.impr).toLocaleString();
-    $(eId).textContent=Math.round(socialStats.engs).toLocaleString();
-    $(rId).textContent=socialStats.rate.toFixed(1)+'%';
-  });
+  if($('pmv-impr')){
+    $('pmv-impr').textContent=Math.round(socialStats.impr).toLocaleString();
+    $('pmv-engs').textContent=Math.round(socialStats.engs).toLocaleString();
+    $('pmv-rate').textContent=socialStats.rate.toFixed(1)+'%';
+  }
 
   const womTot0=womHits*(womReach/1000)*womCPM;
   // PRED_ADJ is applied once, uniformly, across every category here, so the
   // headline, channel cards, and detailed breakdown below all foot together.
   const oohSpec=oohSpec0*PRED_ADJ,oohDur=oohDur0*PRED_ADJ,oohTot=oohTot0*PRED_ADJ;
   const offSoc=offSoc0*PRED_ADJ,ugc=ugc0*PRED_ADJ,infTot=infTot0*PRED_ADJ,collabPredTot=collabPredTot0*PRED_ADJ;
-  const contTot=7300*PRED_ADJ,womTot=womTot0*PRED_ADJ;
+  const contTot=(BM.cont_ph+BM.cont_vi+BM.cont_ae+BM.cont_sf)*PRED_ADJ,womTot=womTot0*PRED_ADJ;
   const socTot=offSoc+ugc+infTot+collabPredTot;
   const perShow=oohTot+socTot+contTot+womTot;
 
@@ -3811,6 +3838,14 @@ function runCalcP(){
   $('pe-pred').textContent=fmt(progT);
   $('pr-pred').textContent='ROI: '+roiP(progT);
   $('pp-pred').textContent=(!hasProg&&progNs>1)?'Per show: '+fmt(perShow):'';
+  // Plain-language disclosure of what's baked into the headline figure, so
+  // it isn't read as a bare, unqualified single-point estimate — a base
+  // range (pre-predictive-adjustment to the figure shown) plus the premiums
+  // in play and what each applies to.
+  if($('pred-assump-note')){
+    const progRangeLo=progT/PRED_ADJ;
+    $('pred-assump-note').innerHTML='<strong>Range:</strong> '+fmt(progRangeLo)+' – '+fmt(progT)+', depending on execution and audience turnout. This estimate applies a '+v.adj+'× '+v.l+' premium to Live Audience value, a '+BM.adj_paid+'×–'+BM.adj_organic+'× paid-vs-organic authenticity premium to influencer and social value, and a '+PRED_ADJ+'× predictive-confidence adjustment to the total.';
+  }
 
   // CHANNEL CARDS: build once, update textContent only
   const cg=$('ch-grid');
@@ -3834,6 +3869,19 @@ function runCalcP(){
   [['ch-P',paidPredTot],['ch-E',earnedPredTot],['ch-S',sharedPredTot],['ch-O',ownedPredTot]].forEach(([id,val])=>{
     $(id+'-v').textContent=fmt(val);$(id+'-p').textContent=perShow>0?Math.round(val/perShow*100)+'% of total':'0% of total';
   });
+
+  // Sticky footer update — only while Prediction is the visible tab, so it
+  // reflects the predicted totals rather than a stale Actuals snapshot.
+  if($('sf-paid')&&$('mode-p').style.display!=='none'){
+    $('sf-paid').textContent=fmt(paidPredTot);
+    $('sf-earned').textContent=fmt(earnedPredTot);
+    $('sf-shared').textContent=fmt(sharedPredTot);
+    $('sf-owned').textContent=fmt(ownedPredTot);
+    $('sf-emv').textContent=fmt(progT);
+    $('sf-biz').textContent='--'; // not a Prediction-mode concept
+    $('sf-roi').textContent=roiP(progT);
+    $('sf-cpm').textContent='--'; // not a Prediction-mode concept
+  }
 
   // INFLUENCER REACH CALCULATOR — back-calculates the total influencer
   // following needed to bring Earned influencer value to a target share of
@@ -3876,12 +3924,13 @@ function runCalcP(){
   const totalPosts=plannedPosts.reduce((s,p)=>s+p.count,0);
   const channelCount=new Set(plannedPosts.map(p=>p.pl)).size;
   $('b5l').textContent='Owned: Official Posts ('+totalPosts+' post'+(totalPosts!==1?'s':'')+' across '+channelCount+' channel'+(channelCount!==1?'s':'')+')';$('b5v').textContent=fmt(offSoc);
-  $('b6l').textContent='Shared: Earned UGC (~'+Math.round(at*v.sh).toLocaleString()+' creators \xd7 500 avg followers)';$('b6v').textContent=fmt(ugc);
+  $('b6l').textContent='Shared: Earned UGC (~'+Math.round(at*v.sh).toLocaleString()+' creators \xd7 500 avg followers) *';$('b6v').textContent=fmt(ugc);
   $('b7l').textContent='Shared: Collab Social Posts ('+collabN+' post'+(collabN!==1?'s':'')+')';$('b7v').textContent=fmt(collabPredTot);
   $('b8l').textContent='Paid/Earned: Influencer Integration ('+infN+' influencer'+(infN!==1?'s':'')+')';$('b8v').textContent=fmt(infTot);
   $('b9l').textContent='[O2] Content Assets Produced';$('b9v').textContent=fmt(contTot);
-  $('b10l').textContent='[E2] Press & Media ('+womHits+' hits \xd7 '+womReach.toLocaleString()+' reach \xd7 $'+womCPM+' CPM)';$('b10v').textContent=fmt(womTot);
+  $('b10l').textContent='[E2] Press & Media ('+womHits+' hits \xd7 '+womReach.toLocaleString()+' reach \xd7 $'+womCPM+' CPM) *';$('b10v').textContent=fmt(womTot);
   $('b11l').textContent='Per-Show Predicted EMV';$('b11v').textContent=fmt(perShow);
+  if(window._currentPredKey)_schedulePredAutoSave();
 }
 
 function resetPred(){
@@ -3915,7 +3964,7 @@ function calcShowEMVRaw(at,du,st,postsSnap,womHits,womReach,womCPM){
     offSoc+=(reach*p.count*p.mult/1000)*PCPM[p.pl]*OWNED_POST_ADJ;
   });
   const ugc=(at*v.sh*500/1000)*8*v.adj;
-  const contTot=7300;
+  const contTot=(BM.cont_ph+BM.cont_vi+BM.cont_ae+BM.cont_sf);
   const womTot=(womHits||20)*((womReach||100000)/1000)*(womCPM||10);
   return oohTot+offSoc+ugc+contTot+womTot;
 }
@@ -5412,7 +5461,7 @@ async function genPredPdf(){
     // all footing to the same number as each other and as the live report).
     const oohSpec=oohSpec0*PRED_ADJ,oohDur=oohDur0*PRED_ADJ,oohTot=oohTot0*PRED_ADJ;
     const offSoc=offSoc0*PRED_ADJ,ugc=ugc0*PRED_ADJ,infTot=infTot0*PRED_ADJ,collabPredTot=collabPredTot0*PRED_ADJ;
-    const contTot=7300*PRED_ADJ,womTot=womTot0*PRED_ADJ;
+    const contTot=(BM.cont_ph+BM.cont_vi+BM.cont_ae+BM.cont_sf)*PRED_ADJ,womTot=womTot0*PRED_ADJ;
     const socTot=offSoc+ugc+infTot+collabPredTot;
     const perShow=oohTot+socTot+contTot+womTot;
     let progT,progCost,progNs;
@@ -5509,12 +5558,64 @@ async function genPredPdf(){
       +pesoCard('#eee','#45454c','#45454c','P — Paid',pesoP,'Contracted Influencers',
         scale=>'Influencer integration:<br>'+fmt(infTot*scale))
       +pesoCard('#ffd',AC,AC,'E — Earned',pesoE,'Live Audience + Press / Media',
-        scale=>'Live Audience: '+fmt(oohTot*scale)+'<br>Press &amp; Media: '+fmt(womTot*scale))
+        scale=>'Live Audience: '+fmt(oohTot*scale)+'<br>Press &amp; Media: '+fmt(womTot*scale)+' *')
       +pesoCard('#f0ddff','#2b0a45','#2b0a45','S — Shared',pesoS,'UGC / Earned Social + Collab Posts',
-        scale=>'Est. '+(Math.round(at*(vir.sh||0)*scale)).toLocaleString()+' UGC creators \xd7 500 avg followers: '+fmt(ugc*scale)+'<br>Collab social posts: '+fmt(collabPredTot*scale))
+        scale=>'Est. '+(Math.round(at*(vir.sh||0)*scale)).toLocaleString()+' UGC creators \xd7 500 avg followers: '+fmt(ugc*scale)+' *<br>Collab social posts: '+fmt(collabPredTot*scale))
       +pesoCard('#f0f0f0','#6e6e76','#6e6e76','O — Owned',pesoO,'Official Social + Content',
         scale=>'Social posts: '+fmt(offSoc*scale)+'<br>Content assets: '+fmt(contTot*scale))
-      +'</div></div>');
+      +'</div><div style="font-size:9px;color:#888;margin-top:2px">* Based on manually entered assumptions (expected press hits, reach, and UGC participation), not measured or platform-reported data.</div></div>');
+
+    // ── APPENDIX: Methodology ───────────────────────────────────────────────
+    // Mirrors genPdf()'s Actuals methodology appendix, adapted for a forward-
+    // looking prediction: describes the calculation approach and the
+    // adjustment factors in plain language rather than hardcoding specific
+    // rate figures, since those live in the Benchmarks tab and can be tuned
+    // per show — this stays accurate no matter what they're set to.
+    pdf.addPage();cy=mg;
+    const _methShowDesc=[gv('p-cl'),gv('p-sn')].filter(v=>v!=='--').join(' — ')||'this program';
+    const _methSec=(num,title)=>'<div style="margin-top:16px"><div style="font-size:12px;font-weight:700;color:'+HC+';border-bottom:2px solid '+AC+';padding-bottom:5px;margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">'+(num?num+'. ':'')+title+'</div>';
+    const _methP=text=>'<div style="font-size:11px;color:#333;line-height:1.6;margin-bottom:6px">'+text+'</div>';
+    await stamp('<div style="margin-bottom:4px;background:#8a2fc2;color:#fff;padding:16px 22px;border-radius:16px;display:flex;align-items:center;gap:16px">'
+      +'<div style="flex:1"><div style="font-size:20px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Appendix — Methodology</div>'
+      +'<div style="font-size:10px;opacity:.75;margin-top:4px">How the Predicted Media Value in this report is calculated</div></div></div>'
+      +_methSec(null,'Overview')
+      +_methP('This report forecasts the Estimated Media Value (EMV) of '+_methShowDesc+' before it happens, using the show’s planned attendance, social following, and partnerships together with industry benchmarks. It is a planning estimate, not a measurement of an already-completed show.')
+      +_methP('The single Predicted figure on the scenario card is the upper end of a range shown alongside it on screen (and above, in the Predicted Value box) — the lower end reflects the same calculation before the predictive-confidence adjustment described below is applied. Actual results depend on execution and audience turnout.')
+      +'</div>');
+    await stamp(_methSec('E1','Live Audience / Experiential')
+      +_methP('Expected attendance is treated as a discrete impression base, valued at a premium out-of-home CPM scaled by a show-type adjustment factor ("'+vir.l+'" for this program) reflecting the spectacle premium over standard OOH advertising.')
+      +_methP('<strong>Engagement Duration:</strong> expected attendance × show duration (minutes) × a per-minute engagement rate.')
+      +'</div>');
+    await stamp(_methSec('E2','Press &amp; Media Coverage *')
+      +_methP('Unlike every other section of this report, Press &amp; Media value is not derived from the show’s own inputs — it comes from manually entered assumptions about expected press hits, average reach per hit, and an equivalent CPM (set in the "WOM / Press Assumptions" section). Est. EMV = Hits × (Reach ÷ 1,000) × CPM.')
+      +_methP('Treat this line as a planning placeholder, not a forecast grounded in measured media relationships, until real coverage is confirmed.')
+      +'</div>');
+    await stamp(_methSec('O1','Owned Social Posts')
+      +_methP('Each planned post on the brand’s own channels is valued from that channel’s following × platform organic reach rate × platform CPM, scaled by the post count and a post-type multiplier (e.g. Reel vs. Story). A flat 1.0× owned-media factor applies — direct, brand-controlled distribution is not given the organic-reach credibility premium that earned third-party content receives.')
+      +'</div>'
+      +_methSec('O2','Content Assets Produced')
+      +_methP('Professional photo, video, and aerial assets planned for the show are valued at their replacement cost — what the brand would pay to commission equivalent content independently. These per-asset rates are configured in the Benchmarks tab and cited to industry sources there.')
+      +'</div>');
+    await stamp(_methSec('S1','Shared — UGC &amp; Collab Posts')
+      +_methP('<strong>Earned UGC *:</strong> expected attendance × an assumed attendee-sharing rate (which varies by show type) × an assumed average follower count per attendee-creator. Like Press &amp; Media, this is a planning assumption rather than a measurement.')
+      +_methP('<strong>Collab Social Posts:</strong> valued the same way as Owned posts, but at a higher mutual-endorsement premium since both parties have agreed to the partnership.')
+      +'</div>');
+    await stamp(_methSec('P1','Influencer Integration')
+      +_methP('Each influencer’s predicted EMV = (followers × platform reach rate ÷ 1,000 × platform CPM) + (followers × expected engagement rate, split across likes/comments/shares/etc. and valued per the Benchmarks tab), then scaled by an authenticity adjustment: a higher multiple for organic/unpaid posts than for paid placements, reflecting the added credibility of an unpaid endorsement.')
+      +'</div>');
+    await stamp(_methSec(null,'Predictive Confidence Adjustment')
+      +_methP('After every category above is calculated, the program-wide total is scaled by a single predictive-confidence factor to arrive at the Predicted figure — the same factor applied uniformly across every category so the headline number, the channel cards, and the detailed breakdown all foot to each other.')
+      +_methP('This adjustment assumes strong creative execution and audience turnout; it is the upper end of the range shown on the Predicted card, not a guarantee.')
+      +'</div>');
+    await stamp(_methSec(null,'Program ROI')
+      +_methP('<strong>ROI</strong> = Total Predicted EMV ÷ Program Cost.'+(co>0?' For this show, a '+roiPerShow(perShow)+' ROI means every $1 budgeted is projected to generate $'+roiPerShow(perShow).replace('x','')+' in media value.':''))
+      +'</div>');
+    await stamp(_methSec(null,'Data Sources &amp; Disclaimers')
+      +_methP('Platform CPMs, organic reach rates, engagement values, and content-production rates reflect the industry benchmarks configured in the Benchmarks tab at the time this report was generated, each cited to its source there.')
+      +_methP('All figures in this report are forward-looking estimates for strategic planning purposes. They are not a guarantee of actual media value, which depends on factors outside this model’s scope (creative execution, weather, news-cycle timing, and audience turnout).')
+      +_methP('Confidential — Pixis Drones — not for external distribution without written consent.')
+      +'</div>');
+
     const np=pdf.internal.getNumberOfPages();
     for(let i=1;i<=np;i++){pdf.setPage(i);pdf.setFontSize(7.5);pdf.setTextColor(160);
       pdf.text('Confidential \u2014 Pixis Drones \u2014 Predictive figures are estimates for planning purposes only.',pw/2,ph-16,{align:'center'});
@@ -6557,6 +6658,28 @@ function _scheduleAutoSave(){
   },8000);
 }
 
+// Prediction mode's own autosave — simpler than Actuals' (purely local,
+// no cloud sync or collaborator merge to worry about) but previously had
+// no autosave at all, so unsaved prediction work was lost on an accidental
+// tab close unless the user remembered to click "Save Prediction".
+let _predAutoSaveTimer=null;
+function _schedulePredAutoSave(){
+  clearTimeout(_predAutoSaveTimer);
+  _predAutoSaveTimer=setTimeout(()=>{
+    if(!window._currentPredKey)return;
+    const all=predGetAll();
+    const idx=all.findIndex(e=>e.key===window._currentPredKey);
+    if(idx===-1)return;
+    const name=all[idx].name;
+    const state=predSerialize();
+    all[idx]={key:window._currentPredKey,name,targetEmv:state.targetEmv,savedAt:new Date().toISOString(),state};
+    predSetAll(all);
+    predRenderList();
+    const badge=document.getElementById('sf-autosave');
+    if(badge){badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),2500);}
+  },8000);
+}
+
 // Persistent (non-auto-dismissing) banner shown when this tab's autosave has
 // detected a newer remote save and paused itself rather than risk clobbering
 // it. Stays until the user reloads the show.
@@ -6671,10 +6794,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="sf-item"><div class="sf-lbl">Biz Impact</div><div class="sf-val teal" id="sf-biz">$0</div></div>
   <div class="sf-item"><div class="sf-lbl">ROI</div><div class="sf-val ind" id="sf-roi">--</div></div>
   <div class="sf-item"><div class="sf-lbl">Prog. CPM</div><div class="sf-val" style="color:#dc88ff" id="sf-cpm">--</div></div>
-  <div class="sf-div"></div>
-  <div class="sf-item"><div class="sf-lbl">Est. Impressions</div><div class="sf-val" id="sf-impr">0</div></div>
-  <div class="sf-item"><div class="sf-lbl">Est. Engagements</div><div class="sf-val" id="sf-engs">0</div></div>
-  <div class="sf-item"><div class="sf-lbl">Eng. Rate</div><div class="sf-val" id="sf-rate">0%</div></div>
   <div class="sf-div"></div>
   <span class="sf-autosave" id="sf-autosave">✓ Auto-saved</span>
   <button class="btn btn-g sf-save" id="sf-save-btn" style="font-size:11px;padding:8px 16px">💾 Save Show</button>
